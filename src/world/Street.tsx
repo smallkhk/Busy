@@ -8,7 +8,7 @@ import { Box, Cyl, Tappable, type V3 } from './Room';
 
 const LOOP = 30; // vehicles wrap between -15 and +15
 
-function Car({ body, roof, stripe }: { body: string; roof: string; stripe?: string }) {
+export function Car({ body, roof, stripe }: { body: string; roof: string; stripe?: string }) {
   return (
     <group>
       <Box p={[0, 0.38, 0]} s={[1.9, 0.45, 0.9]} c={body} />
@@ -25,7 +25,7 @@ function Car({ body, roof, stripe }: { body: string; roof: string; stripe?: stri
   );
 }
 
-function Keke() {
+export function Keke() {
   return (
     <group>
       <Box p={[0, 0.45, 0]} s={[1.2, 0.5, 0.8]} c="#2f9e44" />
@@ -77,7 +77,7 @@ function Traffic() {
   );
 }
 
-type Walker = { from: number; to: number; z: number; speed: number; shirt: string; tray?: boolean };
+export type Walker = { from: number; to: number; z: number; speed: number; shirt: string; tray?: boolean };
 
 const WALKERS: Walker[] = [
   { from: -7, to: 7, z: 2.9, speed: 0.9, shirt: '#c0392b' },
@@ -86,10 +86,15 @@ const WALKERS: Walker[] = [
 ];
 
 function Pedestrians() {
+  return <Walkers walkers={WALKERS} />;
+}
+
+/** NPCs pacing back and forth along x. */
+export function Walkers({ walkers }: { walkers: Walker[] }) {
   const refs = useRef<(Group | null)[]>([]);
   useFrame(({ clock }) => {
     const t = clock.getElapsedTime();
-    WALKERS.forEach((w, i) => {
+    walkers.forEach((w, i) => {
       const g = refs.current[i];
       if (!g) return;
       const len = Math.abs(w.to - w.from);
@@ -103,7 +108,7 @@ function Pedestrians() {
   });
   return (
     <>
-      {WALKERS.map((w, i) => (
+      {walkers.map((w, i) => (
         <group key={i} ref={(g) => { refs.current[i] = g; }} scale={0.92}>
           <Person shirt={w.shirt} trousers="#2d2d2d" />
           {w.tray && (
@@ -134,7 +139,7 @@ function Shop({ x, color, awning, children }: { x: number; color: string; awning
   );
 }
 
-function Lamp({ p, on }: { p: V3; on: boolean }) {
+export function Lamp({ p, on }: { p: V3; on: boolean }) {
   return (
     <group position={p}>
       <Cyl p={[0, 1.6, 0]} r={0.05} h={3.2} c="#4b4b4b" />
@@ -148,7 +153,7 @@ function Lamp({ p, on }: { p: V3; on: boolean }) {
   );
 }
 
-function Tree({ p, s = 1 }: { p: V3; s?: number }) {
+export function Tree({ p, s = 1 }: { p: V3; s?: number }) {
   return (
     <group position={p} scale={s}>
       <Cyl p={[0, 0.8, 0]} r={0.14} h={1.6} c="#6b4a2b" />

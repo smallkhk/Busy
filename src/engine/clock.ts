@@ -38,3 +38,9 @@ export function inHours(totalMinutes: number, [start, end]: [number, number]): b
 }
 
 export const formatNaira = (n: number) => `₦${Math.round(n).toLocaleString('en-NG')}`;
+
+export function formatMinutes(m: number): string {
+  if (m < 60) return `${m}m`;
+  const h = Math.floor(m / 60);
+  return m % 60 ? `${h}h ${m % 60}m` : `${h}h`;
+}

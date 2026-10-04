@@ -1,16 +1,33 @@
 import { OrthographicCamera } from '@react-three/drei';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, type ReactElement } from 'react';
 import { Color, Vector3 } from 'three';
 import { clockParts, daylight } from '../engine/clock';
 import { useGame } from '../store/game';
 import { Avatar } from './Avatar';
 import { Room } from './Room';
 import { Street } from './Street';
+import { JabiLake } from './places/JabiLake';
+import { Secretariat } from './places/Secretariat';
+import { WuseMarket } from './places/WuseMarket';
 import { INTERACTABLES, type Place } from '../content/activities';
 import { avatarLabelPos, labelEls } from './labels';
 
-const CENTERS: Record<Place, [number, number, number]> = { home: [1.4, 0, 0.4], street: [-0.6, 0, -1.2] };
+const CENTERS: Record<Place, [number, number, number]> = {
+  home: [1.4, 0, 0.4],
+  street: [-0.6, 0, -1.2],
+  wuse: [-1.0, 0, 0],
+  jabi: [-0.6, 0, -0.8],
+  secretariat: [0, 0, -0.6],
+};
+
+const SCENES: Record<Place, () => ReactElement> = {
+  home: Room,
+  street: Street,
+  wuse: WuseMarket,
+  jabi: JabiLake,
+  secretariat: Secretariat,
+};
 
 function GameLoop() {
   const tick = useGame((s) => s.tick);
@@ -39,7 +56,7 @@ function LabelSync() {
 function IsoCamera({ place }: { place: Place }) {
   const { size } = useThree();
   const CENTER = CENTERS[place];
-  const span = place === 'street' ? 12 : 10.5;
+  const span = place === 'home' ? 10.5 : 12.5;
   const zoom = Math.min(size.width / span, size.height / 9);
   return (
     <OrthographicCamera
@@ -98,13 +115,14 @@ function Lights({ place }: { place: Place }) {
 
 export function Scene() {
   const place = useGame((s) => s.place);
+  const PlaceScene = SCENES[place];
   return (
     <Canvas shadows dpr={[1, 2]} className="scene">
       <IsoCamera key={place} place={place} />
       <Lights place={place} />
       <GameLoop />
       <LabelSync />
-      {place === 'home' ? <Room /> : <Street />}
+      <PlaceScene />
       <Avatar />
     </Canvas>
   );
