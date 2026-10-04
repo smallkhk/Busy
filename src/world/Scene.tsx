@@ -1,13 +1,16 @@
 import { OrthographicCamera } from '@react-three/drei';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { useEffect, useMemo } from 'react';
-import { Color } from 'three';
+import { Color, Vector3 } from 'three';
 import { clockParts, daylight } from '../engine/clock';
 import { useGame } from '../store/game';
 import { Avatar } from './Avatar';
 import { Room } from './Room';
+import { Street } from './Street';
+import { INTERACTABLES, type Place } from '../content/activities';
+import { avatarLabelPos, labelEls } from './labels';
 
-const CENTER: [number, number, number] = [1.4, 0, 0.4];
+const CENTERS: Record<Place, [number, number, number]> = { home: [1.4, 0, 0.4], street: [-0.6, 0, -1.2] };
 
 function GameLoop() {
   const tick = useGame((s) => s.tick);
@@ -15,9 +18,29 @@ function GameLoop() {
   return null;
 }
 
-function IsoCamera() {
+const LABEL_POS = new Map(INTERACTABLES.map((i) => [i.id, new Vector3(...i.label)]));
+const tmp = new Vector3();
+
+/** Projects world label anchors to screen space and moves the DOM labels there. */
+function LabelSync() {
+  useFrame(({ camera, size }) => {
+    for (const [key, el] of labelEls) {
+      const world = key === 'avatar' ? avatarLabelPos : LABEL_POS.get(key);
+      if (!world) continue;
+      tmp.copy(world).project(camera);
+      const x = ((tmp.x + 1) / 2) * size.width;
+      const y = ((1 - tmp.y) / 2) * size.height;
+      el.style.transform = `translate(${x}px, ${y}px) translate(-50%, -50%)`;
+    }
+  });
+  return null;
+}
+
+function IsoCamera({ place }: { place: Place }) {
   const { size } = useThree();
-  const zoom = Math.min(size.width / 10.5, size.height / 9);
+  const CENTER = CENTERS[place];
+  const span = place === 'street' ? 12 : 10.5;
+  const zoom = Math.min(size.width / span, size.height / 9);
   return (
     <OrthographicCamera
       makeDefault
@@ -34,7 +57,7 @@ const NIGHT_SKY = new Color('#0b1626');
 const DAY_SKY = new Color('#8fc6e8');
 const DUSK = new Color('#f2a65a');
 
-function Lights() {
+function Lights({ place }: { place: Place }) {
   // Re-render lights once per in-game ~10 minutes, not every frame.
   const bucket = useGame((s) => Math.floor(s.time / 10));
   const power = useGame((s) => s.power);
@@ -66,20 +89,22 @@ function Lights() {
         shadow-camera-top={10}
         shadow-camera-bottom={-10}
       />
-      {power && <pointLight position={[0, 2.5, 0]} intensity={light > 0.7 ? 3 : 14} distance={9} decay={1.6} color="#ffd9a0" />}
+      {place === 'home' && power && <pointLight position={[0, 2.5, 0]} intensity={light > 0.7 ? 3 : 14} distance={9} decay={1.6} color="#ffd9a0" />}
       {/* Mai Shayi's lantern keeps the kiosk lit at night */}
-      <pointLight position={[5.8, 1.6, 0.2]} intensity={light > 0.5 ? 0 : 6} distance={4} color="#ffb347" />
+      {place === 'home' && <pointLight position={[5.8, 1.6, 0.2]} intensity={light > 0.5 ? 0 : 6} distance={4} color="#ffb347" />}
     </>
   );
 }
 
 export function Scene() {
+  const place = useGame((s) => s.place);
   return (
     <Canvas shadows dpr={[1, 2]} className="scene">
-      <IsoCamera />
-      <Lights />
+      <IsoCamera key={place} place={place} />
+      <Lights place={place} />
       <GameLoop />
-      <Room />
+      <LabelSync />
+      {place === 'home' ? <Room /> : <Street />}
       <Avatar />
     </Canvas>
   );

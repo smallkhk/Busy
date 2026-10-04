@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
-import { activityById, DOOR_SPOT, GEN_COST, type Activity } from '../content/activities';
+import { activityById, ENTRY_SPOT, EXIT_SPOT, GEN_COST, PLACE_NAMES, type Activity, type Place } from '../content/activities';
 import { clockParts, formatNaira, inHours } from '../engine/clock';
 import { fullNeeds, LOW_NEED, NEED_KEYS, NEED_META, tickNeeds, type NeedKey, type Needs } from '../engine/needs';
 
@@ -16,6 +16,7 @@ type GameState = {
   shirt: string;
   time: number;
   money: number;
+  place: Place;
   needs: Needs;
   power: boolean;
   nextPowerChange: number;
@@ -46,8 +47,10 @@ const START_TIME = 7 * 60; // Day 1, 7:00 AM
 const START_MONEY = 45000;
 const START_POS: [number, number] = [0.5, 1.2];
 
-// In-room walkable bounds (room + compound outside).
-const BOUNDS = { minX: -3.6, maxX: 6.4, minZ: -2.6, maxZ: 3.6 };
+const BOUNDS: Record<Place, { minX: number; maxX: number; minZ: number; maxZ: number }> = {
+  home: { minX: -3.6, maxX: 6.4, minZ: -2.6, maxZ: 3.6 },
+  street: { minX: -8.5, maxX: 7, minZ: -2.4, maxZ: 3.2 },
+};
 
 let toastId = 0;
 
@@ -59,6 +62,7 @@ const initial = () => ({
   shirt: '#2f9e6b',
   time: START_TIME,
   money: START_MONEY,
+  place: 'home' as Place,
   needs: fullNeeds(),
   power: true,
   nextPowerChange: START_TIME + 180,
@@ -75,6 +79,7 @@ const initial = () => ({
 
 /** Why an activity can't start right now, or null if it can. */
 export function blockReason(a: Activity, s: Pick<GameState, 'time' | 'money' | 'power' | 'active'>): string | null {
+  if (a.locked) return a.locked;
   if (s.active) return 'You dey do something already';
   if (a.hours && !inHours(s.time, a.hours)) {
     return `Only from ${a.hours[0]}:00 to ${a.hours[1]}:00`;
@@ -119,10 +124,14 @@ export const useGame = create<GameState>()(
             txns: [{ at: s.time, label: a.label, amount: a.pay }, ...s.txns].slice(0, 40),
           });
           get().toast(`💰 You don collect ${formatNaira(a.pay)}`);
-        } else {
+        } else if (!a.travelTo) {
           get().toast(`${a.emoji} Done: ${a.label}`);
         }
-        set({ active: null, ...(a.away ? { pos: DOOR_SPOT } : {}) });
+        set({ active: null, ...(a.away ? { pos: EXIT_SPOT[s.place] } : {}) });
+        if (a.travelTo) {
+          set({ place: a.travelTo, pos: ENTRY_SPOT[a.travelTo], target: null });
+          get().toast(`📍 ${PLACE_NAMES[a.travelTo]}`);
+        }
       };
 
       return {
@@ -197,13 +206,15 @@ export const useGame = create<GameState>()(
           // New day greeting
           const prev = clockParts(s.time);
           const cur = clockParts(time);
-          if (cur.day !== prev.day) now.toast(`🌅 Day ${cur.day} for Kubwa. Make today count!`);
+          if (cur.day !== prev.day) now.toast(`🌅 Day ${cur.day} for Abuja. Make today count!`);
         },
 
         walkTo: (x, z) => {
-          if (get().active) return;
+          const { active, place } = get();
+          if (active) return;
+          const b = BOUNDS[place];
           set({
-            target: [Math.min(BOUNDS.maxX, Math.max(BOUNDS.minX, x)), Math.min(BOUNDS.maxZ, Math.max(BOUNDS.minZ, z))],
+            target: [Math.min(b.maxX, Math.max(b.minX, x)), Math.min(b.maxZ, Math.max(b.minZ, z))],
             pending: null,
             menu: null,
           });
@@ -219,7 +230,7 @@ export const useGame = create<GameState>()(
             get().toast(`😕 ${reason}`);
             return;
           }
-          const spot = a.spot ?? (a.away ? DOOR_SPOT : null);
+          const spot = a.spot ?? (a.away ? EXIT_SPOT[s.place] : null);
           if (spot) set({ target: spot, pending: a.id });
           else startActivity(a.id);
         },
@@ -234,7 +245,7 @@ export const useGame = create<GameState>()(
           const s = get();
           const a = s.active && activityById(s.active.id);
           if (!a) return;
-          set({ active: null, ...(a.away ? { pos: DOOR_SPOT } : {}) });
+          set({ active: null, ...(a.away ? { pos: EXIT_SPOT[s.place] } : {}) });
           get().toast(a.pay ? '🚶 You comot from work early. No pay o' : '✋ You stop am');
         },
 
@@ -263,6 +274,7 @@ export const useGame = create<GameState>()(
         shirt: s.shirt,
         time: s.time,
         money: s.money,
+        place: s.place,
         needs: s.needs,
         power: s.power,
         nextPowerChange: s.nextPowerChange,

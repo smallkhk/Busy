@@ -1,5 +1,9 @@
 import type { Needs } from '../engine/needs';
 
+export type Place = 'home' | 'street';
+
+export const PLACE_NAMES: Record<Place, string> = { home: 'Your compound', street: 'Kubwa street' };
+
 export type Activity = {
   id: string;
   label: string;
@@ -18,10 +22,15 @@ export type Activity = {
   sleep?: boolean;
   /** Where the player stands to do it. Phone activities have none. */
   spot?: [number, number];
+  /** Walking here moves the player to another place. */
+  travelTo?: Place;
+  /** Shown instead of running, for content that isn't built yet. */
+  locked?: string;
 };
 
 export type Interactable = {
   id: string;
+  place: Place;
   name: string;
   emoji: string;
   /** Label anchor in the world. */
@@ -31,11 +40,15 @@ export type Interactable = {
 
 export const GEN_COST = 1000;
 
-export const DOOR_SPOT: [number, number] = [4.3, 1.8];
+/** Where away activities (jobs) leave from and come back to. */
+export const EXIT_SPOT: Record<Place, [number, number]> = { home: [6.0, 2.9], street: [1.0, 2.6] };
+/** Where you appear when you arrive at a place. */
+export const ENTRY_SPOT: Record<Place, [number, number]> = { home: [5.6, 2.6], street: [-7.1, -2.0] };
 
 export const INTERACTABLES: Interactable[] = [
   {
     id: 'bed',
+    place: 'home',
     name: 'Bed',
     emoji: '🛏️',
     label: [-2.9, 1.3, -1.9],
@@ -46,6 +59,7 @@ export const INTERACTABLES: Interactable[] = [
   },
   {
     id: 'cooler',
+    place: 'home',
     name: 'Cooler',
     emoji: '🧊',
     label: [-0.7, 1.1, -2.5],
@@ -56,6 +70,7 @@ export const INTERACTABLES: Interactable[] = [
   },
   {
     id: 'stove',
+    place: 'home',
     name: 'Gas cooker',
     emoji: '🔥',
     label: [0.8, 1.3, -2.5],
@@ -66,6 +81,7 @@ export const INTERACTABLES: Interactable[] = [
   },
   {
     id: 'toilet',
+    place: 'home',
     name: 'Toilet',
     emoji: '🚽',
     label: [3.5, 1.1, -2.5],
@@ -75,6 +91,7 @@ export const INTERACTABLES: Interactable[] = [
   },
   {
     id: 'bucket',
+    place: 'home',
     name: 'Bathroom',
     emoji: '🪣',
     label: [2.5, 1.0, -2.5],
@@ -84,6 +101,7 @@ export const INTERACTABLES: Interactable[] = [
   },
   {
     id: 'tv',
+    place: 'home',
     name: 'TV',
     emoji: '📺',
     label: [-3.6, 1.6, 1.0],
@@ -94,6 +112,7 @@ export const INTERACTABLES: Interactable[] = [
   },
   {
     id: 'maishayi',
+    place: 'home',
     name: 'Mai Shayi',
     emoji: '☕',
     label: [5.6, 1.6, 0.0],
@@ -104,11 +123,85 @@ export const INTERACTABLES: Interactable[] = [
   },
   {
     id: 'bench',
+    place: 'home',
     name: 'Compound bench',
     emoji: '🪑',
     label: [3.6, 1.0, 3.3],
     activities: [
       { id: 'neighbours', label: 'Gist with neighbours', doing: 'Gisting with neighbours', emoji: '🗣️', minutes: 45, gains: { social: 25, fun: 10 }, hours: [7, 22], spot: [3.6, 2.6] },
+    ],
+  },
+  {
+    id: 'gate',
+    place: 'home',
+    name: 'Compound gate',
+    emoji: '🚪',
+    label: [6.4, 1.9, 3.1],
+    activities: [
+      { id: 'go-street', label: 'Go outside (Kubwa street)', doing: 'Stepping out', emoji: '🚶', minutes: 2, gains: {}, travelTo: 'street', spot: [6.0, 2.9] },
+    ],
+  },
+  {
+    id: 'home-gate',
+    place: 'street',
+    name: 'Your compound',
+    emoji: '🏠',
+    label: [-7.2, 2.4, -2.9],
+    activities: [
+      { id: 'go-home', label: 'Go back inside', doing: 'Going home', emoji: '🏠', minutes: 2, gains: {}, travelTo: 'home', spot: [-7.1, -2.0] },
+    ],
+  },
+  {
+    id: 'mamaput',
+    place: 'street',
+    name: 'Mama Put',
+    emoji: '🍲',
+    label: [-4.2, 2.6, -3.4],
+    activities: [
+      { id: 'rice', label: 'Rice, stew & meat', doing: 'Chopping for Mama Put', emoji: '🍛', minutes: 30, cost: 2500, gains: { food: 60, social: 8 }, hours: [7, 21], spot: [-4.2, -2.0] },
+      { id: 'tuwo', label: 'Tuwo shinkafa & miyan kuka', doing: 'Chopping tuwo', emoji: '🥣', minutes: 30, cost: 2000, gains: { food: 55, fun: 5 }, hours: [7, 21], spot: [-4.2, -2.0] },
+    ],
+  },
+  {
+    id: 'barber',
+    place: 'street',
+    name: 'Barber shop',
+    emoji: '💈',
+    label: [-1.2, 2.6, -3.4],
+    activities: [
+      { id: 'lowcut', label: 'Low cut + shave', doing: 'Barbing hair', emoji: '💈', minutes: 40, cost: 2000, gains: { hygiene: 20, fun: 10, social: 15 }, hours: [8, 21], spot: [-1.2, -2.0] },
+    ],
+  },
+  {
+    id: 'viewing',
+    place: 'street',
+    name: 'Viewing centre',
+    emoji: '⚽',
+    label: [1.8, 2.6, -3.4],
+    activities: [
+      { id: 'epl', label: 'Watch EPL match (dem get gen)', doing: 'Shouting for viewing centre', emoji: '⚽', minutes: 120, cost: 500, gains: { fun: 45, social: 25 }, hours: [12, 23], spot: [1.8, -2.0] },
+    ],
+  },
+  {
+    id: 'suya',
+    place: 'street',
+    name: 'Suya spot',
+    emoji: '🍢',
+    label: [4.8, 2.0, -2.6],
+    activities: [
+      { id: 'suya', label: 'Suya & onions', doing: 'Enjoying suya', emoji: '🍢', minutes: 20, cost: 1500, gains: { food: 25, fun: 15 }, hours: [16, 24], spot: [4.8, -1.8] },
+    ],
+  },
+  {
+    id: 'busstop',
+    place: 'street',
+    name: 'Kubwa bus stop',
+    emoji: '🚏',
+    label: [1.0, 2.6, 3.4],
+    activities: [
+      { id: 'to-wuse', label: 'Enter bus go Wuse Market', doing: 'Waiting for bus', emoji: '🚌', minutes: 60, cost: 700, gains: {}, locked: 'Coming soon', spot: [1.0, 2.6] },
+      { id: 'to-jabi', label: 'Enter taxi go Jabi Lake Mall', doing: 'Waiting for taxi', emoji: '🚕', minutes: 45, cost: 3500, gains: {}, locked: 'Coming soon', spot: [1.0, 2.6] },
+      { id: 'to-sec', label: 'Go Federal Secretariat', doing: 'Waiting for bus', emoji: '🏛️', minutes: 75, cost: 900, gains: {}, locked: 'Coming soon', spot: [1.0, 2.6] },
     ],
   },
 ];

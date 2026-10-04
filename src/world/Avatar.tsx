@@ -1,9 +1,9 @@
 import { useFrame } from '@react-three/fiber';
-import { Html } from '@react-three/drei';
 import { useRef } from 'react';
 import type { Group } from 'three';
 import { activityById } from '../content/activities';
 import { useGame } from '../store/game';
+import { avatarLabelPos } from './labels';
 
 const SPEED = 2.6; // world units per second
 const BED_POS: [number, number] = [-2.9, -1.9];
@@ -60,7 +60,6 @@ export function Avatar() {
   const group = useRef<Group>(null);
   const legs = useRef<Group[]>([]);
   const walkPhase = useRef(0);
-  const name = useGame((s) => s.name);
   const shirt = useGame((s) => s.shirt);
   const active = useGame((s) => s.active);
   const activity = active ? activityById(active.id) : undefined;
@@ -74,9 +73,10 @@ export function Avatar() {
 
     if (sleeping) {
       // Faint on the floor if not at the bed
-      const atBed = Math.hypot(pos[0] - BED_POS[0], pos[1] - BED_POS[1]) < 2;
+      const atBed = useGame.getState().place === 'home' && Math.hypot(pos[0] - BED_POS[0], pos[1] - BED_POS[1]) < 2;
       g.position.set(atBed ? BED_POS[0] : pos[0], atBed ? 0.62 : 0.15, atBed ? -1.25 : pos[1]);
       g.rotation.set(-Math.PI / 2, 0, 0);
+      avatarLabelPos.set(g.position.x, g.position.y + 0.5, g.position.z - 0.6);
       return;
     }
     if (g.rotation.x !== 0) {
@@ -107,16 +107,12 @@ export function Avatar() {
     const swing = target ? Math.sin(walkPhase.current) * 0.5 : 0;
     legs.current.forEach((l, i) => l && (l.rotation.x = i === 0 ? swing : -swing));
     g.position.y = target ? Math.abs(Math.sin(walkPhase.current)) * 0.04 : 0;
+    avatarLabelPos.set(g.position.x, 1.75, g.position.z);
   });
 
   return (
     <group ref={group} visible={!hidden}>
       <Person shirt={shirt} legs={legs} />
-      {!hidden && (
-        <Html position={[0, 1.75, 0]} center zIndexRange={[10, 0]} style={{ pointerEvents: 'none' }}>
-          <div className="nametag">{sleeping ? '💤' : name}</div>
-        </Html>
-      )}
     </group>
   );
 }

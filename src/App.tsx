@@ -1,4 +1,5 @@
 import { ActionMenu, ActiveBanner, NeedsPanel, Toasts, TopBar } from './ui/Hud';
+import { Labels } from './ui/Labels';
 import { Phone } from './ui/Phone';
 import { Start } from './ui/Start';
 import { useGame } from './store/game';
@@ -31,6 +32,7 @@ export default function App() {
       <Scene />
       {started ? (
         <>
+          <Labels />
           <div className="hud-top">
             <TopBar />
             <NeedsPanel />

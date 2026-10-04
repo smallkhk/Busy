@@ -13,7 +13,7 @@ const APPS: { id: PhoneApp; name: string; emoji: string; color: string }[] = [
 ];
 
 const PLACES = [
-  { name: 'Kubwa (your self-con)', emoji: '🏠', open: true },
+  { name: 'Kubwa (your area)', emoji: '🏠', open: true },
   { name: 'Wuse Market', emoji: '🛍️', open: false },
   { name: 'Jabi Lake Mall', emoji: '🌊', open: false },
   { name: 'Wuse 2 lounge', emoji: '🍸', open: false },

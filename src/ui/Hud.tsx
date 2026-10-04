@@ -1,5 +1,5 @@
 import { useShallow } from 'zustand/react/shallow';
-import { activityById, INTERACTABLES } from '../content/activities';
+import { activityById, INTERACTABLES, PLACE_NAMES } from '../content/activities';
 import { clockParts, formatClock, formatNaira } from '../engine/clock';
 import { mood, moodFace, NEED_KEYS, NEED_META } from '../engine/needs';
 import { blockReason, useGame } from '../store/game';
@@ -9,12 +9,13 @@ export function TopBar() {
   const money = useGame((s) => s.money);
   const power = useGame((s) => s.power);
   const needs = useGame((s) => s.needs);
+  const place = useGame((s) => s.place);
   const { day } = clockParts(time);
   return (
     <div className="topbar">
       <div className="pill">
         <span className="big">{formatClock(time)}</span>
-        <span className="muted">Day {day} · Kubwa</span>
+        <span className="muted">Day {day} · {PLACE_NAMES[place]}</span>
       </div>
       <div className="pill" title={power ? 'Light dey' : 'No light'}>{power ? '💡' : '🕯️'}</div>
       <div className="pill">{moodFace(mood(needs))}</div>

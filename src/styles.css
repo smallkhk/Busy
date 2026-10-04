@@ -83,6 +83,9 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
 .bottomnav button.on span { color: var(--gold); font-weight: 700; }
 
 /* ---------- World labels ---------- */
+.labels { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+.label { position: absolute; top: 0; left: 0; transform: translate(-999px, -999px); pointer-events: auto; will-change: transform; }
+.nametag.label { pointer-events: none; }
 .nametag {
   background: var(--gold); color: #1d1405; font-weight: 800; font-size: 12px; padding: 2px 8px; border-radius: 8px;
   white-space: nowrap; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);

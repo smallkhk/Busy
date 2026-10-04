@@ -1,13 +1,11 @@
-import { Html } from '@react-three/drei';
 import type { ThreeEvent } from '@react-three/fiber';
 import { useState, type ReactNode } from 'react';
-import { INTERACTABLES } from '../content/activities';
 import { useGame } from '../store/game';
 import { Person } from './Avatar';
 
-type V3 = [number, number, number];
+export type V3 = [number, number, number];
 
-function Box({ p, s, c, r }: { p: V3; s: V3; c: string; r?: V3 }) {
+export function Box({ p, s, c, r }: { p: V3; s: V3; c: string; r?: V3 }) {
   return (
     <mesh position={p} rotation={r} castShadow receiveShadow>
       <boxGeometry args={s} />
@@ -16,7 +14,7 @@ function Box({ p, s, c, r }: { p: V3; s: V3; c: string; r?: V3 }) {
   );
 }
 
-function Cyl({ p, r, h, c }: { p: V3; r: number; h: number; c: string }) {
+export function Cyl({ p, r, h, c }: { p: V3; r: number; h: number; c: string }) {
   return (
     <mesh position={p} castShadow>
       <cylinderGeometry args={[r, r, h, 16]} />
@@ -26,10 +24,9 @@ function Cyl({ p, r, h, c }: { p: V3; r: number; h: number; c: string }) {
 }
 
 /** Wraps furniture so tapping it opens its action menu. */
-function Tappable({ id, children }: { id: string; children: ReactNode }) {
+export function Tappable({ id, children }: { id: string; children: ReactNode }) {
   const [hover, setHover] = useState(false);
   const openMenu = useGame((s) => s.openMenu);
-  const item = INTERACTABLES.find((i) => i.id === id)!;
   const onDown = (e: ThreeEvent<PointerEvent>) => {
     e.stopPropagation();
     openMenu(id);
@@ -49,11 +46,6 @@ function Tappable({ id, children }: { id: string; children: ReactNode }) {
       scale={hover ? 1.03 : 1}
     >
       {children}
-      <Html position={item.label} center zIndexRange={[5, 0]}>
-        <button className="obj-chip" onPointerDown={(e) => { e.stopPropagation(); openMenu(id); }}>
-          {item.emoji}
-        </button>
-      </Html>
     </group>
   );
 }
@@ -215,6 +207,16 @@ export function Room() {
           <coneGeometry args={[1.1, 0.4, 8]} />
           <meshStandardMaterial color="#e2a531" />
         </mesh>
+      </Tappable>
+
+      <Tappable id="gate">
+        {/* Compound wall + blue metal gate */}
+        <Box p={[6.95, 0.9, 1.95]} s={[0.25, 1.8, 0.25]} c="#cbbd9d" />
+        <Box p={[6.95, 0.9, 3.75]} s={[0.25, 1.8, 0.25]} c="#cbbd9d" />
+        <Box p={[6.95, 0.95, 2.85]} s={[0.08, 1.9, 1.5]} c="#2a5d9f" />
+        {[2.3, 2.6, 2.9, 3.2, 3.5].map((z) => (
+          <Box key={z} p={[6.9, 0.95, z]} s={[0.04, 1.8, 0.05]} c="#1c467a" />
+        ))}
       </Tappable>
 
       {/* Compound fence */}
