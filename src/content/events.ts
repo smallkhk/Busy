@@ -322,6 +322,43 @@ export const EVENTS: GameEvent[] = [
     ],
   },
 
+  // ---------------- AbujaGram & fake life ----------------
+  {
+    id: 'exposed',
+    emoji: '💀',
+    title: 'Dem don expose you!',
+    text: 'Somebody screenshot your post put am for AbujaGram: "This one dey form big boy/big girl, but e dey owe rent 😂😂". E don go viral.',
+    trigger: 'idle',
+    weight: 6,
+    cooldownHours: 96,
+    when: (c) => (c.gap ?? 0) > 30 && (c.followers ?? 0) >= 50,
+    choices: [
+      {
+        label: 'Post "Haters go hate 😎"',
+        outcomes: [
+          { weight: 1, text: 'People like your confidence. Clout na clout 💅', effect: { followersPct: 10, needs: { fun: 10 } } },
+          { weight: 2, text: 'Dem drag you worse. Comment section don turn war 💀', effect: { followersPct: -40, packaging: -10, needs: { fun: -20, social: -10 } } },
+        ],
+      },
+      { label: 'Deactivate account for one week', outcomes: [{ text: 'You hide. Gist go die down… small small.', effect: { followersPct: -15, packaging: -8, needs: { social: -10 } } }] },
+      { label: 'Confess: "I dey hustle, I no go lie"', outcomes: [{ text: 'Some people respect am. Some unfollow. Your mind don free 🙏', effect: { followersPct: -20, packaging: -15, needs: { fun: 10 } } }] },
+    ],
+  },
+  {
+    id: 'gram-dm',
+    emoji: '💌',
+    title: 'DM don land',
+    text: '"Hi dear 😘 I like your page. I be oil and gas CEO, I wan sponsor your trip to Dubai. Send ₦20,000 for visa processing."',
+    trigger: 'idle',
+    weight: 2,
+    cooldownHours: 168,
+    when: (c) => (c.followers ?? 0) >= 150,
+    choices: [
+      { label: 'Send the ₦20,000', cost: 20000, outcomes: [{ text: 'The "CEO" don block you. Dubai don cancel 😭', effect: { needs: { fun: -25 } } }] },
+      { label: 'Screenshot am, post am', outcomes: [{ text: 'Your followers laugh tire 😂 Content na content.', effect: { followersPct: 8, needs: { fun: 10 } } }] },
+    ],
+  },
+
   // ---------------- On the road ----------------
   {
     id: 'checkpoint',

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { activityById, INTERACTABLES } from '../content/activities';
 import { CONTACTS, longLeg } from '../content/contacts';
 import { EVENTS } from '../content/events';
+import { followersGain, packagingGap, POSTS, realWealth } from '../content/gram';
 import { moveCost, rentOwed } from '../content/housing';
 import { blockReason, durationAt, type BlockState } from './game';
 
@@ -84,5 +85,26 @@ describe('long leg', () => {
       ...EVENTS.flatMap((e) => e.choices.flatMap((c) => c.outcomes.map((o) => o.effect?.meet))),
     ]);
     for (const c of CONTACTS) expect(meets.has(c.id), c.id).toBe(true);
+  });
+});
+
+describe('abujagram', () => {
+  it('real wealth comes from money and address', () => {
+    expect(realWealth(0, 'kubwa')).toBe(0);
+    expect(realWealth(1_000_000, 'kubwa')).toBe(50);
+    expect(realWealth(-50000, 'wuse2')).toBe(25);
+    expect(packagingGap(60, 200_000, 'kubwa')).toBe(50);
+  });
+
+  it('more packaging brings more followers', () => {
+    const benz = POSTS.find((p) => p.id === 'benz')!;
+    expect(followersGain(benz, 80, 0.5)).toBeGreaterThan(followersGain(benz, 10, 0.5));
+  });
+
+  it('exposure only hits people forming pass their pocket', () => {
+    const ctx = { place: 'home' as const, hour: 12, day: 3, money: 0, power: true, followers: 100 };
+    const exposed = EVENTS.find((e) => e.id === 'exposed')!;
+    expect(exposed.when!({ ...ctx, gap: 40 })).toBe(true);
+    expect(exposed.when!({ ...ctx, gap: 10 })).toBe(false);
   });
 });
