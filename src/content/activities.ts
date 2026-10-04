@@ -1,4 +1,5 @@
 import { ride, type Activity, type Interactable, type Place } from './common';
+import { DRIVES, HAILING_JOB } from './cars';
 import { CHOP_ITEMS, RIDES, TREKS } from './phoneapps';
 import { TRAVEL_INTERACTABLES } from './travel';
 
@@ -195,6 +196,7 @@ export const JOBS: Activity[] = [
   { id: 'pos', label: 'POS attendant for area market', doing: 'Working POS for market', emoji: '💳', minutes: 360, pay: 9000, gains: { energy: -25, fun: -10, social: 10 }, hours: [8, 15], away: true },
   { id: 'delivery', label: 'Dispatch rider (borrowed bike)', doing: 'Delivering packages for Gwarinpa', emoji: '🛵', minutes: 240, pay: 7000, gains: { energy: -30, hygiene: -20 }, hours: [7, 19], away: true },
   { id: 'cyber', label: 'Typing & printing at cyber café', doing: 'Typing CVs for corpers', emoji: '🖨️', minutes: 180, pay: 4500, gains: { energy: -12, fun: -8 }, hours: [8, 18], away: true },
+  HAILING_JOB,
 ];
 
 export const PHONE_ACTIVITIES: Activity[] = [
@@ -210,6 +212,7 @@ export const ALL_ACTIVITIES: Activity[] = [
   ...CHOP_ITEMS,
   ...RIDES,
   ...TREKS,
+  ...DRIVES,
 ];
 
 export const activityById = (id: string) => ALL_ACTIVITIES.find((a) => a.id === id);

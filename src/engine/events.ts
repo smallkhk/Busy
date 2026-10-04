@@ -18,6 +18,8 @@ export type EventContext = {
   owned?: string[];
   /** Your civil service grade (0 = GL 04). */
   grade?: number;
+  /** Your car condition 0–100, undefined if you no get car. */
+  carCondition?: number;
   /** Ego Loan repayment date don pass. */
   loanOverdue?: boolean;
   /** Id of the trip in progress, for commute events. */
@@ -45,6 +47,8 @@ export type Effect = {
   relAll?: number;
   /** Pay off the Ego Loan from your balance. */
   payLoan?: boolean;
+  /** Fix your car back to 100. */
+  carRepair?: boolean;
   /** Shut a business you own for some days. */
   closeBusiness?: { id: string; days: number };
 };
@@ -114,6 +118,7 @@ export function effectChips(effect: Effect | undefined, cost = 0, needEmoji: Rec
   if (effect?.power === false) chips.push('Light cut 🕯️');
   if (effect?.followersPct) chips.push(`${effect.followersPct > 0 ? '+' : ''}${effect.followersPct}% 📸 followers`);
   if (effect?.closeBusiness) chips.push(`Business closed ${effect.closeBusiness.days} days 🔒`);
+  if (effect?.carRepair) chips.push('Car don fix 🔧');
   if (effect?.rentGraceDays) chips.push(`+${effect.rentGraceDays} days to pay rent 🏠`);
   return chips;
 }

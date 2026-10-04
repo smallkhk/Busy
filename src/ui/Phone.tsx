@@ -9,6 +9,7 @@ import { blockReason, useGame, type PhoneApp } from '../store/game';
 import { activityDetail } from './detail';
 import { EgoBank } from './EgoBank';
 import { BusinessApp, CareerCard } from './Career';
+import { CarsApp } from './Cars';
 import { GoalsApp } from './Goals';
 import { MapView } from './MapView';
 
@@ -18,6 +19,7 @@ const APPS: { id: PhoneApp; name: string; emoji: string; color: string }[] = [
   { id: 'ride', name: 'Ride', emoji: '🚘', color: '#1f8a4c' },
   { id: 'jobs', name: 'Jobs', emoji: '💼', color: '#c27c1a' },
   { id: 'biz', name: 'Business', emoji: '🏪', color: '#0e7c86' },
+  { id: 'cars', name: 'Cars', emoji: '🚗', color: '#a8322d' },
   { id: 'chat', name: 'Chat', emoji: '💬', color: '#2f7fd6' },
   { id: 'map', name: 'Map', emoji: '🗺️', color: '#6a4bc4' },
   { id: 'gram', name: 'AbujaGram', emoji: '📸', color: '#d6406f' },
@@ -30,7 +32,7 @@ const APPS: { id: PhoneApp; name: string; emoji: string; color: string }[] = [
 
 function ActivityList({ items }: { items: Activity[] }) {
   const choose = useGame((s) => s.choose);
-  const state = useGame(useShallow((s) => ({ time: s.time, money: s.money, power: s.power, active: s.active, packaging: s.packaging, pantry: s.pantry, cv: s.cv, area: s.area, rentLocked: s.rentLocked, unlocks: s.unlocks, grade: s.grade })));
+  const state = useGame(useShallow((s) => ({ time: s.time, money: s.money, power: s.power, active: s.active, packaging: s.packaging, pantry: s.pantry, cv: s.cv, area: s.area, rentLocked: s.rentLocked, unlocks: s.unlocks, grade: s.grade, hasCar: !!s.car })));
   return (
     <div className="list">
       {items.map((a) => {
@@ -292,6 +294,8 @@ function AppBody({ app }: { app: PhoneApp }) {
       return <GoalsApp />;
     case 'biz':
       return <BusinessApp />;
+    case 'cars':
+      return <CarsApp />;
     case 'jobs':
       return (
         <>

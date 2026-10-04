@@ -3,7 +3,10 @@ import { useShallow } from 'zustand/react/shallow';
 import { INTERACTABLES, type Activity, type Place } from '../content/activities';
 import { AREAS } from '../content/housing';
 import { HOME_XY, MAP_SPOTS, ROADS, type MapSpot } from '../content/map';
+import { DRIVES } from '../content/cars';
 import { fromPlace, rideBetween, rideKm, trekBetween } from '../content/phoneapps';
+
+const driveBetween = (from: Place, to: Place) => DRIVES.find((d) => d.id === `drive-${fromPlace(from)}-${to}`);
 import { blockReason, useGame } from '../store/game';
 import { activityDetail } from './detail';
 
@@ -16,7 +19,7 @@ function publicRoute(place: Place, to: Place): Activity | undefined {
 
 function Option({ a, title, note }: { a?: Activity; title: string; note?: string }) {
   const choose = useGame((s) => s.choose);
-  const state = useGame(useShallow((s) => ({ time: s.time, money: s.money, power: s.power, active: s.active, packaging: s.packaging, pantry: s.pantry, cv: s.cv, area: s.area, rentLocked: s.rentLocked, unlocks: s.unlocks, grade: s.grade })));
+  const state = useGame(useShallow((s) => ({ time: s.time, money: s.money, power: s.power, active: s.active, packaging: s.packaging, pantry: s.pantry, cv: s.cv, area: s.area, rentLocked: s.rentLocked, unlocks: s.unlocks, grade: s.grade, hasCar: !!s.car })));
   const reason = note ?? (a ? blockReason(a, state) : 'No route from here');
   return (
     <button className="action" disabled={!a || !!reason} onClick={() => a && choose(a.id)}>
@@ -47,6 +50,7 @@ function labelAt(pos: MapSpot['label'] = 'below', selected: boolean) {
 export function MapView() {
   const place = useGame((s) => s.place);
   const area = useGame((s) => s.area);
+  const hasCar = useGame((s) => !!s.car);
   const [selected, setSelected] = useState<string | null>(null);
   const homeXY = HOME_XY[area];
   const here = fromPlace(place);
@@ -114,6 +118,7 @@ export function MapView() {
                 note={place === 'home' ? 'Comot go bus stop for your street first' : publicRoute(place, to) ? undefined : 'No direct bus from here'}
               />
               <Option a={rideBetween(place, to)} title="🚘 Book ride" />
+              {hasCar && <Option a={driveBetween(place, to)} title="🚗 Drive your car (fuel only)" />}
             </div>
           )}
         </div>

@@ -481,6 +481,39 @@ export const EVENTS: GameEvent[] = [
     ],
   },
 
+  // ---------------- Car ----------------
+  {
+    id: 'car-knock',
+    emoji: '🔧',
+    title: 'Your car don dey make noise',
+    text: 'Engine dey knock, AC no dey cold, and one light don show for dashboard. Mechanic say "na small thing… ₦60,000".',
+    trigger: 'idle',
+    weight: 8,
+    cooldownHours: 48,
+    when: (c) => c.carCondition !== undefined && c.carCondition < 40,
+    choices: [
+      { label: 'Carry am go mechanic (₦60,000)', cost: 60000, outcomes: [{ text: 'Mechanic change plug, oil and "something". Car dey purr like cat now 🐈', effect: { carRepair: true } }] },
+      { label: 'Manage am small', outcomes: [{ text: 'You turn up music make you no hear the knock 🎶😅', effect: { needs: { fun: -10 } } }] },
+    ],
+  },
+  {
+    id: 'vio',
+    emoji: '🦺',
+    title: 'VIO don stop you',
+    text: '"Oga, your particulars. Where your fire extinguisher? Your C-caution? This one na serious offence o!"',
+    trigger: 'commute',
+    weight: 6,
+    cooldownHours: 24,
+    when: (c) => !!c.trip?.startsWith('drive-'),
+    choices: [
+      { label: 'Show everything, calm down', outcomes: [
+        { weight: 2, text: 'Everything complete. "Oya go." You no even sweat 😎', effect: { minutes: 15 } },
+        { weight: 1, text: 'Extinguisher don expire. Dem tow you go office, ₦15,000 fine 😤', effect: { money: -15000, minutes: 120, needs: { fun: -20 } } },
+      ] },
+      { label: 'Find "something" for dem (₦5,000)', cost: 5000, outcomes: [{ text: 'Dem wave you go with big smile. Abuja road 😑' }] },
+    ],
+  },
+
   // ---------------- On the road ----------------
   {
     id: 'checkpoint',
