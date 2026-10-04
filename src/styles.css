@@ -52,6 +52,7 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
 .pill .big { font-size: 16px; font-weight: 700; letter-spacing: 0.3px; }
 .pill .muted { font-size: 11px; }
 .pill.small-pill { font-size: 13px; font-weight: 700; padding: 6px 8px; }
+.pill.money.debt { color: var(--bad); }
 .pill.money { font-size: 15px; font-weight: 800; color: var(--gold); }
 
 .needs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px 12px; padding: 10px 12px; max-width: 360px; }
@@ -159,3 +160,20 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
 .swatch.on { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(232, 176, 75, 0.3); }
 .primary { background: var(--gold); color: #1d1405; font-weight: 800; padding: 14px; border-radius: 14px; font-size: 16px; }
 .primary:active { transform: scale(0.98); }
+
+/* ---------- Events ---------- */
+.event-backdrop {
+  position: absolute; inset: 0; z-index: 40; display: grid; place-items: center; padding: 16px;
+  background: rgba(5, 18, 14, 0.6); animation: fade 0.2s;
+}
+.event { width: 100%; max-width: 400px; padding: 20px; display: flex; flex-direction: column; gap: 10px; background: var(--card-solid); animation: pop 0.25s ease-out; }
+.event.danger { border-color: var(--bad); box-shadow: 0 0 0 3px rgba(239, 91, 91, 0.25), 0 8px 24px rgba(0, 0, 0, 0.3); animation: pop 0.25s ease-out, shake 0.4s 0.1s; }
+@keyframes pop { from { transform: scale(0.92); opacity: 0; } }
+@keyframes shake { 20%, 60% { transform: translateX(-6px); } 40%, 80% { transform: translateX(6px); } }
+.event-emoji { font-size: 46px; text-align: center; line-height: 1; }
+.event-title { font-size: 20px; font-weight: 800; text-align: center; }
+.event-text { margin: 0; line-height: 1.5; color: var(--text); text-align: center; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
+.chip { padding: 4px 10px; border-radius: 99px; font-size: 13px; font-weight: 700; background: rgba(255, 255, 255, 0.08); }
+.chip.pos { color: var(--green); }
+.chip.neg { color: var(--bad); }

@@ -22,7 +22,7 @@ export function TopBar() {
       <div className="pill" title={power ? 'Light dey' : 'No light'}>{power ? '💡' : '🕯️'}</div>
       <div className="pill">{moodFace(mood(needs))}</div>
       <div className="pill small-pill" title="Packaging: how rich you look">👔{Math.round(packaging)}</div>
-      <div className="pill money">{formatNaira(money)}</div>
+      <div className={`pill money ${money < 0 ? "debt" : ""}`} title={money < 0 ? "You dey owe" : "Your money"}>{formatNaira(money)}</div>
     </div>
   );
 }
