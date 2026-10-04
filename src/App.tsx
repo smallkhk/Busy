@@ -1,5 +1,6 @@
 import { ActionMenu, ActiveBanner, NeedsPanel, Toasts, TopBar } from './ui/Hud';
 import { EventModal } from './ui/EventModal';
+import { QuestPill } from './ui/Goals';
 import { Labels } from './ui/Labels';
 import { Phone } from './ui/Phone';
 import { Start } from './ui/Start';
@@ -37,6 +38,7 @@ export default function App() {
           <div className="hud-top">
             <TopBar />
             <NeedsPanel />
+            <QuestPill />
             <Toasts />
           </div>
           <div className="hud-bottom">

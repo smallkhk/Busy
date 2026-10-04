@@ -8,6 +8,7 @@ import { CHOP_ITEMS, HEADLINES, ridesFrom } from '../content/phoneapps';
 import { blockReason, useGame, type PhoneApp } from '../store/game';
 import { activityDetail } from './detail';
 import { EgoBank } from './EgoBank';
+import { GoalsApp } from './Goals';
 import { MapView } from './MapView';
 
 const APPS: { id: PhoneApp; name: string; emoji: string; color: string }[] = [
@@ -21,6 +22,7 @@ const APPS: { id: PhoneApp; name: string; emoji: string; color: string }[] = [
   { id: 'house', name: 'Rent', emoji: '🏠', color: '#8c5a2b' },
   { id: 'contacts', name: 'Long Leg', emoji: '🦵', color: '#b8860b' },
   { id: 'news', name: 'News', emoji: '📰', color: '#34495e' },
+  { id: 'goals', name: 'Goals', emoji: '🏆', color: '#9a7b1c' },
 ];
 
 
@@ -284,6 +286,8 @@ function AppBody({ app }: { app: PhoneApp }) {
       return <RideApp />;
     case 'news':
       return <NewsApp />;
+    case 'goals':
+      return <GoalsApp />;
     case 'jobs':
       return (
         <>

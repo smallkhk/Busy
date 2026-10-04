@@ -5,6 +5,7 @@ import { AREAS, moveCost, placeLabel, RENT_CYCLE_DAYS, RENT_GRACE_DAYS, rentOwed
 import { clockParts, formatNaira, inHours } from '../engine/clock';
 import { CALL_COST, contactById, FIRST_MEET_REL, GIFT_COST, type ContactState } from '../content/contacts';
 import { EVENTS } from '../content/events';
+import { ALL_GOALS } from '../content/goals';
 import { LOAN_DAYS, LOAN_FEE, LOAN_MAX, SAVINGS_DAILY_RATE, TOKEN_COST } from '../content/phoneapps';
 import { BRAND_COOLDOWN_DAYS, BRAND_MIN_FOLLOWERS, brandPay, followersGain, packagingGap, POST_COOLDOWN_MIN, postById } from '../content/gram';
 import { effectChips, pickEvent, resolveChoice } from '../engine/events';
@@ -12,7 +13,7 @@ import { clamp, fullNeeds, LOW_NEED, NEED_KEYS, NEED_META, tickNeeds, type NeedK
 
 export type Txn = { at: number; label: string; amount: number };
 export type Toast = { id: number; text: string };
-export type PhoneApp = 'home' | 'bank' | 'jobs' | 'chat' | 'map' | 'gram' | 'house' | 'contacts' | 'chop' | 'ride' | 'news';
+export type PhoneApp = 'home' | 'bank' | 'jobs' | 'chat' | 'map' | 'gram' | 'house' | 'contacts' | 'chop' | 'ride' | 'news' | 'goals';
 
 /** `total` is the actual duration (rush hour makes trips longer); old saves may lack it. */
 type Active = { id: string; remaining: number; gen: boolean; total?: number; eventAt?: number };
@@ -38,6 +39,10 @@ type GameState = {
   contacts: Record<string, ContactState>;
   /** Activity ids whose requirements a contact don waive. */
   unlocks: string[];
+  /** Counters for goals: meals, jobs, trips, treks, sleeps, rentPaid, bottles, visit-<place>. */
+  stats: Record<string, number>;
+  /** Goal ids already completed. */
+  goals: string[];
   savings: number;
   savingsInterest: number;
   /** Ego Loan: what you owe and when. */
@@ -138,6 +143,8 @@ const initial = () => ({
   rentLocked: false,
   contacts: {} as Record<string, ContactState>,
   unlocks: [] as string[],
+  stats: {} as Record<string, number>,
+  goals: [] as string[],
   savings: 0,
   savingsInterest: 0,
   loan: null as { owed: number; dueDay: number } | null,
@@ -212,9 +219,39 @@ export const useGame = create<GameState>()(
         if (total > a.minutes) get().toast('🚗 Rush hour! Traffic don hold for expressway');
       };
 
+      const bump = (...keys: string[]) => {
+        const stats = { ...get().stats };
+        for (const k of keys) stats[k] = (stats[k] ?? 0) + 1;
+        set({ stats });
+      };
+
+      /** Award any goals newly met. */
+      const checkGoals = () => {
+        const s = get();
+        const ctx = { ...s, day: clockParts(s.time).day };
+        const fresh = ALL_GOALS.filter((g) => !s.goals.includes(g.id) && g.done(ctx));
+        if (!fresh.length) return;
+        const reward = fresh.reduce((sum, g) => sum + g.reward, 0);
+        set({
+          goals: [...s.goals, ...fresh.map((g) => g.id)],
+          money: s.money + reward,
+          txns: reward ? [{ at: s.time, label: `Goal reward: ${fresh.map((g) => g.title).join(', ')}`, amount: reward }, ...s.txns].slice(0, 40) : s.txns,
+        });
+        for (const g of fresh) get().toast(`🏆 ${g.title}!${g.reward ? ` +${formatNaira(g.reward)}` : ''}`);
+      };
+
       const finish = (a: Activity) => {
         const s = get();
         const fx = a.effects;
+        const keys: string[] = [];
+        if ((a.gains.food ?? 0) > 0) keys.push('meals');
+        if (a.pay) keys.push('jobs');
+        if (a.travelTo) keys.push(`visit-${a.travelTo}`);
+        if (a.commute || a.id.startsWith('trek-')) keys.push('trips');
+        if (a.id.startsWith('trek-')) keys.push('treks');
+        if (a.sleep && a.minutes >= 480) keys.push('sleeps');
+        if (a.id === 'bottle') keys.push('bottles');
+        bump(...keys);
         if (fx?.meet) meetContact(fx.meet);
         if (fx) {
           set({
@@ -509,6 +546,7 @@ export const useGame = create<GameState>()(
             txns: [{ at: s.time, label: `Rent: ${AREAS[s.area].home}`, amount: -owed }, ...s.txns].slice(0, 40),
           });
           get().toast(s.rentLocked ? '🔓 Landlord don open your door. Sorry o!' : `🏠 Rent paid till Day ${s.rentDueDay + RENT_CYCLE_DAYS}`);
+          bump('rentPaid');
         },
 
         moveTo: (to) => {
@@ -607,6 +645,8 @@ export const useGame = create<GameState>()(
             set({ needs: { ...now.needs, bladder: 100, hygiene: 0 } });
             now.toast('🙈 Omo… accident happen. You need bath now now');
           }
+
+          if (Math.floor(time) !== Math.floor(s.time) || !s.active) checkGoals();
 
           // New day greeting
           const prev = clockParts(s.time);
@@ -714,6 +754,8 @@ export const useGame = create<GameState>()(
         rentLocked: s.rentLocked,
         contacts: s.contacts,
         unlocks: s.unlocks,
+        stats: s.stats,
+        goals: s.goals,
         savings: s.savings,
         savingsInterest: s.savingsInterest,
         loan: s.loan,
