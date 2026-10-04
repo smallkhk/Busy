@@ -1,5 +1,6 @@
 import { useShallow } from 'zustand/react/shallow';
 import { activityById, INTERACTABLES, PLACE_NAMES } from '../content/activities';
+import { placeLabel } from '../content/housing';
 import { clockParts, formatClock, formatNaira } from '../engine/clock';
 import { mood, moodFace, NEED_KEYS, NEED_META } from '../engine/needs';
 import { blockReason, useGame } from '../store/game';
@@ -12,15 +13,18 @@ export function TopBar() {
   const needs = useGame((s) => s.needs);
   const place = useGame((s) => s.place);
   const packaging = useGame((s) => s.packaging);
+  const area = useGame((s) => s.area);
   const { day } = clockParts(time);
   return (
     <div className="topbar">
       <div className="pill">
         <span className="big">{formatClock(time)}</span>
-        <span className="muted">Day {day} · {PLACE_NAMES[place]}</span>
+        <span className="muted">Day {day} · {placeLabel(place, area, PLACE_NAMES)}</span>
       </div>
-      <div className="pill" title={power ? 'Light dey' : 'No light'}>{power ? '💡' : '🕯️'}</div>
-      <div className="pill">{moodFace(mood(needs))}</div>
+      <div className="pill pair" title={power ? 'Light dey' : 'No light'}>
+        <span>{power ? '💡' : '🕯️'}</span>
+        <span>{moodFace(mood(needs))}</span>
+      </div>
       <div className="pill small-pill" title="Packaging: how rich you look">👔{Math.round(packaging)}</div>
       <div className={`pill money ${money < 0 ? "debt" : ""}`} title={money < 0 ? "You dey owe" : "Your money"}>{formatNaira(money)}</div>
     </div>
@@ -74,7 +78,7 @@ export function ActionMenu() {
   const menu = useGame((s) => s.menu);
   const openMenu = useGame((s) => s.openMenu);
   const choose = useGame((s) => s.choose);
-  const state = useGame(useShallow((s) => ({ time: s.time, money: s.money, power: s.power, active: s.active, packaging: s.packaging, pantry: s.pantry, cv: s.cv })));
+  const state = useGame(useShallow((s) => ({ time: s.time, money: s.money, power: s.power, active: s.active, packaging: s.packaging, pantry: s.pantry, cv: s.cv, area: s.area, rentLocked: s.rentLocked })));
   const item = INTERACTABLES.find((i) => i.id === menu);
   if (!item) return null;
   return (

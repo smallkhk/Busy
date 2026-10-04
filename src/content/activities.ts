@@ -117,7 +117,7 @@ const HOME_AND_STREET: Interactable[] = [
     emoji: '🚪',
     label: [6.4, 1.9, 3.1],
     activities: [
-      { id: 'go-street', label: 'Go outside (Kubwa street)', doing: 'Stepping out', emoji: '🚶', minutes: 2, gains: {}, travelTo: 'street', spot: [6.0, 2.9] },
+      { id: 'go-street', label: 'Go outside to the street', doing: 'Stepping out', emoji: '🚶', minutes: 2, gains: {}, travelTo: 'street', spot: [6.0, 2.9] },
     ],
   },
   {
@@ -174,13 +174,13 @@ const HOME_AND_STREET: Interactable[] = [
   {
     id: 'busstop',
     place: 'street',
-    name: 'Kubwa bus stop',
+    name: 'Bus stop',
     emoji: '🚏',
     label: [1.0, 2.6, 3.4],
     activities: [
-      ride('to-wuse', 'Bus go Wuse Market', '🚌', 'wuse', 60, 700, [1.0, 2.6]),
-      ride('to-jabi', 'Taxi go Jabi Lake Mall', '🚕', 'jabi', 45, 3500, [1.0, 2.6]),
-      ride('to-sec', 'Bus go Federal Secretariat', '🏛️', 'secretariat', 75, 900, [1.0, 2.6]),
+      ride('to-wuse', 'Bus go Wuse Market', '🚌', 'wuse', 60, 700, [1.0, 2.6], true),
+      ride('to-jabi', 'Taxi go Jabi Lake Mall', '🚕', 'jabi', 45, 3500, [1.0, 2.6], true),
+      ride('to-sec', 'Bus go Federal Secretariat', '🏛️', 'secretariat', 75, 900, [1.0, 2.6], true),
     ],
   },
 ];
@@ -188,7 +188,7 @@ const HOME_AND_STREET: Interactable[] = [
 export const INTERACTABLES: Interactable[] = [...HOME_AND_STREET, ...TRAVEL_INTERACTABLES];
 
 export const JOBS: Activity[] = [
-  { id: 'pos', label: 'POS attendant, Kubwa Village Market', doing: 'Working POS for Kubwa market', emoji: '💳', minutes: 360, pay: 9000, gains: { energy: -25, fun: -10, social: 10 }, hours: [8, 15], away: true },
+  { id: 'pos', label: 'POS attendant for area market', doing: 'Working POS for market', emoji: '💳', minutes: 360, pay: 9000, gains: { energy: -25, fun: -10, social: 10 }, hours: [8, 15], away: true },
   { id: 'delivery', label: 'Dispatch rider (borrowed bike)', doing: 'Delivering packages for Gwarinpa', emoji: '🛵', minutes: 240, pay: 7000, gains: { energy: -30, hygiene: -20 }, hours: [7, 19], away: true },
   { id: 'cyber', label: 'Typing & printing at cyber café', doing: 'Typing CVs for corpers', emoji: '🖨️', minutes: 180, pay: 4500, gains: { energy: -12, fun: -8 }, hours: [8, 18], away: true },
 ];
@@ -206,3 +206,7 @@ export const ALL_ACTIVITIES: Activity[] = [
 ];
 
 export const activityById = (id: string) => ALL_ACTIVITIES.find((a) => a.id === id);
+
+const PLACE_OF = new Map(INTERACTABLES.flatMap((i) => i.activities.map((a) => [a.id, i.place] as const)));
+/** Where an activity happens; undefined for phone activities and jobs. */
+export const activityPlace = (id: string) => PLACE_OF.get(id);

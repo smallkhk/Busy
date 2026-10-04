@@ -1,5 +1,6 @@
 import type { ThreeEvent } from '@react-three/fiber';
 import { useState, type ReactNode } from 'react';
+import { AREAS } from '../content/housing';
 import { useGame } from '../store/game';
 import { Person } from './Avatar';
 
@@ -53,6 +54,9 @@ export function Tappable({ id, children }: { id: string; children: ReactNode }) 
 export function Room() {
   const walkTo = useGame((s) => s.walkTo);
   const power = useGame((s) => s.power);
+  const area = useGame((s) => s.area);
+  const theme = AREAS[area].theme;
+  const upgraded = area !== 'kubwa';
 
   const onFloor = (e: ThreeEvent<PointerEvent>) => {
     e.stopPropagation();
@@ -68,7 +72,7 @@ export function Room() {
       </mesh>
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow onPointerDown={onFloor}>
         <planeGeometry args={[8, 6]} />
-        <meshStandardMaterial color="#d9cbb0" />
+        <meshStandardMaterial color={theme.floor} />
       </mesh>
       {/* Bathroom tiles */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[3, 0.005, -2.2]} receiveShadow onPointerDown={onFloor}>
@@ -82,8 +86,8 @@ export function Room() {
       </mesh>
 
       {/* Back walls (cream paint, with the classic skirting) */}
-      <Box p={[0, 1.4, -3.05]} s={[8, 2.8, 0.1]} c="#efe4cf" />
-      <Box p={[-4.05, 1.4, 0]} s={[0.1, 2.8, 6.2]} c="#e8dcc3" />
+      <Box p={[0, 1.4, -3.05]} s={[8, 2.8, 0.1]} c={theme.wall} />
+      <Box p={[-4.05, 1.4, 0]} s={[0.1, 2.8, 6.2]} c={theme.wall2} />
       <Box p={[0, 0.08, -2.99]} s={[8, 0.16, 0.02]} c="#6b4b2e" />
       <Box p={[-3.99, 0.08, 0]} s={[0.02, 0.16, 6.2]} c="#6b4b2e" />
       {/* Front walls are cut away (dollhouse view); skirting marks the edge */}
@@ -107,13 +111,13 @@ export function Room() {
       {/* Rug */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[-1.8, 0.01, 1]} receiveShadow onPointerDown={onFloor}>
         <planeGeometry args={[2.2, 1.6]} />
-        <meshStandardMaterial color="#8c2f39" />
+        <meshStandardMaterial color={theme.rug} />
       </mesh>
 
       <Tappable id="bed">
         <Box p={[-2.9, 0.2, -1.9]} s={[1.5, 0.4, 2.1]} c="#5b3a21" />
         <Box p={[-2.9, 0.47, -1.85]} s={[1.4, 0.16, 2.0]} c="#e9e4f2" />
-        <Box p={[-2.9, 0.5, -1.6]} s={[1.42, 0.17, 1.3]} c="#2d6a8a" />
+        <Box p={[-2.9, 0.5, -1.6]} s={[1.42, 0.17, 1.3]} c={theme.bed} />
         <Box p={[-2.9, 0.62, -2.6]} s={[0.9, 0.12, 0.4]} c="#fafafa" />
         <Box p={[-2.9, 0.7, -2.95]} s={[1.5, 0.9, 0.08]} c="#5b3a21" />
       </Tappable>
@@ -152,8 +156,16 @@ export function Room() {
           <planeGeometry args={[1.05, 0.58]} />
           <meshStandardMaterial color={power ? '#4aa3df' : '#0b0b0b'} emissive={power ? '#1d6fa5' : '#000'} emissiveIntensity={power ? 0.8 : 0} />
         </mesh>
-        {/* Red plastic chairs */}
-        {[0.6, 1.4].map((z) => (
+        {/* Sofa in better areas, red plastic chairs in Kubwa */}
+        {upgraded && (
+          <group position={[-1.6, 0, 1.0]}>
+            <Box p={[0, 0.3, 0]} s={[0.8, 0.4, 1.8]} c={area === 'wuse2' ? '#3d4a5c' : '#6b4f3a'} />
+            <Box p={[0.32, 0.7, 0]} s={[0.18, 0.6, 1.8]} c={area === 'wuse2' ? '#3d4a5c' : '#6b4f3a'} />
+            <Box p={[0, 0.55, -0.85]} s={[0.8, 0.3, 0.14]} c={area === 'wuse2' ? '#2c3646' : '#5a412f'} />
+            <Box p={[0, 0.55, 0.85]} s={[0.8, 0.3, 0.14]} c={area === 'wuse2' ? '#2c3646' : '#5a412f'} />
+          </group>
+        )}
+        {!upgraded && [0.6, 1.4].map((z) => (
           <group key={z} position={[-1.7, 0, z]}>
             <Box p={[0, 0.42, 0]} s={[0.45, 0.06, 0.45]} c="#d62f2f" />
             <Box p={[0.2, 0.72, 0]} s={[0.06, 0.6, 0.45]} c="#d62f2f" />
@@ -163,6 +175,28 @@ export function Room() {
           </group>
         ))}
       </Tappable>
+
+      {upgraded && (
+        <>
+          {/* Split AC on the wall */}
+          <Box p={[1.0, 2.35, -2.95]} s={[1.1, 0.32, 0.18]} c="#f4f4f4" />
+          <Box p={[1.0, 2.22, -2.85]} s={[1.0, 0.03, 0.02]} c="#bbb" />
+          {/* Wall art */}
+          <Box p={[-3.98, 1.7, -0.6]} s={[0.03, 0.8, 1.1]} c="#2b2b2b" />
+          <Box p={[-3.96, 1.7, -0.6]} s={[0.02, 0.66, 0.96]} c={area === 'wuse2' ? '#e8b04b' : '#3ccf8e'} />
+        </>
+      )}
+      {area === 'wuse2' && (
+        <>
+          {/* Potted plant and a coffee table */}
+          <Cyl p={[-3.5, 0.2, 2.6]} r={0.2} h={0.4} c="#8a5a3b" />
+          <mesh position={[-3.5, 0.75, 2.6]}>
+            <dodecahedronGeometry args={[0.4, 0]} />
+            <meshStandardMaterial color="#2e8b3a" flatShading />
+          </mesh>
+          <Box p={[-2.6, 0.25, 1.0]} s={[0.6, 0.06, 0.9]} c="#1f1f1f" />
+        </>
+      )}
 
       {/* Standing fan */}
       <group position={[2.6, 0, 0.6]}>

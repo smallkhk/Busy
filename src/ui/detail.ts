@@ -5,7 +5,7 @@ import { durationAt, type BlockState } from '../store/game';
 
 /** One-line summary under an activity button: time, price, pay and effects. */
 export function activityDetail(a: Activity, s: BlockState): string {
-  const mins = durationAt(a, s.time);
+  const mins = durationAt(a, s.time, s.area);
   return [
     formatMinutes(mins) + (mins > a.minutes ? ' 🚗' : ''),
     a.pay ? `Pay ${formatNaira(a.pay)}` : a.cost ? formatNaira(a.cost) : 'Free',
