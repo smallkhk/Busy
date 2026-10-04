@@ -8,7 +8,8 @@ export type Txn = { at: number; label: string; amount: number };
 export type Toast = { id: number; text: string };
 export type PhoneApp = 'home' | 'bank' | 'jobs' | 'chat' | 'map' | 'gram';
 
-type Active = { id: string; remaining: number; gen: boolean };
+/** `total` is the actual duration (rush hour makes trips longer); old saves may lack it. */
+type Active = { id: string; remaining: number; gen: boolean; total?: number };
 
 type GameState = {
   started: boolean;
@@ -18,6 +19,9 @@ type GameState = {
   money: number;
   place: Place;
   needs: Needs;
+  packaging: number;
+  pantry: number;
+  cv: number;
   power: boolean;
   nextPowerChange: number;
   pos: [number, number];
@@ -50,7 +54,18 @@ const START_POS: [number, number] = [0.5, 1.2];
 const BOUNDS: Record<Place, { minX: number; maxX: number; minZ: number; maxZ: number }> = {
   home: { minX: -3.6, maxX: 6.4, minZ: -2.6, maxZ: 3.6 },
   street: { minX: -8.5, maxX: 7, minZ: -2.4, maxZ: 3.2 },
+  wuse: { minX: -6.5, maxX: 6.5, minZ: -1.6, maxZ: 3.4 },
+  jabi: { minX: -7.5, maxX: 6.5, minZ: -2.0, maxZ: 3.4 },
+  secretariat: { minX: -7, maxX: 7, minZ: -2.0, maxZ: 3.6 },
 };
+
+const RUSH_HOURS = [7, 8, 17, 18];
+const RUSH_FACTOR = 1.6;
+
+/** Real duration of an activity started at `time`. */
+export function durationAt(a: Activity, time: number): number {
+  return a.commute && RUSH_HOURS.includes(clockParts(time).hour) ? Math.round(a.minutes * RUSH_FACTOR) : a.minutes;
+}
 
 let toastId = 0;
 
@@ -64,6 +79,9 @@ const initial = () => ({
   money: START_MONEY,
   place: 'home' as Place,
   needs: fullNeeds(),
+  packaging: 5,
+  pantry: 0,
+  cv: 0,
   power: true,
   nextPowerChange: START_TIME + 180,
   pos: START_POS,
@@ -78,12 +96,17 @@ const initial = () => ({
 });
 
 /** Why an activity can't start right now, or null if it can. */
-export function blockReason(a: Activity, s: Pick<GameState, 'time' | 'money' | 'power' | 'active'>): string | null {
+export type BlockState = Pick<GameState, 'time' | 'money' | 'power' | 'active' | 'packaging' | 'pantry' | 'cv'>;
+
+export function blockReason(a: Activity, s: BlockState): string | null {
   if (a.locked) return a.locked;
+  if (a.requires?.packaging && s.packaging < a.requires.packaging) return `Need 👔 Packaging ${a.requires.packaging} (you get ${Math.round(s.packaging)})`;
+  if (a.requires?.cv && s.cv < a.requires.cv) return `Dem never call you. Submit CV ${a.requires.cv - s.cv} more time`;
   if (s.active) return 'You dey do something already';
   if (a.hours && !inHours(s.time, a.hours)) {
     return `Only from ${a.hours[0]}:00 to ${a.hours[1]}:00`;
   }
+  if (a.usesPantry && s.pantry < a.usesPantry) return 'No foodstuff. Buy for Wuse Market';
   const cost = (a.cost ?? 0) + (a.requiresPower && !s.power ? GEN_COST : 0);
   if (cost > s.money) return `You need ${formatNaira(cost)}`;
   return null;
@@ -107,17 +130,34 @@ export const useGame = create<GameState>()(
         const txns = [...s.txns];
         if (a.cost) txns.unshift({ at: s.time, label: a.label, amount: -a.cost });
         if (gen) txns.unshift({ at: s.time, label: 'Fuel for gen', amount: -GEN_COST });
+        const total = durationAt(a, s.time);
         set({
-          active: { id, remaining: a.minutes, gen },
+          active: { id, remaining: total, gen, total },
           pending: null,
           money: s.money - cost,
+          pantry: s.pantry - (a.usesPantry ?? 0),
           txns: txns.slice(0, 40),
         });
         if (gen) get().toast('⛽ No light, you on gen');
+        if (total > a.minutes) get().toast('🚗 Rush hour! Traffic don hold for expressway');
       };
 
       const finish = (a: Activity) => {
         const s = get();
+        const fx = a.effects;
+        if (fx) {
+          set({
+            packaging: Math.min(100, s.packaging + (fx.packaging ?? 0)),
+            pantry: s.pantry + (fx.pantry ?? 0),
+            cv: s.cv + (fx.cv ?? 0),
+          });
+          if (fx.packaging) get().toast(`👔 Packaging +${fx.packaging}. You don dey look clean!`);
+          if (fx.pantry) get().toast(`🧺 Foodstuff +${fx.pantry} meals. Cook am for house`);
+          if (fx.cv) {
+            const cv = get().cv;
+            get().toast(cv >= 3 ? '📞 Dem don call you! Contract staff job don open for Secretariat' : `📄 Dem collect am. "Come back next week" 😑 (${cv}/3)`);
+          }
+        }
         if (a.pay) {
           set({
             money: s.money + a.pay,
@@ -125,7 +165,7 @@ export const useGame = create<GameState>()(
           });
           get().toast(`💰 You don collect ${formatNaira(a.pay)}`);
         } else if (!a.travelTo) {
-          get().toast(`${a.emoji} Done: ${a.label}`);
+          if (!fx) get().toast(`${a.emoji} Done: ${a.label}`);
         }
         set({ active: null, ...(a.away ? { pos: EXIT_SPOT[s.place] } : {}) });
         if (a.travelTo) {
@@ -150,9 +190,10 @@ export const useGame = create<GameState>()(
 
           if (s.active && a) {
             // Fast-forward while busy: every activity takes ~4 real seconds.
-            const speed = Math.max(10, a.minutes / 4);
+            const total = s.active.total ?? a.minutes;
+            const speed = Math.max(10, total / 4);
             const step = Math.min(dtReal * speed, s.active.remaining);
-            needs = tickNeeds(needs, step, { gains: a.gains, activityMinutes: a.minutes, sleeping: a.sleep });
+            needs = tickNeeds(needs, step, { gains: a.gains, activityMinutes: total, sleeping: a.sleep });
             time += step;
             const remaining = s.active.remaining - step;
             set({ needs, time, active: { ...s.active, remaining } });
@@ -276,6 +317,9 @@ export const useGame = create<GameState>()(
         money: s.money,
         place: s.place,
         needs: s.needs,
+        packaging: s.packaging,
+        pantry: s.pantry,
+        cv: s.cv,
         power: s.power,
         nextPowerChange: s.nextPowerChange,
         pos: s.pos,

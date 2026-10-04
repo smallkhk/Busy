@@ -3,6 +3,7 @@ import { activityById, INTERACTABLES, PLACE_NAMES } from '../content/activities'
 import { clockParts, formatClock, formatNaira } from '../engine/clock';
 import { mood, moodFace, NEED_KEYS, NEED_META } from '../engine/needs';
 import { blockReason, useGame } from '../store/game';
+import { activityDetail } from './detail';
 
 export function TopBar() {
   const time = useGame((s) => Math.floor(s.time));
@@ -10,6 +11,7 @@ export function TopBar() {
   const power = useGame((s) => s.power);
   const needs = useGame((s) => s.needs);
   const place = useGame((s) => s.place);
+  const packaging = useGame((s) => s.packaging);
   const { day } = clockParts(time);
   return (
     <div className="topbar">
@@ -19,6 +21,7 @@ export function TopBar() {
       </div>
       <div className="pill" title={power ? 'Light dey' : 'No light'}>{power ? '💡' : '🕯️'}</div>
       <div className="pill">{moodFace(mood(needs))}</div>
+      <div className="pill small-pill" title="Packaging: how rich you look">👔{Math.round(packaging)}</div>
       <div className="pill money">{formatNaira(money)}</div>
     </div>
   );
@@ -50,7 +53,7 @@ export function ActiveBanner() {
   if (!active) return null;
   const a = activityById(active.id);
   if (!a) return null;
-  const pct = 100 - (active.remaining / a.minutes) * 100;
+  const pct = 100 - (active.remaining / (active.total ?? a.minutes)) * 100;
   const mins = Math.ceil(active.remaining);
   return (
     <div className="banner card">
@@ -71,7 +74,7 @@ export function ActionMenu() {
   const menu = useGame((s) => s.menu);
   const openMenu = useGame((s) => s.openMenu);
   const choose = useGame((s) => s.choose);
-  const state = useGame(useShallow((s) => ({ time: s.time, money: s.money, power: s.power, active: s.active })));
+  const state = useGame(useShallow((s) => ({ time: s.time, money: s.money, power: s.power, active: s.active, packaging: s.packaging, pantry: s.pantry, cv: s.cv })));
   const item = INTERACTABLES.find((i) => i.id === menu);
   if (!item) return null;
   return (
@@ -80,19 +83,13 @@ export function ActionMenu() {
         <div className="sheet-title">{item.emoji} {item.name}</div>
         {item.activities.map((a) => {
           const reason = blockReason(a, state);
-          const gen = a.requiresPower && !state.power;
           return (
             <button key={a.id} className="action" disabled={!!reason} onClick={() => choose(a.id)}>
               <span className="action-emoji">{a.emoji}</span>
               <span className="action-body">
                 <span>{a.label}</span>
                 <span className="muted small">
-                  {reason ?? [
-                    a.minutes >= 60 ? `${a.minutes / 60}h` : `${a.minutes}m`,
-                    a.cost ? formatNaira(a.cost) : 'Free',
-                    gen ? '+ ₦1,000 gen' : '',
-                    ...Object.entries(a.gains).map(([k, v]) => `${v! > 0 ? '+' : ''}${v} ${NEED_META[k as keyof typeof NEED_META].emoji}`),
-                  ].filter(Boolean).join(' · ')}
+                  {reason ?? activityDetail(a, state)}
                 </span>
               </span>
             </button>

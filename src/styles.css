@@ -51,6 +51,7 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
 .pill:first-child { flex: 1; }
 .pill .big { font-size: 16px; font-weight: 700; letter-spacing: 0.3px; }
 .pill .muted { font-size: 11px; }
+.pill.small-pill { font-size: 13px; font-weight: 700; padding: 6px 8px; }
 .pill.money { font-size: 15px; font-weight: 800; color: var(--gold); }
 
 .needs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px 12px; padding: 10px 12px; max-width: 360px; }
@@ -85,7 +86,8 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
 /* ---------- World labels ---------- */
 .labels { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
 .label { position: absolute; top: 0; left: 0; transform: translate(-999px, -999px); pointer-events: auto; will-change: transform; }
-.nametag.label { pointer-events: none; }
+.nametag.label { pointer-events: none; z-index: 1; }
+.obj-chip.label { z-index: 2; }
 .nametag {
   background: var(--gold); color: #1d1405; font-weight: 800; font-size: 12px; padding: 2px 8px; border-radius: 8px;
   white-space: nowrap; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);

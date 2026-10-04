@@ -1,51 +1,28 @@
-import type { Needs } from '../engine/needs';
+import { ride, type Activity, type Interactable, type Place } from './common';
+import { TRAVEL_INTERACTABLES } from './travel';
 
-export type Place = 'home' | 'street';
-
-export const PLACE_NAMES: Record<Place, string> = { home: 'Your compound', street: 'Kubwa street' };
-
-export type Activity = {
-  id: string;
-  label: string;
-  /** Shown while it runs, e.g. "Cooking indomie". */
-  doing: string;
-  emoji: string;
-  minutes: number;
-  cost?: number;
-  pay?: number;
-  gains: Partial<Needs>;
-  requiresPower?: boolean;
-  /** Allowed hours [start, end) on the 24h clock. */
-  hours?: [number, number];
-  /** Player leaves the room (walks out the door) while it runs. */
-  away?: boolean;
-  sleep?: boolean;
-  /** Where the player stands to do it. Phone activities have none. */
-  spot?: [number, number];
-  /** Walking here moves the player to another place. */
-  travelTo?: Place;
-  /** Shown instead of running, for content that isn't built yet. */
-  locked?: string;
-};
-
-export type Interactable = {
-  id: string;
-  place: Place;
-  name: string;
-  emoji: string;
-  /** Label anchor in the world. */
-  label: [number, number, number];
-  activities: Activity[];
-};
+export * from './common';
 
 export const GEN_COST = 1000;
 
 /** Where away activities (jobs) leave from and come back to. */
-export const EXIT_SPOT: Record<Place, [number, number]> = { home: [6.0, 2.9], street: [1.0, 2.6] };
+export const EXIT_SPOT: Record<Place, [number, number]> = {
+  home: [6.0, 2.9],
+  street: [1.0, 2.6],
+  wuse: [-5.0, 2.2],
+  jabi: [4.4, 2.4],
+  secretariat: [4.6, 2.6],
+};
 /** Where you appear when you arrive at a place. */
-export const ENTRY_SPOT: Record<Place, [number, number]> = { home: [5.6, 2.6], street: [-7.1, -2.0] };
+export const ENTRY_SPOT: Record<Place, [number, number]> = {
+  home: [5.6, 2.6],
+  street: [-7.1, -2.0],
+  wuse: [-4.4, 1.6],
+  jabi: [3.8, 1.8],
+  secretariat: [4.0, 2.0],
+};
 
-export const INTERACTABLES: Interactable[] = [
+const HOME_AND_STREET: Interactable[] = [
   {
     id: 'bed',
     place: 'home',
@@ -65,6 +42,7 @@ export const INTERACTABLES: Interactable[] = [
     label: [-0.7, 1.1, -2.5],
     activities: [
       { id: 'jollof', label: 'Chop leftover jollof', doing: 'Chopping jollof', emoji: '🍛', minutes: 20, cost: 0, gains: { food: 30, fun: 3 }, spot: [-0.7, -1.7] },
+      { id: 'homefood', label: 'Chop home food (foodstuff)', doing: 'Chopping home food', emoji: '🍲', minutes: 20, usesPantry: 1, gains: { food: 45, fun: 5 }, spot: [-0.7, -1.7] },
       { id: 'water', label: 'Drink pure water', doing: 'Drinking pure water', emoji: '💧', minutes: 5, cost: 50, gains: { food: 5, bladder: -8 }, spot: [-0.7, -1.7] },
     ],
   },
@@ -76,6 +54,7 @@ export const INTERACTABLES: Interactable[] = [
     label: [0.8, 1.3, -2.5],
     activities: [
       { id: 'indomie', label: 'Cook indomie & egg', doing: 'Cooking indomie', emoji: '🍜', minutes: 30, cost: 1500, gains: { food: 45, fun: 5 }, spot: [0.8, -1.6] },
+      { id: 'cookmarket', label: 'Cook with market foodstuff', doing: 'Cooking jollof rice', emoji: '🍚', minutes: 45, usesPantry: 1, gains: { food: 65, fun: 10 }, spot: [0.8, -1.6] },
       { id: 'soup', label: 'Cook pot of soup', doing: 'Cooking egusi soup', emoji: '🥘', minutes: 120, cost: 6500, gains: { food: 85, fun: 10, energy: -8 }, spot: [0.8, -1.6] },
     ],
   },
@@ -199,12 +178,14 @@ export const INTERACTABLES: Interactable[] = [
     emoji: '🚏',
     label: [1.0, 2.6, 3.4],
     activities: [
-      { id: 'to-wuse', label: 'Enter bus go Wuse Market', doing: 'Waiting for bus', emoji: '🚌', minutes: 60, cost: 700, gains: {}, locked: 'Coming soon', spot: [1.0, 2.6] },
-      { id: 'to-jabi', label: 'Enter taxi go Jabi Lake Mall', doing: 'Waiting for taxi', emoji: '🚕', minutes: 45, cost: 3500, gains: {}, locked: 'Coming soon', spot: [1.0, 2.6] },
-      { id: 'to-sec', label: 'Go Federal Secretariat', doing: 'Waiting for bus', emoji: '🏛️', minutes: 75, cost: 900, gains: {}, locked: 'Coming soon', spot: [1.0, 2.6] },
+      ride('to-wuse', 'Bus go Wuse Market', '🚌', 'wuse', 60, 700, [1.0, 2.6]),
+      ride('to-jabi', 'Taxi go Jabi Lake Mall', '🚕', 'jabi', 45, 3500, [1.0, 2.6]),
+      ride('to-sec', 'Bus go Federal Secretariat', '🏛️', 'secretariat', 75, 900, [1.0, 2.6]),
     ],
   },
 ];
+
+export const INTERACTABLES: Interactable[] = [...HOME_AND_STREET, ...TRAVEL_INTERACTABLES];
 
 export const JOBS: Activity[] = [
   { id: 'pos', label: 'POS attendant, Kubwa Village Market', doing: 'Working POS for Kubwa market', emoji: '💳', minutes: 360, pay: 9000, gains: { energy: -25, fun: -10, social: 10 }, hours: [8, 15], away: true },

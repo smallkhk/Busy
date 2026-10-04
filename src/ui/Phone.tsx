@@ -1,8 +1,8 @@
 import { useShallow } from 'zustand/react/shallow';
 import { JOBS, PHONE_ACTIVITIES, type Activity } from '../content/activities';
 import { clockParts, formatClock, formatNaira } from '../engine/clock';
-import { NEED_META } from '../engine/needs';
 import { blockReason, useGame, type PhoneApp } from '../store/game';
+import { activityDetail } from './detail';
 
 const APPS: { id: PhoneApp; name: string; emoji: string; color: string }[] = [
   { id: 'bank', name: 'Bank', emoji: '🏦', color: '#1f7a5a' },
@@ -13,17 +13,17 @@ const APPS: { id: PhoneApp; name: string; emoji: string; color: string }[] = [
 ];
 
 const PLACES = [
-  { name: 'Kubwa (your area)', emoji: '🏠', open: true },
-  { name: 'Wuse Market', emoji: '🛍️', open: false },
-  { name: 'Jabi Lake Mall', emoji: '🌊', open: false },
-  { name: 'Wuse 2 lounge', emoji: '🍸', open: false },
-  { name: 'Federal Secretariat', emoji: '🏛️', open: false },
-  { name: 'Maitama', emoji: '💎', open: false },
+  { place: 'home', name: 'Kubwa (your area)', emoji: '🏠', open: true, note: 'Bus stop for Kubwa street' },
+  { place: 'wuse', name: 'Wuse Market', emoji: '🛍️', open: true, note: 'Bus ₦700 · 1h' },
+  { place: 'jabi', name: 'Jabi Lake Mall', emoji: '🌊', open: true, note: 'Taxi ₦3,500 · 45m' },
+  { place: 'secretariat', name: 'Federal Secretariat', emoji: '🏛️', open: true, note: 'Bus ₦900 · 1h 15m' },
+  { place: '', name: 'Wuse 2 lounge', emoji: '🍸', open: false, note: '' },
+  { place: '', name: 'Maitama', emoji: '💎', open: false, note: '' },
 ];
 
 function ActivityList({ items }: { items: Activity[] }) {
   const choose = useGame((s) => s.choose);
-  const state = useGame(useShallow((s) => ({ time: s.time, money: s.money, power: s.power, active: s.active })));
+  const state = useGame(useShallow((s) => ({ time: s.time, money: s.money, power: s.power, active: s.active, packaging: s.packaging, pantry: s.pantry, cv: s.cv })));
   return (
     <div className="list">
       {items.map((a) => {
@@ -34,11 +34,7 @@ function ActivityList({ items }: { items: Activity[] }) {
             <span className="action-body">
               <span>{a.label}</span>
               <span className="muted small">
-                {reason ?? [
-                  a.minutes >= 60 ? `${a.minutes / 60}h` : `${a.minutes}m`,
-                  a.pay ? `Pay ${formatNaira(a.pay)}` : a.cost ? formatNaira(a.cost) : '',
-                  ...Object.entries(a.gains).map(([k, v]) => `${v! > 0 ? '+' : ''}${v} ${NEED_META[k as keyof typeof NEED_META].emoji}`),
-                ].filter(Boolean).join(' · ')}
+                {reason ?? activityDetail(a, state)}
               </span>
             </span>
           </button>
@@ -50,6 +46,9 @@ function ActivityList({ items }: { items: Activity[] }) {
 
 function Bank() {
   const money = useGame((s) => s.money);
+  const pantry = useGame((s) => s.pantry);
+  const packaging = useGame((s) => s.packaging);
+  const cv = useGame((s) => s.cv);
   const txns = useGame((s) => s.txns);
   return (
     <>
@@ -57,6 +56,7 @@ function Bank() {
         <div className="muted small">Available balance</div>
         <div className="balance-amt">{formatNaira(money)}</div>
         <div className="muted small">🏠 Rent paid till Day 365 · ₦850,000/yr</div>
+        <div className="muted small">🧺 Foodstuff: {pantry} meals · 👔 Packaging: {Math.round(packaging)} · 📄 CVs: {Math.min(cv, 3)}/3</div>
       </div>
       <div className="list">
         {txns.slice(0, 12).map((t, i) => (
@@ -68,6 +68,24 @@ function Bank() {
             <span className={t.amount >= 0 ? 'pos' : 'neg'}>
               {t.amount >= 0 ? '+' : '−'}{formatNaira(Math.abs(t.amount))}
             </span>
+          </div>
+        ))}
+      </div>
+    </>
+  );
+}
+
+function MapApp() {
+  const place = useGame((s) => s.place);
+  const here = place === 'street' ? 'home' : place;
+  return (
+    <>
+      <p className="muted small">Go any bus stop or motor park to travel. Rush hour (7–9am, 5–7pm) go make the trip long 🚗</p>
+      <div className="list">
+        {PLACES.map((p) => (
+          <div key={p.name} className={`place ${p.open ? '' : 'locked'}`}>
+            <span>{p.emoji} {p.name}</span>
+            <span className="small">{!p.open ? '🔒 Coming soon' : p.place === here ? '📍 You dey here' : p.note}</span>
           </div>
         ))}
       </div>
@@ -89,16 +107,7 @@ function AppBody({ app }: { app: PhoneApp }) {
     case 'chat':
       return <ActivityList items={PHONE_ACTIVITIES} />;
     case 'map':
-      return (
-        <div className="list">
-          {PLACES.map((p) => (
-            <div key={p.name} className={`place ${p.open ? '' : 'locked'}`}>
-              <span>{p.emoji} {p.name}</span>
-              <span className="small">{p.open ? '📍 You dey here' : '🔒 Coming soon'}</span>
-            </div>
-          ))}
-        </div>
-      );
+      return <MapApp />;
     case 'gram':
       return (
         <div className="empty">
