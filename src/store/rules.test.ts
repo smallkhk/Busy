@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { activityById, INTERACTABLES } from '../content/activities';
+import { CONTACTS, longLeg } from '../content/contacts';
+import { EVENTS } from '../content/events';
 import { moveCost, rentOwed } from '../content/housing';
 import { blockReason, durationAt, type BlockState } from './game';
 
@@ -61,5 +63,26 @@ describe('housing', () => {
     expect(rentOwed('kubwa', 31, 31)).toBe(70000);
     expect(rentOwed('kubwa', 33, 31)).toBe(77000);
     expect(moveCost('gwarinpa')).toBe(396000);
+  });
+});
+
+describe('long leg', () => {
+  it('scores contacts by relationship and influence', () => {
+    expect(longLeg({})).toBe(0);
+    const all = Object.fromEntries(CONTACTS.map((c) => [c.id, { rel: 100 }]));
+    expect(longLeg(all)).toBe(100);
+    expect(longLeg({ alhaji: { rel: 100 } })).toBeGreaterThan(longLeg({ garba: { rel: 100 } }));
+  });
+
+  it('a referral waives the packaging requirement', () => {
+    expect(blockReason(act('phoneshop'), { ...base, time: 10 * 60, unlocks: ['phoneshop'] })).toBeNull();
+  });
+
+  it('every contact can be met somewhere', () => {
+    const meets = new Set([
+      ...INTERACTABLES.flatMap((i) => i.activities).map((a) => a.effects?.meet),
+      ...EVENTS.flatMap((e) => e.choices.flatMap((c) => c.outcomes.map((o) => o.effect?.meet))),
+    ]);
+    for (const c of CONTACTS) expect(meets.has(c.id), c.id).toBe(true);
   });
 });

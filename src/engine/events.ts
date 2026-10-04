@@ -7,6 +7,8 @@ export type EventContext = {
   day: number;
   money: number;
   power: boolean;
+  /** Contacts you don meet. */
+  met?: string[];
   /** Rent due date don pass and door never lock. */
   rentOverdue?: boolean;
   /** Id of the trip in progress, for commute events. */
@@ -24,6 +26,10 @@ export type Effect = {
   power?: boolean;
   /** Push the rent due date back. */
   rentGraceDays?: number;
+  /** Meet a new contact (or get closer to one you know). */
+  meet?: string;
+  /** Relationship changes, by contact id. */
+  rel?: Record<string, number>;
 };
 
 export type Outcome = { weight?: number; text: string; effect?: Effect };

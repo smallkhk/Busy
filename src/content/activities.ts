@@ -107,7 +107,7 @@ const HOME_AND_STREET: Interactable[] = [
     emoji: '🪑',
     label: [3.6, 1.0, 3.3],
     activities: [
-      { id: 'neighbours', label: 'Gist with neighbours', doing: 'Gisting with neighbours', emoji: '🗣️', minutes: 45, gains: { social: 25, fun: 10 }, hours: [7, 22], spot: [3.6, 2.6] },
+      { id: 'neighbours', label: 'Gist with neighbours', doing: 'Gisting with neighbours', emoji: '🗣️', minutes: 45, gains: { social: 25, fun: 10 }, effects: { meet: 'ade' }, hours: [7, 22], spot: [3.6, 2.6] },
     ],
   },
   {

@@ -87,7 +87,7 @@ export const TRAVEL_INTERACTABLES: Interactable[] = [
     emoji: '🛍️',
     label: [-3.1, 3.1, -2.3],
     activities: [
-      { id: 'designer', label: 'Designer shirt', doing: 'Trying clothes for fitting room', emoji: '👔', minutes: 30, cost: 35000, gains: { fun: 10 }, effects: { packaging: 18 }, hours: [9, 21], spot: [-3.1, -1.6] },
+      { id: 'designer', label: 'Designer shirt', doing: 'Trying clothes for fitting room', emoji: '👔', minutes: 30, cost: 35000, gains: { fun: 10 }, effects: { packaging: 18, meet: 'okafor' }, hours: [9, 21], spot: [-3.1, -1.6] },
       { id: 'perfume', label: 'Fine perfume', doing: 'Testing perfume', emoji: '🧴', minutes: 15, cost: 15000, gains: { hygiene: 10, fun: 5 }, effects: { packaging: 8 }, hours: [9, 21], spot: [-3.1, -1.6] },
       { id: 'phoneshop', label: 'Sales rep for phone shop', doing: 'Selling phones for mall', emoji: '📱', minutes: 360, pay: 13000, gains: { energy: -22, social: 15, fun: -5 }, hours: [9, 15], requires: { packaging: 25 }, away: true, spot: [-3.1, -1.6] },
     ],
@@ -135,7 +135,7 @@ export const TRAVEL_INTERACTABLES: Interactable[] = [
     emoji: '🍛',
     label: [-5.5, 2.3, 1.2],
     activities: [
-      { id: 'beans', label: 'Rice & beans + dodo', doing: 'Chopping for buka', emoji: '🍛', minutes: 25, cost: 1800, gains: { food: 45, social: 10 }, hours: [8, 17], spot: [-4.8, 0.6] },
+      { id: 'beans', label: 'Rice & beans + dodo', doing: 'Chopping for buka', emoji: '🍛', minutes: 25, cost: 1800, gains: { food: 45, social: 10 }, effects: { meet: 'garba' }, hours: [8, 17], spot: [-4.8, 0.6] },
       { id: 'biscuit', label: 'Pure water & biscuit', doing: 'Managing biscuit', emoji: '🍪', minutes: 5, cost: 300, gains: { food: 8 }, hours: [7, 19], spot: [-4.8, 0.6] },
     ],
   },

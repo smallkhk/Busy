@@ -78,7 +78,7 @@ export function ActionMenu() {
   const menu = useGame((s) => s.menu);
   const openMenu = useGame((s) => s.openMenu);
   const choose = useGame((s) => s.choose);
-  const state = useGame(useShallow((s) => ({ time: s.time, money: s.money, power: s.power, active: s.active, packaging: s.packaging, pantry: s.pantry, cv: s.cv, area: s.area, rentLocked: s.rentLocked })));
+  const state = useGame(useShallow((s) => ({ time: s.time, money: s.money, power: s.power, active: s.active, packaging: s.packaging, pantry: s.pantry, cv: s.cv, area: s.area, rentLocked: s.rentLocked, unlocks: s.unlocks })));
   const item = INTERACTABLES.find((i) => i.id === menu);
   if (!item) return null;
   return (

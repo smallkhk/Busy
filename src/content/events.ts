@@ -149,7 +149,7 @@ export const EVENTS: GameEvent[] = [
     weight: 2,
     cooldownHours: 168,
     choices: [
-      { label: 'Buy the aso-ebi', cost: 15000, outcomes: [{ text: 'You go shine for that wedding 💃 People go notice you.', effect: { packaging: 6, needs: { social: 20, fun: 10 } } }] },
+      { label: 'Buy the aso-ebi', cost: 15000, outcomes: [{ text: 'You go shine for that wedding 💃 People go notice you.', effect: { packaging: 6, needs: { social: 20, fun: 10 }, meet: 'alhaji' } }] },
       { label: '"I go come with my own cloth"', outcomes: [{ text: 'Your friend reply with only "Ok." 😐', effect: { needs: { social: -10 } } }] },
     ],
   },
@@ -199,7 +199,7 @@ export const EVENTS: GameEvent[] = [
     cooldownHours: 96,
     when: (c) => outside(c.place) && day(c.hour),
     choices: [
-      { label: 'Make we gist small', outcomes: [{ text: 'Una gist tire. E say e dey work for one ministry. Network don open 👀', effect: { minutes: 45, needs: { social: 25, fun: 15 } } }] },
+      { label: 'Make we gist small', outcomes: [{ text: 'Una gist tire. E say e dey work for one ministry. Network don open 👀', effect: { minutes: 45, needs: { social: 25, fun: 15 }, meet: 'chinedu' } }] },
       { label: '"I dey rush, I go call you"', outcomes: [{ text: 'You collect number. You no go call am, we know 😂' }] },
     ],
   },
@@ -255,6 +255,70 @@ export const EVENTS: GameEvent[] = [
         ],
       },
       { label: 'Refuse. I no dey bribe', outcomes: [{ text: 'You hold your head high. Your mama go proud of you 🙌', effect: { needs: { fun: 5 } } }] },
+    ],
+  },
+
+  // ---------------- Long Leg ----------------
+  {
+    id: 'chinedu-loan',
+    emoji: '🧑🏾‍💼',
+    title: 'Chinedu dey call',
+    text: '"Guy, salary never enter. Abeg borrow me ₦10,000, I go pay back end of month. You know say I get you."',
+    trigger: 'idle',
+    weight: 2,
+    cooldownHours: 240,
+    when: (c) => !!c.met?.includes('chinedu'),
+    choices: [
+      { label: 'Send am ₦10,000', cost: 10000, outcomes: [{ text: '"You be real one!" Chinedu no go forget this 🤝', effect: { rel: { chinedu: 20 }, needs: { social: 10 } } }] },
+      { label: '"I no get o"', outcomes: [{ text: '"No wahala." Im voice change small 😐', effect: { rel: { chinedu: -15 } } }] },
+    ],
+  },
+  {
+    id: 'alhaji-errand',
+    emoji: '✉️',
+    title: 'Alhaji need help',
+    text: '"My boy, carry this envelope go one oga for ministry. No open am o. I go settle you ₦15,000."',
+    trigger: 'idle',
+    weight: 2,
+    cooldownHours: 168,
+    when: (c) => !!c.met?.includes('alhaji') && c.hour >= 8 && c.hour < 17,
+    choices: [
+      {
+        label: 'Carry am go',
+        outcomes: [
+          { weight: 3, text: 'You deliver am quiet quiet. Alhaji happy, e settle you 💰', effect: { money: 15000, minutes: 120, rel: { alhaji: 15 } } },
+          { weight: 1, text: 'EFCC dey wait for the office 😱 Dem question you 3 hours before dem release you. Alhaji no pick your call again.', effect: { minutes: 180, needs: { fun: -30, energy: -15 }, rel: { alhaji: -10 } } },
+        ],
+      },
+      { label: '"Alhaji, I no fit"', outcomes: [{ text: '"Hmm. Okay." Alhaji no too like am 😶', effect: { rel: { alhaji: -10 } } }] },
+    ],
+  },
+  {
+    id: 'garba-gist',
+    emoji: '👳🏾‍♂️',
+    title: 'Mallam Garba get gist',
+    text: '"Ranka dede! Dem go soon do recruitment for one agency. If you get ₦2,000 for my tea, I go tell you who to see."',
+    trigger: 'idle',
+    weight: 2,
+    cooldownHours: 120,
+    when: (c) => !!c.met?.includes('garba') && c.place === 'secretariat',
+    choices: [
+      { label: 'Buy am tea (₦2,000)', cost: 2000, outcomes: [{ text: 'E give you name and office number. Information na power 📄', effect: { cv: 1, rel: { garba: 10 } } }] },
+      { label: '"Next time, Mallam"', outcomes: [{ text: '"Allah ya kiyaye." E smile, but e no talk again.', effect: { rel: { garba: -5 } } }] },
+    ],
+  },
+  {
+    id: 'estate-meeting',
+    emoji: '🏘️',
+    title: 'Compound meeting',
+    text: 'Tenants dey meet about security and light. "Everybody must attend!"',
+    trigger: 'idle',
+    weight: 2,
+    cooldownHours: 168,
+    when: (c) => c.place === 'home' && c.hour >= 17 && c.hour < 21,
+    choices: [
+      { label: 'Attend am', outcomes: [{ text: 'Long meeting, but you know everybody now. The lawyer for flat 3 like how you talk 👀', effect: { minutes: 60, needs: { social: 20 }, meet: 'ade' } }] },
+      { label: 'Pretend say you dey sleep', outcomes: [{ text: 'Dem don choose you for security levy committee for your absence 😂', effect: { needs: { social: -5 } } }] },
     ],
   },
 
