@@ -20,6 +20,7 @@ export const POSTS: Post[] = [
   { id: 'food', label: 'Food pic', emoji: '🍔', cost: 200, baseFollowers: 18, where: ['street', 'wuse', 'jabi', 'secretariat'], caption: 'Chop life, my guy 🍽️' },
   { id: 'lake', label: 'Lakeside photoshoot', emoji: '🌊', cost: 500, baseFollowers: 60, packaging: 2, where: ['jabi'], caption: 'Soft life for Jabi Lake 🌊💅' },
   { id: 'office', label: '"New office vibes 💼"', emoji: '🏛️', cost: 200, baseFollowers: 40, packaging: 3, where: ['secretariat'], caption: 'Federal Government don call me o 💼🇳🇬' },
+  { id: 'lounge', label: 'Lounge pics 🍾', emoji: '🥂', cost: 500, baseFollowers: 90, packaging: 3, where: ['lounge'], caption: 'Wuse 2 on a Friday. Enjoyment minister 🥂🔥' },
   { id: 'benz', label: 'Rent Benz 1 hour, snap am', emoji: '🚘', cost: 15000, baseFollowers: 220, packaging: 10, fake: true, caption: 'New whip. God did 🙌🚘' },
   { id: 'jet', label: 'Photoshop private jet', emoji: '🛩️', cost: 3000, baseFollowers: 160, packaging: 8, fake: true, caption: 'Abuja ➡️ Dubai. Weekend things ✈️' },
 ];

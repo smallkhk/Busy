@@ -12,6 +12,7 @@ export const EXIT_SPOT: Record<Place, [number, number]> = {
   wuse: [-5.0, 2.2],
   jabi: [4.4, 2.4],
   secretariat: [4.6, 2.6],
+  lounge: [4.6, 2.6],
 };
 /** Where you appear when you arrive at a place. */
 export const ENTRY_SPOT: Record<Place, [number, number]> = {
@@ -20,6 +21,7 @@ export const ENTRY_SPOT: Record<Place, [number, number]> = {
   wuse: [-4.4, 1.6],
   jabi: [3.8, 1.8],
   secretariat: [4.0, 2.0],
+  lounge: [4.0, 1.8],
 };
 
 const HOME_AND_STREET: Interactable[] = [
@@ -181,6 +183,7 @@ const HOME_AND_STREET: Interactable[] = [
       ride('to-wuse', 'Bus go Wuse Market', '🚌', 'wuse', 60, 700, [1.0, 2.6], true),
       ride('to-jabi', 'Taxi go Jabi Lake Mall', '🚕', 'jabi', 45, 3500, [1.0, 2.6], true),
       ride('to-sec', 'Bus go Federal Secretariat', '🏛️', 'secretariat', 75, 900, [1.0, 2.6], true),
+      ride('to-lounge', 'Taxi go Wuse 2 lounge', '🍾', 'lounge', 50, 4500, [1.0, 2.6], true),
     ],
   },
 ];

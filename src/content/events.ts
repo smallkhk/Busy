@@ -359,6 +359,42 @@ export const EVENTS: GameEvent[] = [
     ],
   },
 
+  // ---------------- Night life ----------------
+  {
+    id: 'lounge-bill',
+    emoji: '🧾',
+    title: 'Bill wahala',
+    text: 'Waiter drop bill: ₦45,000. "Na the bottle wey your table order." You no order any bottle 😳',
+    trigger: 'idle',
+    weight: 3,
+    cooldownHours: 72,
+    when: (c) => c.place === 'lounge' && c.hour >= 19,
+    choices: [
+      { label: 'Pay make shame no catch you', cost: 45000, outcomes: [{ text: 'Your account cry, but your packaging still dey 💅', effect: { packaging: 3, needs: { fun: -10 } } }] },
+      {
+        label: 'Call manager',
+        outcomes: [
+          { weight: 2, text: 'Manager check: na another table bill. "Sorry sir/ma!" Dem dash you free drink 🍹', effect: { needs: { fun: 15 } } },
+          { weight: 1, text: 'Bouncers carry you outside like bag of rice 😭 Everybody dey video.', effect: { packaging: -12, followersPct: -10, needs: { fun: -25, social: -15 } } },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'money-rain',
+    emoji: '💸',
+    title: 'Big man dey spray',
+    text: 'One Alhaji don climb chair dey spray dollar for dance floor. Money dey rain 💵💵',
+    trigger: 'idle',
+    weight: 3,
+    cooldownHours: 96,
+    when: (c) => c.place === 'lounge' && c.hour >= 20,
+    choices: [
+      { label: 'Gather some', outcomes: [{ text: 'You pack ₦12,000 worth. Nobody see you… you hope 👀', effect: { money: 12000, packaging: -3, needs: { fun: 10 } } }] },
+      { label: 'Dance near am, form big', outcomes: [{ text: 'E notice you, e collect your number. "Call me tomorrow." 📞', effect: { needs: { fun: 15, social: 10 }, meet: 'alhaji' } }] },
+    ],
+  },
+
   // ---------------- On the road ----------------
   {
     id: 'checkpoint',

@@ -22,7 +22,7 @@ const PLACES = [
   { place: 'wuse', name: 'Wuse Market', emoji: '🛍️', open: true, note: 'Bus ₦700 · 1h' },
   { place: 'jabi', name: 'Jabi Lake Mall', emoji: '🌊', open: true, note: 'Taxi ₦3,500 · 45m' },
   { place: 'secretariat', name: 'Federal Secretariat', emoji: '🏛️', open: true, note: 'Bus ₦900 · 1h 15m' },
-  { place: '', name: 'Wuse 2 lounge', emoji: '🍸', open: false, note: '' },
+  { place: 'lounge', name: 'Wuse 2 lounge', emoji: '🍾', open: true, note: 'Taxi ₦4,500 · night life (👔 25+)' },
   { place: '', name: 'Maitama', emoji: '💎', open: false, note: '' },
 ];
 

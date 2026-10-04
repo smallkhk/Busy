@@ -90,6 +90,7 @@ const BOUNDS: Record<Place, { minX: number; maxX: number; minZ: number; maxZ: nu
   wuse: { minX: -6.5, maxX: 6.5, minZ: -1.6, maxZ: 3.4 },
   jabi: { minX: -7.5, maxX: 6.5, minZ: -2.0, maxZ: 3.4 },
   secretariat: { minX: -7, maxX: 7, minZ: -2.0, maxZ: 3.6 },
+  lounge: { minX: -6.8, maxX: 6.5, minZ: -2.0, maxZ: 3.4 },
 };
 
 /** Chance per idle game hour that something happens. */
