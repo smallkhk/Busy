@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { activityById, INTERACTABLES } from '../content/activities';
 import { CONTACTS, longLeg } from '../content/contacts';
 import { EVENTS } from '../content/events';
+import { BUSINESSES, dailyProfit, upgradeCost } from '../content/business';
+import { payFor, promotionBlock } from '../content/career';
 import { ACHIEVEMENTS, TUTORIAL } from '../content/goals';
 import { followersGain, packagingGap, POSTS, realWealth } from '../content/gram';
 import { moveCost, rentOwed } from '../content/housing';
@@ -157,5 +159,28 @@ describe('goals', () => {
   it('goal ids are unique', () => {
     const ids = [...TUTORIAL, ...ACHIEVEMENTS].map((g) => g.id);
     expect(new Set(ids).size).toBe(ids.length);
+  });
+});
+
+describe('career & business', () => {
+  it('office shift pays by grade', () => {
+    expect(payFor(act('contract'), 0)).toBe(18000);
+    expect(payFor(act('contract'), 4)).toBe(120000);
+    expect(payFor(act('pos'), 4)).toBe(9000);
+  });
+
+  it('promotion needs shifts, long leg and packaging', () => {
+    expect(promotionBlock(0, 3, 50, 50)).toMatch(/more office shift/);
+    expect(promotionBlock(0, 8, 10, 50)).toMatch(/Long Leg/);
+    expect(promotionBlock(0, 8, 20, 5)).toMatch(/Packaging/);
+    expect(promotionBlock(0, 8, 20, 15)).toBeNull();
+    expect(promotionBlock(4, 99, 99, 99)).toMatch(/top/);
+  });
+
+  it('business profit grows with level', () => {
+    const pos = BUSINESSES.find((b) => b.id === 'pos')!;
+    expect(dailyProfit(pos, 1, 0)).toBe(3000);
+    expect(dailyProfit(pos, 3, 1)).toBeGreaterThan(dailyProfit(pos, 1, 1));
+    expect(upgradeCost(pos, 2)).toBe(300000);
   });
 });

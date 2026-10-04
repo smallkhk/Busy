@@ -126,7 +126,7 @@ export const TRAVEL_INTERACTABLES: Interactable[] = [
     label: [0, 3.3, -2.8],
     activities: [
       { id: 'cv', label: 'Submit CV for ministry', doing: 'Waiting for oga for reception', emoji: '📄', minutes: 60, gains: { energy: -5, fun: -5 }, effects: { cv: 1 }, hours: [8, 15], spot: [0, -1.8] },
-      { id: 'contract', label: 'Contract staff (GL 04) shift', doing: 'Working for ministry', emoji: '🗂️', minutes: 480, pay: 18000, gains: { energy: -30, fun: -15, social: 10 }, hours: [8, 10], requires: { cv: 3 }, away: true, spot: [0, -1.8] },
+      { id: 'contract', label: 'Office shift (your grade)', doing: 'Working for ministry', emoji: '🗂️', minutes: 480, pay: 18000, gains: { energy: -30, fun: -15, social: 10 }, hours: [8, 10], requires: { cv: 3 }, away: true, spot: [0, -1.8] },
     ],
   },
   {

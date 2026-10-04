@@ -12,6 +12,8 @@ export type GoalState = {
   area: AreaId;
   contacts: Record<string, ContactState>;
   eventHistory: Record<string, number>;
+  grade?: number;
+  businesses?: Record<string, unknown>;
 };
 
 export type Goal = {
@@ -48,6 +50,10 @@ export const ACHIEVEMENTS: Goal[] = [
   { id: 'a-wuse2', emoji: '🏙️', title: 'Wuse 2 big boy/big girl', hint: 'Live for Wuse 2', reward: 20000, done: (s) => s.area === 'wuse2' },
   { id: 'a-lounge', emoji: '🍾', title: 'Enjoyment minister', hint: 'Pop bottle for the lounge', reward: 5000, done: (s) => n(s, 'bottles') >= 1 },
   { id: 'a-survivor', emoji: '🚑', title: 'God dey', hint: 'Survive a serious accident', reward: 5000, done: (s) => s.eventHistory['accident-major'] !== undefined },
+  { id: 'a-promo', emoji: '📈', title: 'Oga for office', hint: 'Get your first promotion', reward: 10000, done: (s) => (s.grade ?? 0) >= 1 },
+  { id: 'a-director', emoji: '🏛️', title: 'Director', hint: 'Reach Director', reward: 100000, done: (s) => (s.grade ?? 0) >= 4 },
+  { id: 'a-biz', emoji: '🏪', title: 'Business owner', hint: 'Start your first business', reward: 10000, done: (s) => Object.keys(s.businesses ?? {}).length >= 1 },
+  { id: 'a-mogul', emoji: '🤑', title: 'Mogul', hint: 'Own all 4 businesses', reward: 200000, done: (s) => Object.keys(s.businesses ?? {}).length >= 4 },
   { id: 'a-million', emoji: '💰', title: 'Millionaire', hint: 'Get ₦1,000,000 for your account', reward: 0, done: (s) => s.money >= 1_000_000 },
 ];
 
