@@ -1,4 +1,5 @@
 import { ActionMenu, ActiveBanner, NeedsPanel, Toasts, TopBar } from './ui/Hud';
+import { EventModal } from './ui/EventModal';
 import { Labels } from './ui/Labels';
 import { Phone } from './ui/Phone';
 import { Start } from './ui/Start';
@@ -45,6 +46,7 @@ export default function App() {
           </div>
           <ActionMenu />
           <Phone />
+          <EventModal />
         </>
       ) : (
         <Start />

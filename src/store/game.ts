@@ -2,14 +2,18 @@ import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import { activityById, ENTRY_SPOT, EXIT_SPOT, GEN_COST, PLACE_NAMES, type Activity, type Place } from '../content/activities';
 import { clockParts, formatNaira, inHours } from '../engine/clock';
-import { fullNeeds, LOW_NEED, NEED_KEYS, NEED_META, tickNeeds, type NeedKey, type Needs } from '../engine/needs';
+import { EVENTS } from '../content/events';
+import { effectChips, pickEvent, resolveChoice } from '../engine/events';
+import { clamp, fullNeeds, LOW_NEED, NEED_KEYS, NEED_META, tickNeeds, type NeedKey, type Needs } from '../engine/needs';
 
 export type Txn = { at: number; label: string; amount: number };
 export type Toast = { id: number; text: string };
 export type PhoneApp = 'home' | 'bank' | 'jobs' | 'chat' | 'map' | 'gram';
 
 /** `total` is the actual duration (rush hour makes trips longer); old saves may lack it. */
-type Active = { id: string; remaining: number; gen: boolean; total?: number };
+type Active = { id: string; remaining: number; gen: boolean; total?: number; eventAt?: number };
+
+export type EventResult = { emoji: string; title: string; text: string; chips: string[] };
 
 type GameState = {
   started: boolean;
@@ -33,6 +37,11 @@ type GameState = {
   lowWarned: Partial<Record<NeedKey, boolean>>;
   menu: string | null;
   phone: PhoneApp | null;
+  /** Id of the event waiting for an answer; the game pauses while set. */
+  event: string | null;
+  eventResult: EventResult | null;
+  eventHistory: Record<string, number>;
+  nextEventCheck: number;
 
   start: (name: string, shirt: string) => void;
   tick: (realSeconds: number) => void;
@@ -44,6 +53,8 @@ type GameState = {
   dismissToast: (id: number) => void;
   openMenu: (id: string | null) => void;
   openPhone: (app: PhoneApp | null) => void;
+  answerEvent: (choice: number) => void;
+  closeEvent: () => void;
   reset: () => void;
 };
 
@@ -58,6 +69,11 @@ const BOUNDS: Record<Place, { minX: number; maxX: number; minZ: number; maxZ: nu
   jabi: { minX: -7.5, maxX: 6.5, minZ: -2.0, maxZ: 3.4 },
   secretariat: { minX: -7, maxX: 7, minZ: -2.0, maxZ: 3.6 },
 };
+
+/** Chance per idle game hour that something happens. */
+const IDLE_EVENT_CHANCE = 0.3;
+/** Chance a road trip gets an event halfway. */
+const COMMUTE_EVENT_CHANCE = 0.45;
 
 const RUSH_HOURS = [7, 8, 17, 18];
 const RUSH_FACTOR = 1.6;
@@ -93,6 +109,10 @@ const initial = () => ({
   lowWarned: {},
   menu: null,
   phone: null,
+  event: null as string | null,
+  eventResult: null as EventResult | null,
+  eventHistory: {} as Record<string, number>,
+  nextEventCheck: START_TIME + 90,
 });
 
 /** Why an activity can't start right now, or null if it can. */
@@ -131,8 +151,9 @@ export const useGame = create<GameState>()(
         if (a.cost) txns.unshift({ at: s.time, label: a.label, amount: -a.cost });
         if (gen) txns.unshift({ at: s.time, label: 'Fuel for gen', amount: -GEN_COST });
         const total = durationAt(a, s.time);
+        const eventAt = a.commute && Math.random() < COMMUTE_EVENT_CHANCE ? total * randomBetween(0.3, 0.7) : undefined;
         set({
-          active: { id, remaining: total, gen, total },
+          active: { id, remaining: total, gen, total, eventAt },
           pending: null,
           money: s.money - cost,
           pantry: s.pantry - (a.usesPantry ?? 0),
@@ -174,14 +195,56 @@ export const useGame = create<GameState>()(
         }
       };
 
+      const fireEvent = (trigger: 'idle' | 'commute', trip?: string) => {
+        const s = get();
+        const { hour, day } = clockParts(s.time);
+        const e = pickEvent(EVENTS, trigger, { place: s.place, hour, day, money: s.money, power: s.power, trip }, s.eventHistory, s.time);
+        if (e) set({ event: e.id, eventHistory: { ...s.eventHistory, [e.id]: s.time }, menu: null, phone: null });
+      };
+
       return {
         ...initial(),
+
+        answerEvent: (index) => {
+          const s = get();
+          const e = EVENTS.find((x) => x.id === s.event);
+          const choice = e?.choices[index];
+          if (!e || !choice) return set({ event: null });
+          const cost = choice.cost ?? 0;
+          if (cost > s.money) return;
+          const fx = resolveChoice(choice);
+          const effect = fx.effect ?? {};
+          const moneyDelta = (effect.money ?? 0) - cost;
+          let needs = { ...s.needs };
+          for (const [k, v] of Object.entries(effect.needs ?? {})) needs[k as NeedKey] = clamp(needs[k as NeedKey] + (v ?? 0));
+          const lost = effect.minutes ?? 0;
+          if (lost) needs = tickNeeds(needs, lost);
+          set({
+            event: null,
+            money: s.money + moneyDelta,
+            needs,
+            time: s.time + lost,
+            packaging: clamp(s.packaging + (effect.packaging ?? 0)),
+            pantry: s.pantry + (effect.pantry ?? 0),
+            cv: s.cv + (effect.cv ?? 0),
+            ...(effect.power === false ? { power: false, nextPowerChange: s.time + lost + 8 * 60 } : {}),
+            txns: moneyDelta ? [{ at: s.time, label: e.title, amount: moneyDelta }, ...s.txns].slice(0, 40) : s.txns,
+            eventResult: {
+              emoji: e.emoji,
+              title: e.title,
+              text: fx.text,
+              chips: effectChips(effect, cost, Object.fromEntries(NEED_KEYS.map((k) => [k, NEED_META[k].emoji]))),
+            },
+          });
+        },
+
+        closeEvent: () => set({ eventResult: null }),
 
         start: (name, shirt) => set({ ...initial(), started: true, name: name.trim() || 'Abuja Hustler', shirt }),
 
         tick: (realSeconds) => {
           const s = get();
-          if (!s.started) return;
+          if (!s.started || s.event || s.eventResult) return;
           const dtReal = Math.min(realSeconds, 0.25);
           const a = s.active ? activityById(s.active.id) : undefined;
 
@@ -197,12 +260,19 @@ export const useGame = create<GameState>()(
             time += step;
             const remaining = s.active.remaining - step;
             set({ needs, time, active: { ...s.active, remaining } });
-            if (remaining <= 0) finish(a);
+            if (s.active.eventAt !== undefined && remaining <= s.active.eventAt && remaining > 0) {
+              set({ active: { ...s.active, remaining, eventAt: undefined } });
+              fireEvent('commute', a.id);
+            } else if (remaining <= 0) finish(a);
           } else {
             const step = dtReal; // 1 real second = 1 game minute
             needs = tickNeeds(needs, step);
             time += step;
             set({ needs, time });
+            if (!s.target && !s.menu && !s.phone && time >= s.nextEventCheck) {
+              set({ nextEventCheck: time + 60 });
+              if (Math.random() < IDLE_EVENT_CHANCE) fireEvent('idle');
+            }
           }
 
           // NEPA/AEDC light schedule
@@ -326,6 +396,10 @@ export const useGame = create<GameState>()(
         active: s.active,
         txns: s.txns,
         lowWarned: s.lowWarned,
+        event: s.event,
+        eventResult: s.eventResult,
+        eventHistory: s.eventHistory,
+        nextEventCheck: s.nextEventCheck,
       }),
     },
   ),
