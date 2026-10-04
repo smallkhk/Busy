@@ -5,6 +5,7 @@ import { AREAS, moveCost, placeLabel, RENT_CYCLE_DAYS, RENT_GRACE_DAYS, rentOwed
 import { clockParts, formatNaira, inHours } from '../engine/clock';
 import { CALL_COST, contactById, FIRST_MEET_REL, GIFT_COST, type ContactState } from '../content/contacts';
 import { EVENTS } from '../content/events';
+import { BRAND_COOLDOWN_DAYS, BRAND_MIN_FOLLOWERS, brandPay, followersGain, packagingGap, POST_COOLDOWN_MIN, postById } from '../content/gram';
 import { effectChips, pickEvent, resolveChoice } from '../engine/events';
 import { clamp, fullNeeds, LOW_NEED, NEED_KEYS, NEED_META, tickNeeds, type NeedKey, type Needs } from '../engine/needs';
 
@@ -16,6 +17,7 @@ export type PhoneApp = 'home' | 'bank' | 'jobs' | 'chat' | 'map' | 'gram' | 'hou
 type Active = { id: string; remaining: number; gen: boolean; total?: number; eventAt?: number };
 
 export type EventResult = { emoji: string; title: string; text: string; chips: string[] };
+export type GramPost = { emoji: string; caption: string; gain: number; at: number };
 
 type GameState = {
   started: boolean;
@@ -35,6 +37,10 @@ type GameState = {
   contacts: Record<string, ContactState>;
   /** Activity ids whose requirements a contact don waive. */
   unlocks: string[];
+  followers: number;
+  lastPostAt: number;
+  lastBrandDay: number;
+  posts: GramPost[];
   power: boolean;
   nextPowerChange: number;
   pos: [number, number];
@@ -62,6 +68,8 @@ type GameState = {
   dismissToast: (id: number) => void;
   openMenu: (id: string | null) => void;
   openPhone: (app: PhoneApp | null) => void;
+  post: (id: string) => void;
+  brandDeal: () => void;
   callContact: (id: string) => void;
   giftContact: (id: string) => void;
   askFavour: (id: string) => void;
@@ -118,6 +126,10 @@ const initial = () => ({
   rentLocked: false,
   contacts: {} as Record<string, ContactState>,
   unlocks: [] as string[],
+  followers: 0,
+  lastPostAt: -1e9,
+  lastBrandDay: -99,
+  posts: [] as GramPost[],
   power: true,
   nextPowerChange: START_TIME + 180,
   pos: START_POS,
@@ -251,7 +263,8 @@ export const useGame = create<GameState>()(
         const { hour, day } = clockParts(s.time);
         const rentOverdue = day > s.rentDueDay && !s.rentLocked;
         const met = Object.keys(s.contacts);
-        const e = pickEvent(EVENTS, trigger, { place: s.place, hour, day, money: s.money, power: s.power, rentOverdue, met, trip }, s.eventHistory, s.time);
+        const gap = packagingGap(s.packaging, s.money, s.area);
+        const e = pickEvent(EVENTS, trigger, { place: s.place, hour, day, money: s.money, power: s.power, rentOverdue, met, gap, followers: s.followers, trip }, s.eventHistory, s.time);
         if (e) set({ event: e.id, eventHistory: { ...s.eventHistory, [e.id]: s.time }, menu: null, phone: null });
       };
 
@@ -282,6 +295,7 @@ export const useGame = create<GameState>()(
             cv: s.cv + (effect.cv ?? 0),
             ...(effect.power === false ? { power: false, nextPowerChange: s.time + lost + 8 * 60 } : {}),
             rentDueDay: s.rentDueDay + (effect.rentGraceDays ?? 0),
+            followers: Math.max(0, Math.round(s.followers * (1 + (effect.followersPct ?? 0) / 100))),
             txns: moneyDelta ? [{ at: s.time, label: e.title, amount: moneyDelta }, ...s.txns].slice(0, 40) : s.txns,
             eventResult: {
               emoji: e.emoji,
@@ -296,6 +310,41 @@ export const useGame = create<GameState>()(
         },
 
         closeEvent: () => set({ eventResult: null }),
+
+        post: (id) => {
+          const s = get();
+          const p = postById(id);
+          if (!p) return;
+          if (s.active) return get().toast('😕 Finish wetin you dey do first');
+          if (p.where && !p.where.includes(s.place)) return get().toast('😕 You no dey the right place for this picture');
+          if (s.time - s.lastPostAt < POST_COOLDOWN_MIN) return get().toast('😕 You just post. No spam your followers');
+          if (p.cost > s.money) return get().toast(`😕 You need ${formatNaira(p.cost)}`);
+          const gain = followersGain(p, s.packaging, Math.random());
+          set({
+            money: s.money - p.cost,
+            followers: s.followers + gain,
+            packaging: clamp(s.packaging + (p.packaging ?? 0)),
+            lastPostAt: s.time,
+            needs: { ...s.needs, fun: clamp(s.needs.fun + 5) },
+            posts: [{ emoji: p.emoji, caption: p.caption, gain, at: s.time }, ...s.posts].slice(0, 5),
+            txns: p.cost >= 1000 ? [{ at: s.time, label: `AbujaGram: ${p.label}`, amount: -p.cost }, ...s.txns].slice(0, 40) : s.txns,
+          });
+          get().toast(`📸 Posted! +${gain} followers${p.packaging ? ` · 👔 +${p.packaging}` : ''}`);
+        },
+
+        brandDeal: () => {
+          const s = get();
+          const { day } = clockParts(s.time);
+          if (s.followers < BRAND_MIN_FOLLOWERS) return get().toast(`😕 Brands want ${BRAND_MIN_FOLLOWERS}+ followers`);
+          if (day - s.lastBrandDay < BRAND_COOLDOWN_DAYS) return get().toast('😕 No brand dey DM you now. Wait small');
+          const pay = brandPay(s.followers);
+          set({
+            money: s.money + pay,
+            lastBrandDay: day,
+            txns: [{ at: s.time, label: 'AbujaGram brand deal', amount: pay }, ...s.txns].slice(0, 40),
+          });
+          get().toast(`💼 You promote "Mama Titi Jollof" for your page. ${formatNaira(pay)} land!`);
+        },
 
         callContact: (id) => {
           const s = get();
@@ -477,6 +526,9 @@ export const useGame = create<GameState>()(
               Object.entries(get().contacts).map(([id, c]) => [id, { ...c, rel: Math.max(5, c.rel - 1) }]),
             );
             set({ contacts });
+            // Followers drift away if you no post for 2 days
+            const g = get();
+            if (g.time - g.lastPostAt > 2 * 24 * 60 && g.followers > 0) set({ followers: Math.floor(g.followers * 0.98) });
             if (left < -RENT_GRACE_DAYS && !rentLocked) {
               set({ rentLocked: true });
               now.toast('🔒 Landlord don lock your room! Pay rent + 10% penalty to enter');
@@ -559,6 +611,10 @@ export const useGame = create<GameState>()(
         rentLocked: s.rentLocked,
         contacts: s.contacts,
         unlocks: s.unlocks,
+        followers: s.followers,
+        lastPostAt: s.lastPostAt,
+        lastBrandDay: s.lastBrandDay,
+        posts: s.posts,
         power: s.power,
         nextPowerChange: s.nextPowerChange,
         pos: s.pos,

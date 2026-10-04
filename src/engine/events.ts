@@ -9,6 +9,9 @@ export type EventContext = {
   power: boolean;
   /** Contacts you don meet. */
   met?: string[];
+  /** Packaging minus real wealth: high means fake life. */
+  gap?: number;
+  followers?: number;
   /** Rent due date don pass and door never lock. */
   rentOverdue?: boolean;
   /** Id of the trip in progress, for commute events. */
@@ -30,6 +33,8 @@ export type Effect = {
   meet?: string;
   /** Relationship changes, by contact id. */
   rel?: Record<string, number>;
+  /** Percent change in AbujaGram followers. */
+  followersPct?: number;
 };
 
 export type Outcome = { weight?: number; text: string; effect?: Effect };
@@ -95,6 +100,7 @@ export function effectChips(effect: Effect | undefined, cost = 0, needEmoji: Rec
   if (effect?.cv) chips.push(`+${effect.cv} 📄`);
   if (effect?.minutes) chips.push(`${effect.minutes >= 60 ? `${Math.round((effect.minutes / 60) * 10) / 10}h` : `${effect.minutes}m`} lost ⏳`);
   if (effect?.power === false) chips.push('Light cut 🕯️');
+  if (effect?.followersPct) chips.push(`${effect.followersPct > 0 ? '+' : ''}${effect.followersPct}% 📸 followers`);
   if (effect?.rentGraceDays) chips.push(`+${effect.rentGraceDays} days to pay rent 🏠`);
   return chips;
 }

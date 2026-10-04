@@ -190,3 +190,18 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
 .contact-emoji { font-size: 26px; }
 .contact-actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
 .contact-actions .ghost { font-size: 12px; padding: 6px 4px; }
+
+/* ---------- AbujaGram ---------- */
+.gram-profile { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+.gram-avatar {
+  width: 52px; height: 52px; border-radius: 50%; display: grid; place-items: center; font-weight: 900; font-size: 22px;
+  background: linear-gradient(135deg, #d6406f, #e8b04b); color: #1d1405; border: 2px solid #fff;
+}
+.gram-handle { font-weight: 800; }
+.gap-card { background: rgba(255, 255, 255, 0.06); border-radius: 12px; padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
+.gap-row { display: grid; grid-template-columns: 92px 1fr 28px; align-items: center; gap: 8px; }
+.gap-row .bar { margin: 0; }
+.danger-text { color: var(--bad); font-weight: 700; }
+.feed { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+.feed-post { display: flex; gap: 10px; align-items: center; padding: 8px; border-radius: 12px; background: rgba(255, 255, 255, 0.04); }
+.feed-pic { width: 44px; height: 44px; border-radius: 10px; display: grid; place-items: center; font-size: 24px; background: linear-gradient(135deg, #2a3a4a, #1a2530); }

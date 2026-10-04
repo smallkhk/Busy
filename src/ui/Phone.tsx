@@ -2,6 +2,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { JOBS, PHONE_ACTIVITIES, type Activity } from '../content/activities';
 import { clockParts, formatClock, formatNaira } from '../engine/clock';
 import { CALL_COST, CONTACTS, GIFT_COST, longLeg } from '../content/contacts';
+import { BRAND_COOLDOWN_DAYS, BRAND_MIN_FOLLOWERS, brandPay, GAP_DANGER, POST_COOLDOWN_MIN, POSTS, realWealth } from '../content/gram';
 import { AREAS, moveCost, rentOwed, type AreaId } from '../content/housing';
 import { blockReason, useGame, type PhoneApp } from '../store/game';
 import { activityDetail } from './detail';
@@ -194,6 +195,78 @@ function ContactsApp() {
   );
 }
 
+function GramApp() {
+  const name = useGame((s) => s.name);
+  const followers = useGame((s) => s.followers);
+  const packaging = useGame((s) => s.packaging);
+  const money = useGame((s) => s.money);
+  const area = useGame((s) => s.area);
+  const place = useGame((s) => s.place);
+  const time = useGame((s) => s.time);
+  const lastPostAt = useGame((s) => s.lastPostAt);
+  const lastBrandDay = useGame((s) => s.lastBrandDay);
+  const posts = useGame((s) => s.posts);
+  const post = useGame((s) => s.post);
+  const brandDeal = useGame((s) => s.brandDeal);
+  const real = realWealth(money, area);
+  const gap = Math.round(packaging - real);
+  const wait = Math.ceil((POST_COOLDOWN_MIN - (time - lastPostAt)) / 60);
+  const day = clockParts(time).day;
+  const brandReady = followers >= BRAND_MIN_FOLLOWERS && day - lastBrandDay >= BRAND_COOLDOWN_DAYS;
+  return (
+    <>
+      <div className="gram-profile">
+        <div className="gram-avatar">{name.slice(0, 1).toUpperCase()}</div>
+        <div>
+          <div className="gram-handle">@{name.toLowerCase().replace(/\s+/g, '')}_abuja</div>
+          <div><b>{followers.toLocaleString('en-NG')}</b> <span className="muted small">followers</span></div>
+        </div>
+      </div>
+      <div className="gap-card">
+        <div className="gap-row"><span className="small">👔 Packaging</span><div className="bar thin"><div className="fill good" style={{ width: `${packaging}%` }} /></div><span className="small">{Math.round(packaging)}</span></div>
+        <div className="gap-row"><span className="small">💰 Real life</span><div className="bar thin"><div className="fill mid" style={{ width: `${real}%` }} /></div><span className="small">{real}</span></div>
+        <div className={`small ${gap > GAP_DANGER ? 'danger-text' : 'muted'}`}>
+          {gap > GAP_DANGER ? `⚠️ Fake life alert! You dey form pass your pocket by ${gap}. Exposure fit happen 💀` : gap > 10 ? 'You dey form small. E never reach wahala.' : 'You dey keep am real 👌'}
+        </div>
+      </div>
+      <div className="list">
+        {POSTS.map((p) => {
+          const where = p.where && !p.where.includes(place);
+          const reason = wait > 0 ? `Post again in ${wait}h` : where ? 'Go the place first' : p.cost > money ? `Need ${formatNaira(p.cost)}` : null;
+          return (
+            <button key={p.id} className="action" disabled={!!reason} onClick={() => post(p.id)}>
+              <span className="action-emoji">{p.emoji}</span>
+              <span className="action-body">
+                <span>{p.label}{p.fake ? ' 🤫' : ''}</span>
+                <span className="muted small">{reason ?? `${formatNaira(p.cost)} · ~${p.baseFollowers}+ followers${p.packaging ? ` · +${p.packaging} 👔` : ''}`}</span>
+              </span>
+            </button>
+          );
+        })}
+        <button className="action" disabled={!brandReady} onClick={brandDeal}>
+          <span className="action-emoji">💼</span>
+          <span className="action-body">
+            <span>Brand deal</span>
+            <span className="muted small">
+              {followers < BRAND_MIN_FOLLOWERS ? `Unlock at ${BRAND_MIN_FOLLOWERS} followers` : brandReady ? `Promote a jollof spot: ${formatNaira(brandPay(followers))}` : 'No DM yet. Check back later'}
+            </span>
+          </span>
+        </button>
+      </div>
+      {posts.length > 0 && (
+        <div className="feed">
+          {posts.map((p) => (
+            <div key={p.at} className="feed-post">
+              <span className="feed-pic">{p.emoji}</span>
+              <span className="small">{p.caption}<br /><span className="muted">+{p.gain} followers · Day {clockParts(p.at).day}</span></span>
+            </div>
+          ))}
+        </div>
+      )}
+    </>
+  );
+}
+
 function MapApp() {
   const place = useGame((s) => s.place);
   const area = useGame((s) => s.area);
@@ -233,13 +306,7 @@ function AppBody({ app }: { app: PhoneApp }) {
     case 'house':
       return <HouseApp />;
     case 'gram':
-      return (
-        <div className="empty">
-          <div style={{ fontSize: 42 }}>📸👔</div>
-          <p>AbujaGram dey come soon.</p>
-          <p className="muted small">Packaging go matter for here. Na who look rich dey get invite 😏</p>
-        </div>
-      );
+      return <GramApp />;
     default:
       return null;
   }
