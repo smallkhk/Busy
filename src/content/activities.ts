@@ -1,4 +1,5 @@
 import { ride, type Activity, type Interactable, type Place } from './common';
+import { CHOP_ITEMS, RIDES } from './phoneapps';
 import { TRAVEL_INTERACTABLES } from './travel';
 
 export * from './common';
@@ -206,6 +207,8 @@ export const ALL_ACTIVITIES: Activity[] = [
   ...INTERACTABLES.flatMap((i) => i.activities),
   ...JOBS,
   ...PHONE_ACTIVITIES,
+  ...CHOP_ITEMS,
+  ...RIDES,
 ];
 
 export const activityById = (id: string) => ALL_ACTIVITIES.find((a) => a.id === id);

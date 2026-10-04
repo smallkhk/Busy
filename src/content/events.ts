@@ -395,6 +395,22 @@ export const EVENTS: GameEvent[] = [
     ],
   },
 
+  // ---------------- Ego Loan ----------------
+  {
+    id: 'loan-shame',
+    emoji: '📲',
+    title: 'Ego Loan don vex',
+    text: 'Ego Loan don send message to everybody for your phone: "This person dey owe us money. Tell am make e pay before we post am." 😭',
+    trigger: 'idle',
+    weight: 40,
+    cooldownHours: 48,
+    when: (c) => !!c.loanOverdue,
+    choices: [
+      { label: 'Pay the loan now', outcomes: [{ text: 'You don clear am. Make una no hear "loan app" again for your mouth.', effect: { payLoan: true } }] },
+      { label: 'Ignore dem', outcomes: [{ text: 'Your contacts dey call you dey ask question. Shame catch you 🙈', effect: { relAll: -8, packaging: -5, needs: { social: -15, fun: -10 } } }] },
+    ],
+  },
+
   // ---------------- On the road ----------------
   {
     id: 'checkpoint',

@@ -14,6 +14,8 @@ export type EventContext = {
   followers?: number;
   /** Rent due date don pass and door never lock. */
   rentOverdue?: boolean;
+  /** Ego Loan repayment date don pass. */
+  loanOverdue?: boolean;
   /** Id of the trip in progress, for commute events. */
   trip?: string;
 };
@@ -35,6 +37,10 @@ export type Effect = {
   rel?: Record<string, number>;
   /** Percent change in AbujaGram followers. */
   followersPct?: number;
+  /** Relationship change with every contact you know. */
+  relAll?: number;
+  /** Pay off the Ego Loan from your balance. */
+  payLoan?: boolean;
 };
 
 export type Outcome = { weight?: number; text: string; effect?: Effect };
