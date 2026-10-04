@@ -55,6 +55,33 @@ export const ridesFrom = (place: Place) => {
   return RIDES.filter((r) => r.id.startsWith(`hail-${from}-`));
 };
 
+// ---------------- Trek: free, slow, tiring ----------------
+/** Walking pace: minutes per km. */
+export const TREK_MIN_PER_KM = 12;
+
+export const TREKS: Activity[] = RIDE_PLACES.flatMap((from) =>
+  RIDE_PLACES.filter((to) => to !== from).map((to): Activity => {
+    const km = rideKm(from, to);
+    return {
+      id: `trek-${from}-${to}`,
+      label: `Trek go ${rideName(to)}`,
+      doing: `Trekking go ${rideName(to)} 🥵`,
+      emoji: '🚶',
+      minutes: km * TREK_MIN_PER_KM,
+      gains: { energy: -Math.round(km * 2), hygiene: -Math.round(km * 1.2), food: -Math.round(km * 0.8), fun: -Math.round(km * 0.5) },
+      travelTo: to,
+      away: true,
+      homeLeg: from === 'street' || to === 'street',
+    };
+  }),
+);
+
+/** Normalise home to its street: you leave from your gate either way. */
+export const fromPlace = (place: Place): Place => (place === 'home' ? 'street' : place);
+
+export const trekBetween = (from: Place, to: Place) => TREKS.find((t) => t.id === `trek-${fromPlace(from)}-${to}`);
+export const rideBetween = (from: Place, to: Place) => RIDES.find((r) => r.id === `hail-${fromPlace(from)}-${to}`);
+
 // ---------------- Ego Bank ----------------
 export const LOAN_MAX = 50000;
 export const LOAN_FEE = 0.1;

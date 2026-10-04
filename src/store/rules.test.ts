@@ -126,3 +126,17 @@ describe('phone apps', () => {
     for (const c of CHOP_ITEMS) expect(act(c.id)).toBeDefined();
   });
 });
+
+describe('trekking', () => {
+  it('trekking is free but slow and tiring', () => {
+    const trek = act('trek-street-wuse');
+    expect(trek.cost ?? 0).toBe(0);
+    expect(durationAt(trek, 8 * 60)).toBe(durationAt(trek, 12 * 60)); // no rush-hour penalty on foot
+    expect(durationAt(trek, 12 * 60)).toBeGreaterThan(durationAt(act('to-wuse'), 12 * 60));
+    expect(trek.gains.energy!).toBeLessThan(-30);
+  });
+
+  it('living closer to town shortens the trek', () => {
+    expect(durationAt(act('trek-street-wuse'), 12 * 60, 'wuse2')).toBeLessThan(durationAt(act('trek-street-wuse'), 12 * 60, 'kubwa'));
+  });
+});

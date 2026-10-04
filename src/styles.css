@@ -250,3 +250,15 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
 .ego-card .ego-primary { margin: 6px 0 0; width: 100%; }
 
 .news-item { padding: 10px 12px; border-radius: 12px; background: rgba(255, 255, 255, 0.06); font-size: 13px; line-height: 1.4; }
+
+/* ---------- Map ---------- */
+.map-wrap { display: flex; flex-direction: column; gap: 10px; }
+.map-svg { width: 100%; height: auto; border-radius: 14px; display: block; touch-action: manipulation; }
+.map-node { cursor: pointer; }
+.map-label { font-size: 8.5px; font-weight: 800; fill: #1d1d1d; paint-order: stroke; stroke: #fffaf0; stroke-width: 2.5px; }
+.map-label.dim { fill: #6d6555; }
+.map-road-label { font-size: 7px; font-style: italic; fill: #8a7f66; }
+.map-pulse { fill: rgba(232, 176, 75, 0.45); transform-box: fill-box; transform-origin: center; animation: mapPulse 1.4s ease-out infinite; }
+@keyframes mapPulse { from { transform: scale(0.6); opacity: 1; } to { transform: scale(2.2); opacity: 0; } }
+.map-sheet { background: rgba(255, 255, 255, 0.06); border-radius: 14px; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+.map-sheet-title { font-weight: 800; }
