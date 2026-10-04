@@ -5,13 +5,14 @@ import { AREAS, moveCost, placeLabel, RENT_CYCLE_DAYS, RENT_GRACE_DAYS, rentOwed
 import { clockParts, formatNaira, inHours } from '../engine/clock';
 import { CALL_COST, contactById, FIRST_MEET_REL, GIFT_COST, type ContactState } from '../content/contacts';
 import { EVENTS } from '../content/events';
+import { LOAN_DAYS, LOAN_FEE, LOAN_MAX, SAVINGS_DAILY_RATE, TOKEN_COST } from '../content/phoneapps';
 import { BRAND_COOLDOWN_DAYS, BRAND_MIN_FOLLOWERS, brandPay, followersGain, packagingGap, POST_COOLDOWN_MIN, postById } from '../content/gram';
 import { effectChips, pickEvent, resolveChoice } from '../engine/events';
 import { clamp, fullNeeds, LOW_NEED, NEED_KEYS, NEED_META, tickNeeds, type NeedKey, type Needs } from '../engine/needs';
 
 export type Txn = { at: number; label: string; amount: number };
 export type Toast = { id: number; text: string };
-export type PhoneApp = 'home' | 'bank' | 'jobs' | 'chat' | 'map' | 'gram' | 'house' | 'contacts';
+export type PhoneApp = 'home' | 'bank' | 'jobs' | 'chat' | 'map' | 'gram' | 'house' | 'contacts' | 'chop' | 'ride' | 'news';
 
 /** `total` is the actual duration (rush hour makes trips longer); old saves may lack it. */
 type Active = { id: string; remaining: number; gen: boolean; total?: number; eventAt?: number };
@@ -37,6 +38,10 @@ type GameState = {
   contacts: Record<string, ContactState>;
   /** Activity ids whose requirements a contact don waive. */
   unlocks: string[];
+  savings: number;
+  savingsInterest: number;
+  /** Ego Loan: what you owe and when. */
+  loan: { owed: number; dueDay: number } | null;
   followers: number;
   lastPostAt: number;
   lastBrandDay: number;
@@ -68,6 +73,12 @@ type GameState = {
   dismissToast: (id: number) => void;
   openMenu: (id: string | null) => void;
   openPhone: (app: PhoneApp | null) => void;
+  saveMoney: (amount: number) => void;
+  withdrawSavings: (amount: number) => void;
+  takeLoan: (amount: number) => void;
+  repayLoan: () => void;
+  sendMoney: (to: string, amount: number) => void;
+  buyToken: () => void;
   post: (id: string) => void;
   brandDeal: () => void;
   callContact: (id: string) => void;
@@ -127,6 +138,9 @@ const initial = () => ({
   rentLocked: false,
   contacts: {} as Record<string, ContactState>,
   unlocks: [] as string[],
+  savings: 0,
+  savingsInterest: 0,
+  loan: null as { owed: number; dueDay: number } | null,
   followers: 0,
   lastPostAt: -1e9,
   lastBrandDay: -99,
@@ -265,7 +279,8 @@ export const useGame = create<GameState>()(
         const rentOverdue = day > s.rentDueDay && !s.rentLocked;
         const met = Object.keys(s.contacts);
         const gap = packagingGap(s.packaging, s.money, s.area);
-        const e = pickEvent(EVENTS, trigger, { place: s.place, hour, day, money: s.money, power: s.power, rentOverdue, met, gap, followers: s.followers, trip }, s.eventHistory, s.time);
+        const loanOverdue = !!s.loan && day > s.loan.dueDay;
+        const e = pickEvent(EVENTS, trigger, { place: s.place, hour, day, money: s.money, power: s.power, rentOverdue, met, gap, followers: s.followers, loanOverdue, trip }, s.eventHistory, s.time);
         if (e) set({ event: e.id, eventHistory: { ...s.eventHistory, [e.id]: s.time }, menu: null, phone: null });
       };
 
@@ -305,12 +320,92 @@ export const useGame = create<GameState>()(
               chips: effectChips(effect, cost, Object.fromEntries(NEED_KEYS.map((k) => [k, NEED_META[k].emoji]))),
             },
           });
-          const extra = [...(effect.meet ? [meetContact(effect.meet)] : []), ...changeRel(effect.rel ?? {})].filter((c): c is string => !!c);
+          const relAll = effect.relAll ? Object.fromEntries(Object.keys(get().contacts).map((id) => [id, effect.relAll!])) : {};
+          const extra = [...(effect.meet ? [meetContact(effect.meet)] : []), ...changeRel({ ...relAll, ...(effect.rel ?? {}) })].filter((c): c is string => !!c);
+          if (effect.payLoan) get().repayLoan();
           const res = get().eventResult;
           if (extra.length && res) set({ eventResult: { ...res, chips: [...res.chips, ...extra] } });
         },
 
         closeEvent: () => set({ eventResult: null }),
+
+        saveMoney: (amount) => {
+          const s = get();
+          if (amount <= 0 || amount > s.money) return get().toast('😕 You no get that much for main balance');
+          set({
+            money: s.money - amount,
+            savings: s.savings + amount,
+            txns: [{ at: s.time, label: 'Moved to Ego Save', amount: -amount }, ...s.txns].slice(0, 40),
+          });
+          get().toast(`💜 ${formatNaira(amount)} don enter Ego Save. E go dey grow small small`);
+        },
+
+        withdrawSavings: (amount) => {
+          const s = get();
+          const n = Math.min(amount, s.savings);
+          if (n <= 0) return get().toast('😕 Ego Save empty');
+          set({
+            money: s.money + n,
+            savings: s.savings - n,
+            txns: [{ at: s.time, label: 'From Ego Save', amount: n }, ...s.txns].slice(0, 40),
+          });
+          get().toast(`💜 ${formatNaira(n)} don land your main balance`);
+        },
+
+        takeLoan: (amount) => {
+          const s = get();
+          const { day } = clockParts(s.time);
+          if (s.loan) return get().toast('😕 Pay your old loan first');
+          if (amount <= 0 || amount > LOAN_MAX) return get().toast(`😕 Max loan na ${formatNaira(LOAN_MAX)}`);
+          const owed = Math.round(amount * (1 + LOAN_FEE));
+          set({
+            money: s.money + amount,
+            loan: { owed, dueDay: day + LOAN_DAYS },
+            txns: [{ at: s.time, label: 'Ego Loan', amount }, ...s.txns].slice(0, 40),
+          });
+          get().toast(`💜 Loan approved! Pay ${formatNaira(owed)} before Day ${day + LOAN_DAYS}`);
+        },
+
+        repayLoan: () => {
+          const s = get();
+          if (!s.loan) return;
+          if (s.loan.owed > s.money) return get().toast(`😕 You need ${formatNaira(s.loan.owed)} to clear the loan`);
+          set({
+            money: s.money - s.loan.owed,
+            loan: null,
+            txns: [{ at: s.time, label: 'Ego Loan repayment', amount: -s.loan.owed }, ...s.txns].slice(0, 40),
+          });
+          get().toast('✅ Loan cleared. Your name don comot for their list');
+        },
+
+        sendMoney: (to, amount) => {
+          const s = get();
+          if (amount <= 0 || amount > s.money) return get().toast('😕 Insufficient funds');
+          const contact = contactById(to);
+          if (to !== 'mama' && (!contact || !s.contacts[to])) return;
+          const name = to === 'mama' ? 'Mama' : contact!.name;
+          const boost = Math.min(25, Math.round((amount / 1000) * 2));
+          set({
+            money: s.money - amount,
+            txns: [{ at: s.time, label: `Transfer to ${name}`, amount: -amount }, ...s.txns].slice(0, 40),
+            ...(to === 'mama'
+              ? { needs: { ...s.needs, social: clamp(s.needs.social + boost), fun: clamp(s.needs.fun + 5) } }
+              : { contacts: { ...s.contacts, [to]: { ...s.contacts[to], rel: clamp(s.contacts[to].rel + boost) } } }),
+          });
+          get().toast(to === 'mama' ? `🙏 Mama: "God go bless you, my pikin!" 💬 +${boost}` : `💸 ${name} receive am. 🦵 +${boost}`);
+        },
+
+        buyToken: () => {
+          const s = get();
+          if (s.money < TOKEN_COST) return get().toast(`😕 You need ${formatNaira(TOKEN_COST)}`);
+          set({
+            money: s.money - TOKEN_COST,
+            power: true,
+            nextPowerChange: s.time + 24 * 60,
+            txns: [{ at: s.time, label: 'AEDC prepaid token', amount: -TOKEN_COST }, ...s.txns].slice(0, 40),
+          });
+          get().toast('💡 Token loaded! Light go stand for 24 hours');
+        },
 
         post: (id) => {
           const s = get();
@@ -527,6 +622,13 @@ export const useGame = create<GameState>()(
               Object.entries(get().contacts).map(([id, c]) => [id, { ...c, rel: Math.max(5, c.rel - 1) }]),
             );
             set({ contacts });
+            // Ego Save interest, paid daily into savings
+            const sv = get();
+            if (sv.savings > 0) {
+              const interest = Math.round(sv.savings * SAVINGS_DAILY_RATE);
+              set({ savings: sv.savings + interest, savingsInterest: sv.savingsInterest + interest });
+            }
+            if (sv.loan && cur.day === sv.loan.dueDay) now.toast(`📲 Ego Loan: pay ${formatNaira(sv.loan.owed)} today o!`);
             // Followers drift away if you no post for 2 days
             const g = get();
             if (g.time - g.lastPostAt > 2 * 24 * 60 && g.followers > 0) set({ followers: Math.floor(g.followers * 0.98) });
@@ -612,6 +714,9 @@ export const useGame = create<GameState>()(
         rentLocked: s.rentLocked,
         contacts: s.contacts,
         unlocks: s.unlocks,
+        savings: s.savings,
+        savingsInterest: s.savingsInterest,
+        loan: s.loan,
         followers: s.followers,
         lastPostAt: s.lastPostAt,
         lastBrandDay: s.lastBrandDay,

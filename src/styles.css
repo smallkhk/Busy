@@ -205,3 +205,48 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
 .feed { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
 .feed-post { display: flex; gap: 10px; align-items: center; padding: 8px; border-radius: 12px; background: rgba(255, 255, 255, 0.04); }
 .feed-pic { width: 44px; height: 44px; border-radius: 10px; display: grid; place-items: center; font-size: 24px; background: linear-gradient(135deg, #2a3a4a, #1a2530); }
+
+/* ---------- Ego Bank (purple fintech style) ---------- */
+.ego { background: #f5f1fb; color: #1d1233; border-radius: 18px; overflow: hidden; padding-bottom: 12px; }
+.ego button { color: inherit; }
+.ego-header { background: linear-gradient(140deg, #3b1366 0%, #5b23a0 70%, #7a3cc4 100%); color: #fff; padding: 16px 16px 46px; }
+.ego-hello { font-weight: 700; font-size: 15px; margin-bottom: 12px; }
+.ego-balance-row { display: flex; justify-content: space-between; align-items: center; }
+.ego-balance { font-size: 30px; font-weight: 900; letter-spacing: 0.3px; }
+.ego-balance.neg { color: #ffb3b3; }
+.ego-eye { font-size: 20px; background: rgba(255, 255, 255, 0.15) !important; width: 40px; height: 40px; border-radius: 50%; }
+.ego-label { font-size: 12px; color: #6b5a85; }
+.ego-label.light { color: rgba(255, 255, 255, 0.75); }
+.ego-actions {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin: -32px 12px 0; padding: 12px 6px;
+  background: #fff; border-radius: 16px; box-shadow: 0 6px 18px rgba(59, 19, 102, 0.15);
+}
+.ego-actions button { display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; }
+.ego-action-icon { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; font-size: 20px; background: #efe6fb; }
+.ego-minis { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 12px 12px 0; }
+.ego-mini { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; padding: 10px 12px; background: #fff; border-radius: 14px; font-size: 12px; }
+.ego-mini b { font-size: 15px; }
+.ego-section { font-weight: 800; font-size: 14px; margin: 16px 14px 6px; }
+.ego-list { display: flex; flex-direction: column; margin: 0 12px; background: #fff; border-radius: 14px; overflow: hidden; }
+.ego-row { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-bottom: 1px solid #f0eaf8; text-align: left; width: 100%; }
+.ego-row:last-child { border-bottom: 0; }
+.ego-row:disabled { opacity: 0.5; }
+.ego-icon { width: 36px; height: 36px; flex: none; border-radius: 50%; display: grid; place-items: center; background: #efe6fb; font-size: 17px; }
+.ego-row-body { flex: 1; min-width: 0; display: flex; flex-direction: column; font-size: 13px; }
+.ego-row-body b { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ego-row-body span { font-size: 11px; color: #8a7aa3; }
+.ego-in { color: #17a35a; font-weight: 800; font-size: 13px; white-space: nowrap; }
+.ego-out { color: #1d1233; font-weight: 800; font-size: 13px; white-space: nowrap; }
+.ego-bad { color: #d63c3c !important; }
+.ego-subhead { display: flex; align-items: center; gap: 10px; padding: 14px; font-weight: 800; background: linear-gradient(140deg, #3b1366, #5b23a0); color: #fff; margin-bottom: 12px; }
+.ego-subhead button { color: #fff !important; font-size: 22px; line-height: 1; }
+.ego-card { margin: 0 12px; padding: 14px; background: #fff; border-radius: 14px; display: flex; flex-direction: column; gap: 6px; }
+.ego-big { font-size: 26px; font-weight: 900; }
+.ego-note { font-size: 12px; color: #6b5a85; margin: 12px 14px 6px; }
+.ego-chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 12px; }
+.ego-chips button { padding: 10px 14px; border-radius: 99px; background: #fff; border: 1.5px solid #d9c8f2 !important; font-weight: 800; font-size: 13px; }
+.ego-chips button:not(:disabled):active { background: #efe6fb; }
+.ego-primary { margin: 12px 12px 0; padding: 12px; border-radius: 12px; background: #5b23a0 !important; color: #fff !important; font-weight: 800; width: calc(100% - 24px); }
+.ego-card .ego-primary { margin: 6px 0 0; width: 100%; }
+
+.news-item { padding: 10px 12px; border-radius: 12px; background: rgba(255, 255, 255, 0.06); font-size: 13px; line-height: 1.4; }

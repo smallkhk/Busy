@@ -4,6 +4,7 @@ import { CONTACTS, longLeg } from '../content/contacts';
 import { EVENTS } from '../content/events';
 import { followersGain, packagingGap, POSTS, realWealth } from '../content/gram';
 import { moveCost, rentOwed } from '../content/housing';
+import { CHOP_ITEMS, ridesFrom } from '../content/phoneapps';
 import { blockReason, durationAt, type BlockState } from './game';
 
 const base: BlockState = { time: 12 * 60, money: 100000, power: true, active: null, packaging: 5, pantry: 0, cv: 0, area: 'kubwa', rentLocked: false };
@@ -106,5 +107,22 @@ describe('abujagram', () => {
     const exposed = EVENTS.find((e) => e.id === 'exposed')!;
     expect(exposed.when!({ ...ctx, gap: 40 })).toBe(true);
     expect(exposed.when!({ ...ctx, gap: 10 })).toBe(false);
+  });
+});
+
+describe('phone apps', () => {
+  it('every ride goes somewhere else and costs more than the bus', () => {
+    for (const p of ['street', 'wuse', 'jabi', 'secretariat', 'lounge'] as const) {
+      const rides = ridesFrom(p);
+      expect(rides.length).toBe(4);
+      expect(rides.every((r) => r.travelTo !== p)).toBe(true);
+    }
+    expect(act('hail-street-wuse').cost!).toBeGreaterThan(act('to-wuse').cost!);
+    expect(durationAt(act('hail-street-wuse'), 12 * 60)).toBeLessThan(durationAt(act('to-wuse'), 12 * 60));
+    expect(ridesFrom('home')).toEqual(ridesFrom('street'));
+  });
+
+  it('food delivery items are registered activities', () => {
+    for (const c of CHOP_ITEMS) expect(act(c.id)).toBeDefined();
   });
 });

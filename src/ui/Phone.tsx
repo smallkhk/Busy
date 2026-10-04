@@ -4,17 +4,22 @@ import { clockParts, formatClock, formatNaira } from '../engine/clock';
 import { CALL_COST, CONTACTS, GIFT_COST, longLeg } from '../content/contacts';
 import { BRAND_COOLDOWN_DAYS, BRAND_MIN_FOLLOWERS, brandPay, GAP_DANGER, POST_COOLDOWN_MIN, POSTS, realWealth } from '../content/gram';
 import { AREAS, moveCost, rentOwed, type AreaId } from '../content/housing';
+import { CHOP_ITEMS, HEADLINES, ridesFrom } from '../content/phoneapps';
 import { blockReason, useGame, type PhoneApp } from '../store/game';
 import { activityDetail } from './detail';
+import { EgoBank } from './EgoBank';
 
 const APPS: { id: PhoneApp; name: string; emoji: string; color: string }[] = [
-  { id: 'bank', name: 'Bank', emoji: '🏦', color: '#1f7a5a' },
+  { id: 'bank', name: 'Ego Bank', emoji: '💜', color: '#4b1f86' },
+  { id: 'chop', name: 'ChopNow', emoji: '🛵', color: '#e8692c' },
+  { id: 'ride', name: 'Ride', emoji: '🚘', color: '#1f8a4c' },
   { id: 'jobs', name: 'Jobs', emoji: '💼', color: '#c27c1a' },
   { id: 'chat', name: 'Chat', emoji: '💬', color: '#2f7fd6' },
   { id: 'map', name: 'Map', emoji: '🗺️', color: '#6a4bc4' },
   { id: 'gram', name: 'AbujaGram', emoji: '📸', color: '#d6406f' },
   { id: 'house', name: 'Rent', emoji: '🏠', color: '#8c5a2b' },
   { id: 'contacts', name: 'Long Leg', emoji: '🦵', color: '#b8860b' },
+  { id: 'news', name: 'News', emoji: '📰', color: '#34495e' },
 ];
 
 const PLACES = [
@@ -49,35 +54,39 @@ function ActivityList({ items }: { items: Activity[] }) {
   );
 }
 
-function Bank() {
-  const money = useGame((s) => s.money);
+function NewsApp() {
+  const day = useGame((s) => clockParts(s.time).day);
   const pantry = useGame((s) => s.pantry);
   const packaging = useGame((s) => s.packaging);
   const cv = useGame((s) => s.cv);
   const area = useGame((s) => s.area);
   const rentDueDay = useGame((s) => s.rentDueDay);
-  const txns = useGame((s) => s.txns);
+  const followers = useGame((s) => s.followers);
+  // A different set of headlines every day
+  const headlines = HEADLINES.map((h, i) => ({ h, k: (i * 7 + day * 13) % HEADLINES.length })).sort((a, b) => a.k - b.k).slice(0, 5);
   return (
     <>
       <div className="balance">
-        <div className="muted small">Available balance</div>
-        <div className="balance-amt">{formatNaira(money)}</div>
-        <div className="muted small">🏠 {AREAS[area].home} · rent due Day {rentDueDay}</div>
-        <div className="muted small">🧺 Foodstuff: {pantry} meals · 👔 Packaging: {Math.round(packaging)} · 📄 CVs: {Math.min(cv, 3)}/3</div>
+        <div className="muted small">Your life today · Day {day}</div>
+        <div className="small">🏠 {AREAS[area].home} · rent due Day {rentDueDay}</div>
+        <div className="small">🧺 Foodstuff: {pantry} meals · 📄 CVs: {Math.min(cv, 3)}/3</div>
+        <div className="small">👔 Packaging: {Math.round(packaging)} · 📸 {followers.toLocaleString('en-NG')} followers</div>
       </div>
       <div className="list">
-        {txns.slice(0, 12).map((t, i) => (
-          <div key={i} className="txn">
-            <span>
-              {t.label}
-              <span className="muted small"> · Day {clockParts(t.at).day}, {formatClock(t.at)}</span>
-            </span>
-            <span className={t.amount >= 0 ? 'pos' : 'neg'}>
-              {t.amount >= 0 ? '+' : '−'}{formatNaira(Math.abs(t.amount))}
-            </span>
-          </div>
+        {headlines.map(({ h }) => (
+          <div key={h} className="news-item">{h}</div>
         ))}
       </div>
+    </>
+  );
+}
+
+function RideApp() {
+  const place = useGame((s) => s.place);
+  return (
+    <>
+      <p className="muted small">Ride go carry you from your door. E cost pass bus, but e fast and you no go waka go bus stop 🚘</p>
+      <ActivityList items={ridesFrom(place)} />
     </>
   );
 }
@@ -289,7 +298,18 @@ function MapApp() {
 function AppBody({ app }: { app: PhoneApp }) {
   switch (app) {
     case 'bank':
-      return <Bank />;
+      return <EgoBank />;
+    case 'chop':
+      return (
+        <>
+          <p className="muted small">Order food anywhere. Rider go find you 🛵</p>
+          <ActivityList items={CHOP_ITEMS} />
+        </>
+      );
+    case 'ride':
+      return <RideApp />;
+    case 'news':
+      return <NewsApp />;
     case 'jobs':
       return (
         <>
