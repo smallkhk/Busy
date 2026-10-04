@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { activityById, INTERACTABLES } from '../content/activities';
 import { CONTACTS, longLeg } from '../content/contacts';
 import { EVENTS } from '../content/events';
+import { ACHIEVEMENTS, TUTORIAL } from '../content/goals';
 import { followersGain, packagingGap, POSTS, realWealth } from '../content/gram';
 import { moveCost, rentOwed } from '../content/housing';
 import { CHOP_ITEMS, ridesFrom } from '../content/phoneapps';
@@ -138,5 +139,23 @@ describe('trekking', () => {
 
   it('living closer to town shortens the trek', () => {
     expect(durationAt(act('trek-street-wuse'), 12 * 60, 'wuse2')).toBeLessThan(durationAt(act('trek-street-wuse'), 12 * 60, 'kubwa'));
+  });
+});
+
+describe('goals', () => {
+  const gs = { stats: {}, day: 1, money: 0, savings: 0, cv: 0, followers: 0, area: 'kubwa' as const, contacts: {}, eventHistory: {} };
+  it('tutorial steps check stats', () => {
+    expect(TUTORIAL[0].done(gs)).toBe(false);
+    expect(TUTORIAL[0].done({ ...gs, stats: { meals: 1 } })).toBe(true);
+  });
+  it('achievements check life progress', () => {
+    const week = ACHIEVEMENTS.find((g) => g.id === 'a-week')!;
+    expect(week.done({ ...gs, day: 7 })).toBe(false);
+    expect(week.done({ ...gs, day: 8 })).toBe(true);
+    expect(ACHIEVEMENTS.find((g) => g.id === 'a-survivor')!.done({ ...gs, eventHistory: { 'accident-major': 10 } })).toBe(true);
+  });
+  it('goal ids are unique', () => {
+    const ids = [...TUTORIAL, ...ACHIEVEMENTS].map((g) => g.id);
+    expect(new Set(ids).size).toBe(ids.length);
   });
 });
