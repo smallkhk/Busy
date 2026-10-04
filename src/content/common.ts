@@ -1,6 +1,6 @@
 import type { Needs } from '../engine/needs';
 
-export type Place = 'home' | 'street' | 'wuse' | 'jabi' | 'secretariat';
+export type Place = 'home' | 'street' | 'wuse' | 'jabi' | 'secretariat' | 'lounge';
 
 export const PLACE_NAMES: Record<Place, string> = {
   home: 'Your compound',
@@ -8,6 +8,7 @@ export const PLACE_NAMES: Record<Place, string> = {
   wuse: 'Wuse Market',
   jabi: 'Jabi Lake Mall',
   secretariat: 'Federal Secretariat',
+  lounge: 'Wuse 2 lounge',
 };
 
 export type Activity = {

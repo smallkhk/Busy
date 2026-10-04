@@ -8,6 +8,7 @@ import { Avatar } from './Avatar';
 import { Room } from './Room';
 import { Street } from './Street';
 import { JabiLake } from './places/JabiLake';
+import { Lounge } from './places/Lounge';
 import { Secretariat } from './places/Secretariat';
 import { WuseMarket } from './places/WuseMarket';
 import { INTERACTABLES, type Place } from '../content/activities';
@@ -19,6 +20,7 @@ const CENTERS: Record<Place, [number, number, number]> = {
   wuse: [-1.0, 0, 0],
   jabi: [-0.6, 0, -0.8],
   secretariat: [0, 0, -0.6],
+  lounge: [-0.2, 0, -0.6],
 };
 
 const SCENES: Record<Place, () => ReactElement> = {
@@ -27,6 +29,7 @@ const SCENES: Record<Place, () => ReactElement> = {
   wuse: WuseMarket,
   jabi: JabiLake,
   secretariat: Secretariat,
+  lounge: Lounge,
 };
 
 function GameLoop() {

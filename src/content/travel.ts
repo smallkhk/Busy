@@ -113,6 +113,7 @@ export const TRAVEL_INTERACTABLES: Interactable[] = [
       ride('jabi-kubwa', 'Taxi go your area (home)', '🚕', 'street', 45, 3500, [4.4, 2.4]),
       ride('jabi-wuse', 'Taxi go Wuse Market', '🚕', 'wuse', 25, 2500, [4.4, 2.4]),
       ride('jabi-sec', 'Taxi go Federal Secretariat', '🏛️', 'secretariat', 20, 2500, [4.4, 2.4]),
+      ride('jabi-lounge', 'Taxi go Wuse 2 lounge', '🍾', 'lounge', 15, 2000, [4.4, 2.4]),
     ],
   },
 
@@ -159,6 +160,50 @@ export const TRAVEL_INTERACTABLES: Interactable[] = [
       ride('sec-kubwa', 'Bus go your area (home)', '🚌', 'street', 75, 900, [4.6, 2.6]),
       ride('sec-wuse', 'Bus go Wuse Market', '🚌', 'wuse', 30, 500, [4.6, 2.6]),
       ride('sec-jabi', 'Taxi go Jabi Lake Mall', '🚕', 'jabi', 20, 2500, [4.6, 2.6]),
+    ],
+  },
+
+  // ---------------- Wuse 2 lounge ----------------
+  {
+    id: 'bar',
+    place: 'lounge',
+    name: 'Bar',
+    emoji: '🍸',
+    label: [-4.2, 2.4, -2.6],
+    activities: [
+      { id: 'cocktail', label: 'Small chops & cocktail', doing: 'Enjoying cocktail', emoji: '🍹', minutes: 45, cost: 15000, gains: { fun: 35, social: 20, food: 15 }, hours: [18, 24], requires: { packaging: 25 }, spot: [-4.2, -1.6] },
+      { id: 'bottle', label: 'Order bottle (table service) 🍾', doing: 'Popping bottle with sparkler', emoji: '🍾', minutes: 120, cost: 150000, gains: { fun: 55, social: 40 }, effects: { packaging: 12, meet: 'alhaji' }, hours: [20, 24], requires: { packaging: 40 }, spot: [-4.2, -1.6] },
+    ],
+  },
+  {
+    id: 'dancefloor',
+    place: 'lounge',
+    name: 'Dance floor',
+    emoji: '💃',
+    label: [0.4, 1.4, -0.6],
+    activities: [
+      { id: 'dance', label: 'Dance like say tomorrow no dey', doing: 'Shaking body for dance floor', emoji: '🕺', minutes: 60, gains: { fun: 35, social: 15, energy: -20, hygiene: -10 }, hours: [19, 24], requires: { packaging: 25 }, spot: [0.4, -0.6] },
+    ],
+  },
+  {
+    id: 'dj',
+    place: 'lounge',
+    name: 'DJ booth',
+    emoji: '🎧',
+    label: [3.2, 2.6, -2.8],
+    activities: [
+      { id: 'spray', label: 'Request song & spray DJ', doing: 'Spraying DJ', emoji: '💸', minutes: 15, cost: 5000, gains: { fun: 20, social: 10 }, effects: { packaging: 2 }, hours: [19, 24], requires: { packaging: 25 }, spot: [3.2, -1.6] },
+    ],
+  },
+  {
+    id: 'lounge-park',
+    place: 'lounge',
+    name: 'Taxi rank',
+    emoji: '🚕',
+    label: [5.0, 2.0, 3.0],
+    activities: [
+      ride('lounge-home', 'Taxi go your area (home)', '🚕', 'street', 40, 4500, [4.6, 2.6]),
+      ride('lounge-jabi', 'Taxi go Jabi Lake Mall', '🚕', 'jabi', 15, 2000, [4.6, 2.6]),
     ],
   },
 ];
