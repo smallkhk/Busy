@@ -3,13 +3,14 @@ import { createJSONStorage, persist } from 'zustand/middleware';
 import { activityById, activityPlace, ENTRY_SPOT, EXIT_SPOT, GEN_COST, PLACE_NAMES, type Activity, type Place } from '../content/activities';
 import { AREAS, moveCost, placeLabel, RENT_CYCLE_DAYS, RENT_GRACE_DAYS, rentOwed, type AreaId } from '../content/housing';
 import { clockParts, formatNaira, inHours } from '../engine/clock';
+import { CALL_COST, contactById, FIRST_MEET_REL, GIFT_COST, type ContactState } from '../content/contacts';
 import { EVENTS } from '../content/events';
 import { effectChips, pickEvent, resolveChoice } from '../engine/events';
 import { clamp, fullNeeds, LOW_NEED, NEED_KEYS, NEED_META, tickNeeds, type NeedKey, type Needs } from '../engine/needs';
 
 export type Txn = { at: number; label: string; amount: number };
 export type Toast = { id: number; text: string };
-export type PhoneApp = 'home' | 'bank' | 'jobs' | 'chat' | 'map' | 'gram' | 'house';
+export type PhoneApp = 'home' | 'bank' | 'jobs' | 'chat' | 'map' | 'gram' | 'house' | 'contacts';
 
 /** `total` is the actual duration (rush hour makes trips longer); old saves may lack it. */
 type Active = { id: string; remaining: number; gen: boolean; total?: number; eventAt?: number };
@@ -31,6 +32,9 @@ type GameState = {
   /** Day number when the next rent is due. */
   rentDueDay: number;
   rentLocked: boolean;
+  contacts: Record<string, ContactState>;
+  /** Activity ids whose requirements a contact don waive. */
+  unlocks: string[];
   power: boolean;
   nextPowerChange: number;
   pos: [number, number];
@@ -58,6 +62,9 @@ type GameState = {
   dismissToast: (id: number) => void;
   openMenu: (id: string | null) => void;
   openPhone: (app: PhoneApp | null) => void;
+  callContact: (id: string) => void;
+  giftContact: (id: string) => void;
+  askFavour: (id: string) => void;
   payRent: () => void;
   moveTo: (area: AreaId) => void;
   answerEvent: (choice: number) => void;
@@ -109,6 +116,8 @@ const initial = () => ({
   area: 'kubwa' as AreaId,
   rentDueDay: 1 + RENT_CYCLE_DAYS,
   rentLocked: false,
+  contacts: {} as Record<string, ContactState>,
+  unlocks: [] as string[],
   power: true,
   nextPowerChange: START_TIME + 180,
   pos: START_POS,
@@ -127,13 +136,14 @@ const initial = () => ({
 });
 
 /** Why an activity can't start right now, or null if it can. */
-export type BlockState = Pick<GameState, 'time' | 'money' | 'power' | 'active' | 'packaging' | 'pantry' | 'cv' | 'area' | 'rentLocked'>;
+export type BlockState = Pick<GameState, 'time' | 'money' | 'power' | 'active' | 'packaging' | 'pantry' | 'cv' | 'area' | 'rentLocked'> & { unlocks?: string[] };
 
 export function blockReason(a: Activity, s: BlockState): string | null {
   if (a.locked) return a.locked;
   if (s.rentLocked && activityPlace(a.id) === 'home' && !a.travelTo) return 'Landlord don lock your door 🔒 Pay rent for phone';
-  if (a.requires?.packaging && s.packaging < a.requires.packaging) return `Need 👔 Packaging ${a.requires.packaging} (you get ${Math.round(s.packaging)})`;
-  if (a.requires?.cv && s.cv < a.requires.cv) return `Dem never call you. Submit CV ${a.requires.cv - s.cv} more time`;
+  const waived = s.unlocks?.includes(a.id);
+  if (!waived && a.requires?.packaging && s.packaging < a.requires.packaging) return `Need 👔 Packaging ${a.requires.packaging} (you get ${Math.round(s.packaging)})`;
+  if (!waived && a.requires?.cv && s.cv < a.requires.cv) return `Dem never call you. Submit CV ${a.requires.cv - s.cv} more time`;
   if (s.active) return 'You dey do something already';
   if (a.hours && !inHours(s.time, a.hours)) {
     return `Only from ${a.hours[0]}:00 to ${a.hours[1]}:00`;
@@ -178,6 +188,7 @@ export const useGame = create<GameState>()(
       const finish = (a: Activity) => {
         const s = get();
         const fx = a.effects;
+        if (fx?.meet) meetContact(fx.meet);
         if (fx) {
           set({
             packaging: Math.min(100, s.packaging + (fx.packaging ?? 0)),
@@ -207,11 +218,40 @@ export const useGame = create<GameState>()(
         }
       };
 
+      /** First meeting adds a contact; meeting again gets you closer. Returns a chip for the UI. */
+      const meetContact = (id: string): string | undefined => {
+        const c = contactById(id);
+        if (!c) return;
+        const contacts = get().contacts;
+        const known = contacts[id];
+        if (known) {
+          set({ contacts: { ...contacts, [id]: { ...known, rel: clamp(known.rel + 5) } } });
+          return `🦵 ${c.name} +5`;
+        }
+        set({ contacts: { ...contacts, [id]: { rel: FIRST_MEET_REL } } });
+        get().toast(`🦵 You don meet ${c.name}! ${c.role}`);
+        return `🦵 New contact: ${c.name}`;
+      };
+
+      const changeRel = (deltas: Record<string, number>): string[] => {
+        const contacts = { ...get().contacts };
+        const chips: string[] = [];
+        for (const [id, d] of Object.entries(deltas)) {
+          const c = contactById(id);
+          if (!c || !contacts[id]) continue;
+          contacts[id] = { ...contacts[id], rel: clamp(contacts[id].rel + d) };
+          chips.push(`🦵 ${c.name} ${d > 0 ? '+' : ''}${d}`);
+        }
+        set({ contacts });
+        return chips;
+      };
+
       const fireEvent = (trigger: 'idle' | 'commute', trip?: string) => {
         const s = get();
         const { hour, day } = clockParts(s.time);
         const rentOverdue = day > s.rentDueDay && !s.rentLocked;
-        const e = pickEvent(EVENTS, trigger, { place: s.place, hour, day, money: s.money, power: s.power, rentOverdue, trip }, s.eventHistory, s.time);
+        const met = Object.keys(s.contacts);
+        const e = pickEvent(EVENTS, trigger, { place: s.place, hour, day, money: s.money, power: s.power, rentOverdue, met, trip }, s.eventHistory, s.time);
         if (e) set({ event: e.id, eventHistory: { ...s.eventHistory, [e.id]: s.time }, menu: null, phone: null });
       };
 
@@ -250,9 +290,66 @@ export const useGame = create<GameState>()(
               chips: effectChips(effect, cost, Object.fromEntries(NEED_KEYS.map((k) => [k, NEED_META[k].emoji]))),
             },
           });
+          const extra = [...(effect.meet ? [meetContact(effect.meet)] : []), ...changeRel(effect.rel ?? {})].filter((c): c is string => !!c);
+          const res = get().eventResult;
+          if (extra.length && res) set({ eventResult: { ...res, chips: [...res.chips, ...extra] } });
         },
 
         closeEvent: () => set({ eventResult: null }),
+
+        callContact: (id) => {
+          const s = get();
+          const c = contactById(id);
+          const cs = s.contacts[id];
+          if (!c || !cs) return;
+          const { day } = clockParts(s.time);
+          if (cs.lastCallDay === day) return get().toast(`📞 You don call ${c.name} today already`);
+          if (s.money < CALL_COST) return get().toast('😕 You no get airtime money');
+          set({
+            money: s.money - CALL_COST,
+            needs: { ...s.needs, social: clamp(s.needs.social + 8) },
+            contacts: { ...s.contacts, [id]: { ...cs, rel: clamp(cs.rel + 6), lastCallDay: day } },
+          });
+          get().toast(`📞 You and ${c.name} gist small. 🦵 +6`);
+        },
+
+        giftContact: (id) => {
+          const s = get();
+          const c = contactById(id);
+          const cs = s.contacts[id];
+          if (!c || !cs) return;
+          const { day } = clockParts(s.time);
+          if (cs.lastGiftDay !== undefined && day - cs.lastGiftDay < 3) return get().toast('🎁 Too much gift go look like say you want something 😅');
+          if (s.money < GIFT_COST) return get().toast(`😕 You need ${formatNaira(GIFT_COST)}`);
+          set({
+            money: s.money - GIFT_COST,
+            contacts: { ...s.contacts, [id]: { ...cs, rel: clamp(cs.rel + 15), lastGiftDay: day } },
+            txns: [{ at: s.time, label: `Gift for ${c.name}`, amount: -GIFT_COST }, ...s.txns].slice(0, 40),
+          });
+          get().toast(`🎁 ${c.name} like the gift well well. 🦵 +15`);
+        },
+
+        askFavour: (id) => {
+          const s = get();
+          const c = contactById(id);
+          const cs = s.contacts[id];
+          if (!c || !cs) return;
+          const { day } = clockParts(s.time);
+          const f = c.favour;
+          if (cs.rel < f.minRel) return get().toast(`😕 ${c.name} never know you reach. Need 🦵 ${f.minRel}`);
+          if (cs.lastFavourDay !== undefined && day - cs.lastFavourDay < f.cooldownDays) return get().toast(`😕 ${c.name} just help you. Wait small`);
+          const fx = f.effect;
+          set({
+            money: s.money + (fx.money ?? 0),
+            cv: s.cv + (fx.cv ?? 0),
+            rentDueDay: s.rentDueDay + (fx.rentGraceDays ?? 0),
+            unlocks: fx.unlock && !s.unlocks.includes(fx.unlock) ? [...s.unlocks, fx.unlock] : s.unlocks,
+            contacts: { ...s.contacts, [id]: { ...cs, rel: clamp(cs.rel - 15), lastFavourDay: day } },
+            txns: fx.money ? [{ at: s.time, label: `${c.name}: ${f.label}`, amount: fx.money }, ...s.txns].slice(0, 40) : s.txns,
+            phone: null,
+            eventResult: { emoji: c.emoji, title: `${c.name} don help you`, text: f.text, chips: [...effectChips(fx), `🦵 ${c.name} -15`] },
+          });
+        },
 
         payRent: () => {
           const s = get();
@@ -375,6 +472,11 @@ export const useGame = create<GameState>()(
             const left = rentDueDay - cur.day;
             if (left === 7 || left === 1) now.toast(`🏠 Rent go due in ${left} day${left > 1 ? 's' : ''}: ${formatNaira(AREAS[area].rent)}`);
             if (left === 0) now.toast('🏠 Rent don due today! Pay for phone → 🏠 Rent');
+            // People forget you if you no dey check on them
+            const contacts = Object.fromEntries(
+              Object.entries(get().contacts).map(([id, c]) => [id, { ...c, rel: Math.max(5, c.rel - 1) }]),
+            );
+            set({ contacts });
             if (left < -RENT_GRACE_DAYS && !rentLocked) {
               set({ rentLocked: true });
               now.toast('🔒 Landlord don lock your room! Pay rent + 10% penalty to enter');
@@ -455,6 +557,8 @@ export const useGame = create<GameState>()(
         area: s.area,
         rentDueDay: s.rentDueDay,
         rentLocked: s.rentLocked,
+        contacts: s.contacts,
+        unlocks: s.unlocks,
         power: s.power,
         nextPowerChange: s.nextPowerChange,
         pos: s.pos,

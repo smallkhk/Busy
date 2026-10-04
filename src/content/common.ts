@@ -38,7 +38,7 @@ export type Activity = {
   usesPantry?: number;
   requires?: { packaging?: number; cv?: number };
   /** Applied when it finishes. */
-  effects?: { packaging?: number; pantry?: number; cv?: number };
+  effects?: { packaging?: number; pantry?: number; cv?: number; meet?: string };
   /** Shown instead of running, for content that isn't built yet. */
   locked?: string;
 };

@@ -182,3 +182,11 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
 .chip { padding: 4px 10px; border-radius: 99px; font-size: 13px; font-weight: 700; background: rgba(255, 255, 255, 0.08); }
 .chip.pos { color: var(--green); }
 .chip.neg { color: var(--bad); }
+
+/* ---------- Contacts ---------- */
+.contact { display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; border-radius: 12px; background: rgba(255, 255, 255, 0.06); }
+.contact.locked { flex-direction: row; align-items: center; gap: 12px; opacity: 0.6; }
+.contact-head { display: flex; align-items: center; gap: 12px; }
+.contact-emoji { font-size: 26px; }
+.contact-actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.contact-actions .ghost { font-size: 12px; padding: 6px 4px; }
