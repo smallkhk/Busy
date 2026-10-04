@@ -281,3 +281,5 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
 .badge-emoji { font-size: 26px; }
 .badge-title { font-weight: 800; font-size: 12px; }
 .badge-hint { font-size: 10px; color: var(--muted); }
+
+.contact.owned { border: 1px solid var(--line); background: rgba(232, 176, 75, 0.1); }

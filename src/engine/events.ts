@@ -14,6 +14,10 @@ export type EventContext = {
   followers?: number;
   /** Rent due date don pass and door never lock. */
   rentOverdue?: boolean;
+  /** Business ids you own. */
+  owned?: string[];
+  /** Your civil service grade (0 = GL 04). */
+  grade?: number;
   /** Ego Loan repayment date don pass. */
   loanOverdue?: boolean;
   /** Id of the trip in progress, for commute events. */
@@ -41,6 +45,8 @@ export type Effect = {
   relAll?: number;
   /** Pay off the Ego Loan from your balance. */
   payLoan?: boolean;
+  /** Shut a business you own for some days. */
+  closeBusiness?: { id: string; days: number };
 };
 
 export type Outcome = { weight?: number; text: string; effect?: Effect };
@@ -107,6 +113,7 @@ export function effectChips(effect: Effect | undefined, cost = 0, needEmoji: Rec
   if (effect?.minutes) chips.push(`${effect.minutes >= 60 ? `${Math.round((effect.minutes / 60) * 10) / 10}h` : `${effect.minutes}m`} lost ⏳`);
   if (effect?.power === false) chips.push('Light cut 🕯️');
   if (effect?.followersPct) chips.push(`${effect.followersPct > 0 ? '+' : ''}${effect.followersPct}% 📸 followers`);
+  if (effect?.closeBusiness) chips.push(`Business closed ${effect.closeBusiness.days} days 🔒`);
   if (effect?.rentGraceDays) chips.push(`+${effect.rentGraceDays} days to pay rent 🏠`);
   return chips;
 }

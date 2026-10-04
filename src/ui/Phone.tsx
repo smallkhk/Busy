@@ -8,6 +8,7 @@ import { CHOP_ITEMS, HEADLINES, ridesFrom } from '../content/phoneapps';
 import { blockReason, useGame, type PhoneApp } from '../store/game';
 import { activityDetail } from './detail';
 import { EgoBank } from './EgoBank';
+import { BusinessApp, CareerCard } from './Career';
 import { GoalsApp } from './Goals';
 import { MapView } from './MapView';
 
@@ -16,6 +17,7 @@ const APPS: { id: PhoneApp; name: string; emoji: string; color: string }[] = [
   { id: 'chop', name: 'ChopNow', emoji: '🛵', color: '#e8692c' },
   { id: 'ride', name: 'Ride', emoji: '🚘', color: '#1f8a4c' },
   { id: 'jobs', name: 'Jobs', emoji: '💼', color: '#c27c1a' },
+  { id: 'biz', name: 'Business', emoji: '🏪', color: '#0e7c86' },
   { id: 'chat', name: 'Chat', emoji: '💬', color: '#2f7fd6' },
   { id: 'map', name: 'Map', emoji: '🗺️', color: '#6a4bc4' },
   { id: 'gram', name: 'AbujaGram', emoji: '📸', color: '#d6406f' },
@@ -28,7 +30,7 @@ const APPS: { id: PhoneApp; name: string; emoji: string; color: string }[] = [
 
 function ActivityList({ items }: { items: Activity[] }) {
   const choose = useGame((s) => s.choose);
-  const state = useGame(useShallow((s) => ({ time: s.time, money: s.money, power: s.power, active: s.active, packaging: s.packaging, pantry: s.pantry, cv: s.cv, area: s.area, rentLocked: s.rentLocked, unlocks: s.unlocks })));
+  const state = useGame(useShallow((s) => ({ time: s.time, money: s.money, power: s.power, active: s.active, packaging: s.packaging, pantry: s.pantry, cv: s.cv, area: s.area, rentLocked: s.rentLocked, unlocks: s.unlocks, grade: s.grade })));
   return (
     <div className="list">
       {items.map((a) => {
@@ -288,10 +290,13 @@ function AppBody({ app }: { app: PhoneApp }) {
       return <NewsApp />;
     case 'goals':
       return <GoalsApp />;
+    case 'biz':
+      return <BusinessApp />;
     case 'jobs':
       return (
         <>
-          <p className="muted small">Small small jobs for now. Build your Long Leg 🦵 to unlock better ones.</p>
+          <CareerCard />
+          <p className="muted small">Side hustle for your area:</p>
           <ActivityList items={JOBS} />
         </>
       );

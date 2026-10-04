@@ -3,7 +3,9 @@ import { createJSONStorage, persist } from 'zustand/middleware';
 import { activityById, activityPlace, ENTRY_SPOT, EXIT_SPOT, GEN_COST, PLACE_NAMES, type Activity, type Place } from '../content/activities';
 import { AREAS, moveCost, placeLabel, RENT_CYCLE_DAYS, RENT_GRACE_DAYS, rentOwed, type AreaId } from '../content/housing';
 import { clockParts, formatNaira, inHours } from '../engine/clock';
-import { CALL_COST, contactById, FIRST_MEET_REL, GIFT_COST, type ContactState } from '../content/contacts';
+import { CALL_COST, contactById, FIRST_MEET_REL, GIFT_COST, longLeg, type ContactState } from '../content/contacts';
+import { businessById, dailyProfit, MAX_BIZ_LEVEL, upgradeCost, type OwnedBusiness } from '../content/business';
+import { GRADES, OFFICE_SHIFT_ID, payFor, promotionBlock } from '../content/career';
 import { EVENTS } from '../content/events';
 import { ALL_GOALS } from '../content/goals';
 import { LOAN_DAYS, LOAN_FEE, LOAN_MAX, SAVINGS_DAILY_RATE, TOKEN_COST } from '../content/phoneapps';
@@ -13,7 +15,7 @@ import { clamp, fullNeeds, LOW_NEED, NEED_KEYS, NEED_META, tickNeeds, type NeedK
 
 export type Txn = { at: number; label: string; amount: number };
 export type Toast = { id: number; text: string };
-export type PhoneApp = 'home' | 'bank' | 'jobs' | 'chat' | 'map' | 'gram' | 'house' | 'contacts' | 'chop' | 'ride' | 'news' | 'goals';
+export type PhoneApp = 'home' | 'bank' | 'jobs' | 'chat' | 'map' | 'gram' | 'house' | 'contacts' | 'chop' | 'ride' | 'news' | 'goals' | 'biz';
 
 /** `total` is the actual duration (rush hour makes trips longer); old saves may lack it. */
 type Active = { id: string; remaining: number; gen: boolean; total?: number; eventAt?: number };
@@ -41,6 +43,11 @@ type GameState = {
   unlocks: string[];
   /** Counters for goals: meals, jobs, trips, treks, sleeps, rentPaid, bottles, visit-<place>. */
   stats: Record<string, number>;
+  /** Civil service grade index into GRADES. */
+  grade: number;
+  /** Office shifts done at the current grade. */
+  gradeShifts: number;
+  businesses: Record<string, OwnedBusiness>;
   /** Goal ids already completed. */
   goals: string[];
   savings: number;
@@ -78,6 +85,9 @@ type GameState = {
   dismissToast: (id: number) => void;
   openMenu: (id: string | null) => void;
   openPhone: (app: PhoneApp | null) => void;
+  promote: () => void;
+  buyBusiness: (id: string) => void;
+  upgradeBusiness: (id: string) => void;
   saveMoney: (amount: number) => void;
   withdrawSavings: (amount: number) => void;
   takeLoan: (amount: number) => void;
@@ -144,6 +154,9 @@ const initial = () => ({
   contacts: {} as Record<string, ContactState>,
   unlocks: [] as string[],
   stats: {} as Record<string, number>,
+  grade: 0,
+  gradeShifts: 0,
+  businesses: {} as Record<string, OwnedBusiness>,
   goals: [] as string[],
   savings: 0,
   savingsInterest: 0,
@@ -170,7 +183,7 @@ const initial = () => ({
 });
 
 /** Why an activity can't start right now, or null if it can. */
-export type BlockState = Pick<GameState, 'time' | 'money' | 'power' | 'active' | 'packaging' | 'pantry' | 'cv' | 'area' | 'rentLocked'> & { unlocks?: string[] };
+export type BlockState = Pick<GameState, 'time' | 'money' | 'power' | 'active' | 'packaging' | 'pantry' | 'cv' | 'area' | 'rentLocked'> & { unlocks?: string[]; grade?: number };
 
 export function blockReason(a: Activity, s: BlockState): string | null {
   if (a.locked) return a.locked;
@@ -266,12 +279,15 @@ export const useGame = create<GameState>()(
             get().toast(cv >= 3 ? '📞 Dem don call you! Contract staff job don open for Secretariat' : `📄 Dem collect am. "Come back next week" 😑 (${cv}/3)`);
           }
         }
-        if (a.pay) {
+        const pay = payFor(a, s.grade);
+        if (a.id === OFFICE_SHIFT_ID) set({ gradeShifts: s.gradeShifts + 1 });
+        if (pay) {
+          const label = a.id === OFFICE_SHIFT_ID ? `Salary: ${GRADES[s.grade].title}` : a.label;
           set({
-            money: s.money + a.pay,
-            txns: [{ at: s.time, label: a.label, amount: a.pay }, ...s.txns].slice(0, 40),
+            money: get().money + pay,
+            txns: [{ at: s.time, label, amount: pay }, ...get().txns].slice(0, 40),
           });
-          get().toast(`💰 You don collect ${formatNaira(a.pay)}`);
+          get().toast(`💰 You don collect ${formatNaira(pay)}`);
         } else if (!a.travelTo) {
           if (!fx) get().toast(`${a.emoji} Done: ${a.label}`);
         }
@@ -317,7 +333,8 @@ export const useGame = create<GameState>()(
         const met = Object.keys(s.contacts);
         const gap = packagingGap(s.packaging, s.money, s.area);
         const loanOverdue = !!s.loan && day > s.loan.dueDay;
-        const e = pickEvent(EVENTS, trigger, { place: s.place, hour, day, money: s.money, power: s.power, rentOverdue, met, gap, followers: s.followers, loanOverdue, trip }, s.eventHistory, s.time);
+        const owned = Object.keys(s.businesses);
+        const e = pickEvent(EVENTS, trigger, { place: s.place, hour, day, money: s.money, power: s.power, rentOverdue, met, gap, followers: s.followers, loanOverdue, owned, grade: s.cv >= 3 ? s.grade : -1, trip }, s.eventHistory, s.time);
         if (e) set({ event: e.id, eventHistory: { ...s.eventHistory, [e.id]: s.time }, menu: null, phone: null });
       };
 
@@ -360,11 +377,67 @@ export const useGame = create<GameState>()(
           const relAll = effect.relAll ? Object.fromEntries(Object.keys(get().contacts).map((id) => [id, effect.relAll!])) : {};
           const extra = [...(effect.meet ? [meetContact(effect.meet)] : []), ...changeRel({ ...relAll, ...(effect.rel ?? {}) })].filter((c): c is string => !!c);
           if (effect.payLoan) get().repayLoan();
+          const cb = effect.closeBusiness;
+          if (cb && get().businesses[cb.id]) {
+            const biz = get().businesses;
+            set({ businesses: { ...biz, [cb.id]: { ...biz[cb.id], closedUntil: clockParts(s.time).day + cb.days } } });
+          }
           const res = get().eventResult;
           if (extra.length && res) set({ eventResult: { ...res, chips: [...res.chips, ...extra] } });
         },
 
         closeEvent: () => set({ eventResult: null }),
+
+        promote: () => {
+          const s = get();
+          const reason = promotionBlock(s.grade, s.gradeShifts, longLeg(s.contacts), s.packaging);
+          if (s.cv < 3) return get().toast('😕 You never get government work. Submit CV for Secretariat');
+          if (reason) return get().toast(`😕 ${reason}`);
+          const next = GRADES[s.grade + 1];
+          set({
+            grade: s.grade + 1,
+            gradeShifts: 0,
+            packaging: clamp(s.packaging + 5),
+            phone: null,
+            eventResult: {
+              emoji: '🎉',
+              title: 'Promotion letter don land!',
+              text: `Congratulations! You don become ${next.title}. Your office shift now pay ${formatNaira(next.pay)}. Office people don dey call you "Oga" 😎`,
+              chips: [`💼 ${next.title}`, `+${formatNaira(next.pay - GRADES[s.grade].pay)}/shift`, '+5 👔'],
+            },
+          });
+        },
+
+        buyBusiness: (id) => {
+          const s = get();
+          const b = businessById(id);
+          if (!b || s.businesses[id]) return;
+          if (b.requires?.longLeg && longLeg(s.contacts) < b.requires.longLeg) return get().toast(`😕 You need 🦵 Long Leg ${b.requires.longLeg} for this one`);
+          if (b.requires?.packaging && s.packaging < b.requires.packaging) return get().toast(`😕 You need 👔 Packaging ${b.requires.packaging}`);
+          if (s.money < b.cost) return get().toast(`😕 You need ${formatNaira(b.cost)}`);
+          set({
+            money: s.money - b.cost,
+            businesses: { ...s.businesses, [id]: { level: 1 } },
+            txns: [{ at: s.time, label: `Started ${b.name}`, amount: -b.cost }, ...s.txns].slice(0, 40),
+          });
+          get().toast(`${b.emoji} ${b.name} don open! Money go start to enter every morning`);
+        },
+
+        upgradeBusiness: (id) => {
+          const s = get();
+          const b = businessById(id);
+          const owned = s.businesses[id];
+          if (!b || !owned) return;
+          if (owned.level >= MAX_BIZ_LEVEL) return get().toast('😕 E don reach the top level');
+          const cost = upgradeCost(b, owned.level);
+          if (s.money < cost) return get().toast(`😕 You need ${formatNaira(cost)}`);
+          set({
+            money: s.money - cost,
+            businesses: { ...s.businesses, [id]: { ...owned, level: owned.level + 1 } },
+            txns: [{ at: s.time, label: `Expanded ${b.name}`, amount: -cost }, ...s.txns].slice(0, 40),
+          });
+          get().toast(`📈 ${b.name} don grow to level ${owned.level + 1}!`);
+        },
 
         saveMoney: (amount) => {
           const s = get();
@@ -662,6 +735,21 @@ export const useGame = create<GameState>()(
               Object.entries(get().contacts).map(([id, c]) => [id, { ...c, rel: Math.max(5, c.rel - 1) }]),
             );
             set({ contacts });
+            // Business income lands every morning
+            const bz = get();
+            let income = 0;
+            const lines: string[] = [];
+            for (const [id, owned] of Object.entries(bz.businesses)) {
+              const b = businessById(id);
+              if (!b || (owned.closedUntil !== undefined && cur.day < owned.closedUntil)) continue;
+              const p = dailyProfit(b, owned.level, Math.random());
+              income += p;
+              lines.push(b.name);
+            }
+            if (income > 0) {
+              set({ money: bz.money + income, txns: [{ at: time, label: `Business income: ${lines.join(', ')}`, amount: income }, ...bz.txns].slice(0, 40) });
+              now.toast(`🏪 Business don bring ${formatNaira(income)} today`);
+            }
             // Ego Save interest, paid daily into savings
             const sv = get();
             if (sv.savings > 0) {
@@ -755,6 +843,9 @@ export const useGame = create<GameState>()(
         contacts: s.contacts,
         unlocks: s.unlocks,
         stats: s.stats,
+        grade: s.grade,
+        gradeShifts: s.gradeShifts,
+        businesses: s.businesses,
         goals: s.goals,
         savings: s.savings,
         savingsInterest: s.savingsInterest,

@@ -411,6 +411,76 @@ export const EVENTS: GameEvent[] = [
     ],
   },
 
+  // ---------------- Business & office ----------------
+  {
+    id: 'pos-fake-alert',
+    emoji: '📲',
+    title: 'Fake alert for your POS',
+    text: 'Your POS girl call you: "Oga/madam, one man show me transfer of ₦25,000, I give am cash. The money no land!" 😭',
+    trigger: 'idle',
+    weight: 3,
+    cooldownHours: 120,
+    when: (c) => !!c.owned?.includes('pos'),
+    choices: [
+      { label: 'Absorb the loss', outcomes: [{ text: 'You don learn. "Confirm alert before you pay" don paste for wall now.', effect: { money: -25000, needs: { fun: -15 } } }] },
+      {
+        label: 'Report for police station',
+        outcomes: [
+          { weight: 1, text: 'Police trace the account! Dem recover ₦20,000 (dem collect ₦5,000 for "fuel").', effect: { money: -5000, minutes: 180 } },
+          { weight: 2, text: 'Police say "we go call you." Dem never call. Money don go.', effect: { money: -25000, minutes: 180, needs: { fun: -20 } } },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'task-force-shop',
+    emoji: '🚧',
+    title: 'Task force for Wuse!',
+    text: 'Environment task force dey market: "Your shop extension block walkway. We go demolish am today!" Red X don land for your wall.',
+    trigger: 'idle',
+    weight: 3,
+    cooldownHours: 168,
+    when: (c) => !!c.owned?.includes('provision'),
+    choices: [
+      { label: 'Settle them (₦30,000)', cost: 30000, outcomes: [{ text: 'Dem clean the X with rag. "We no see anything." 😑', effect: { needs: { fun: -10 } } }] },
+      { label: 'Argue: "I get permit!"', outcomes: [
+        { weight: 1, text: 'Your permit correct! Dem waka go another shop. ✊', effect: { needs: { fun: 10 } } },
+        { weight: 2, text: 'Dem lock your shop. You go pay fine and wait 3 days 😤', effect: { money: -15000, closeBusiness: { id: 'provision', days: 3 }, needs: { fun: -20 } } },
+      ] },
+    ],
+  },
+  {
+    id: 'staff-theft',
+    emoji: '🕵🏾',
+    title: 'Staff don dey chop your money',
+    text: 'Your account no balance. Your manager don dey "manage" the business money for im pocket.',
+    trigger: 'idle',
+    weight: 2,
+    cooldownHours: 240,
+    when: (c) => !!c.owned?.some((id) => id === 'catering' || id === 'logistics'),
+    choices: [
+      { label: 'Sack am', outcomes: [{ text: 'You sack am. Business slow small while you find another person.', effect: { money: -20000, needs: { fun: -10 } } }] },
+      { label: 'Give am last warning', outcomes: [
+        { weight: 1, text: 'E change! Business don dey balance now.', effect: { needs: { fun: 5 } } },
+        { weight: 1, text: 'E carry ₦60,000 run comot Abuja 😭', effect: { money: -60000, needs: { fun: -25 } } },
+      ] },
+    ],
+  },
+  {
+    id: 'oga-birthday',
+    emoji: '🎂',
+    title: 'Director birthday',
+    text: 'Office WhatsApp: "Our amiable Director birthday na Friday. Each staff ₦10,000 contribution." Everybody dey watch who go pay.',
+    trigger: 'idle',
+    weight: 2,
+    cooldownHours: 336,
+    when: (c) => (c.grade ?? -1) >= 1,
+    choices: [
+      { label: 'Pay ₦10,000', cost: 10000, outcomes: [{ text: 'Director see your name for list. E smile at you for corridor 😏', effect: { packaging: 3, needs: { social: 10 } } }] },
+      { label: '"Salary never enter"', outcomes: [{ text: 'Your name dey "never pay" list. Promotion go dey look you from far 👀', effect: { needs: { social: -10 } } }] },
+    ],
+  },
+
   // ---------------- On the road ----------------
   {
     id: 'checkpoint',
