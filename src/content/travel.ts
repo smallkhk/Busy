@@ -52,7 +52,7 @@ export const TRAVEL_INTERACTABLES: Interactable[] = [
     emoji: '🚌',
     label: [-5.6, 2.8, 3.0],
     activities: [
-      ride('wuse-kubwa', 'Bus go Kubwa (home)', '🚌', 'street', 60, 700, [-5.0, 2.2]),
+      ride('wuse-kubwa', 'Bus go your area (home)', '🚌', 'street', 60, 700, [-5.0, 2.2]),
       ride('wuse-jabi', 'Taxi go Jabi Lake Mall', '🚕', 'jabi', 25, 2500, [-5.0, 2.2]),
       ride('wuse-sec', 'Bus go Federal Secretariat', '🏛️', 'secretariat', 30, 500, [-5.0, 2.2]),
     ],
@@ -110,7 +110,7 @@ export const TRAVEL_INTERACTABLES: Interactable[] = [
     emoji: '🚕',
     label: [4.8, 2.0, 3.0],
     activities: [
-      ride('jabi-kubwa', 'Taxi go Kubwa (home)', '🚕', 'street', 45, 3500, [4.4, 2.4]),
+      ride('jabi-kubwa', 'Taxi go your area (home)', '🚕', 'street', 45, 3500, [4.4, 2.4]),
       ride('jabi-wuse', 'Taxi go Wuse Market', '🚕', 'wuse', 25, 2500, [4.4, 2.4]),
       ride('jabi-sec', 'Taxi go Federal Secretariat', '🏛️', 'secretariat', 20, 2500, [4.4, 2.4]),
     ],
@@ -156,7 +156,7 @@ export const TRAVEL_INTERACTABLES: Interactable[] = [
     emoji: '🚏',
     label: [5.2, 2.5, 3.2],
     activities: [
-      ride('sec-kubwa', 'Bus go Kubwa (home)', '🚌', 'street', 75, 900, [4.6, 2.6]),
+      ride('sec-kubwa', 'Bus go your area (home)', '🚌', 'street', 75, 900, [4.6, 2.6]),
       ride('sec-wuse', 'Bus go Wuse Market', '🚌', 'wuse', 30, 500, [4.6, 2.6]),
       ride('sec-jabi', 'Taxi go Jabi Lake Mall', '🚕', 'jabi', 20, 2500, [4.6, 2.6]),
     ],

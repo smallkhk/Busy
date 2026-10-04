@@ -33,6 +33,27 @@ export const EVENTS: GameEvent[] = [
     ],
   },
   {
+    id: 'landlord-rent',
+    emoji: '👴🏾',
+    title: 'Landlord don land',
+    text: '"My friend, your rent don pass due date. I no be Father Christmas o. When you dey pay?"',
+    trigger: 'idle',
+    weight: 50,
+    cooldownHours: 48,
+    when: (c) => !!c.rentOverdue && (c.place === 'home' || c.place === 'street'),
+    choices: [
+      {
+        label: '"Baba, abeg give me one week"',
+        outcomes: [
+          { weight: 3, text: '"Na last warning be this o!" E give you 7 more days.', effect: { rentGraceDays: 7, needs: { social: -5 } } },
+          { weight: 2, text: '"No more story! Pay or pack!" E no gree 😬', effect: { needs: { fun: -10 } } },
+        ],
+      },
+      { label: 'Promise to pay today (open phone → 🏠 Rent)', outcomes: [{ text: 'E fold hand dey wait. Better pay before e lock your door 🔒' }] },
+      { label: 'Jump fence, avoid am', outcomes: [{ text: 'You escape… for now. Compound people don dey look you 👀', effect: { needs: { social: -10, fun: -5 } } }] },
+    ],
+  },
+  {
     id: 'aedc-bill',
     emoji: '⚡',
     title: 'AEDC people for gate',

@@ -4,7 +4,7 @@ export type Place = 'home' | 'street' | 'wuse' | 'jabi' | 'secretariat';
 
 export const PLACE_NAMES: Record<Place, string> = {
   home: 'Your compound',
-  street: 'Kubwa street',
+  street: 'Your street',
   wuse: 'Wuse Market',
   jabi: 'Jabi Lake Mall',
   secretariat: 'Federal Secretariat',
@@ -32,6 +32,8 @@ export type Activity = {
   travelTo?: Place;
   /** A road trip: takes longer in rush hour. */
   commute?: boolean;
+  /** Trip to or from your home area: shorter if you live closer to town. */
+  homeLeg?: boolean;
   /** Meals of foodstuff used up when it starts. */
   usesPantry?: number;
   requires?: { packaging?: number; cv?: number };
@@ -51,7 +53,7 @@ export type Interactable = {
   activities: Activity[];
 };
 
-export function ride(id: string, label: string, emoji: string, to: Place, minutes: number, cost: number, spot: [number, number]): Activity {
+export function ride(id: string, label: string, emoji: string, to: Place, minutes: number, cost: number, spot: [number, number], homeLeg = to === 'street'): Activity {
   return {
     id,
     label,
@@ -63,6 +65,7 @@ export function ride(id: string, label: string, emoji: string, to: Place, minute
     travelTo: to,
     away: true,
     commute: true,
+    homeLeg,
     spot,
   };
 }

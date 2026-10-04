@@ -1,6 +1,7 @@
 import { useShallow } from 'zustand/react/shallow';
 import { JOBS, PHONE_ACTIVITIES, type Activity } from '../content/activities';
 import { clockParts, formatClock, formatNaira } from '../engine/clock';
+import { AREAS, moveCost, rentOwed, type AreaId } from '../content/housing';
 import { blockReason, useGame, type PhoneApp } from '../store/game';
 import { activityDetail } from './detail';
 
@@ -10,10 +11,11 @@ const APPS: { id: PhoneApp; name: string; emoji: string; color: string }[] = [
   { id: 'chat', name: 'Chat', emoji: '💬', color: '#2f7fd6' },
   { id: 'map', name: 'Map', emoji: '🗺️', color: '#6a4bc4' },
   { id: 'gram', name: 'AbujaGram', emoji: '📸', color: '#d6406f' },
+  { id: 'house', name: 'Rent', emoji: '🏠', color: '#8c5a2b' },
 ];
 
 const PLACES = [
-  { place: 'home', name: 'Kubwa (your area)', emoji: '🏠', open: true, note: 'Bus stop for Kubwa street' },
+  { place: 'home', name: 'Your area', emoji: '🏠', open: true, note: 'Bus/taxi from any motor park' },
   { place: 'wuse', name: 'Wuse Market', emoji: '🛍️', open: true, note: 'Bus ₦700 · 1h' },
   { place: 'jabi', name: 'Jabi Lake Mall', emoji: '🌊', open: true, note: 'Taxi ₦3,500 · 45m' },
   { place: 'secretariat', name: 'Federal Secretariat', emoji: '🏛️', open: true, note: 'Bus ₦900 · 1h 15m' },
@@ -23,7 +25,7 @@ const PLACES = [
 
 function ActivityList({ items }: { items: Activity[] }) {
   const choose = useGame((s) => s.choose);
-  const state = useGame(useShallow((s) => ({ time: s.time, money: s.money, power: s.power, active: s.active, packaging: s.packaging, pantry: s.pantry, cv: s.cv })));
+  const state = useGame(useShallow((s) => ({ time: s.time, money: s.money, power: s.power, active: s.active, packaging: s.packaging, pantry: s.pantry, cv: s.cv, area: s.area, rentLocked: s.rentLocked })));
   return (
     <div className="list">
       {items.map((a) => {
@@ -49,13 +51,15 @@ function Bank() {
   const pantry = useGame((s) => s.pantry);
   const packaging = useGame((s) => s.packaging);
   const cv = useGame((s) => s.cv);
+  const area = useGame((s) => s.area);
+  const rentDueDay = useGame((s) => s.rentDueDay);
   const txns = useGame((s) => s.txns);
   return (
     <>
       <div className="balance">
         <div className="muted small">Available balance</div>
         <div className="balance-amt">{formatNaira(money)}</div>
-        <div className="muted small">🏠 Rent paid till Day 365 · ₦850,000/yr</div>
+        <div className="muted small">🏠 {AREAS[area].home} · rent due Day {rentDueDay}</div>
         <div className="muted small">🧺 Foodstuff: {pantry} meals · 👔 Packaging: {Math.round(packaging)} · 📄 CVs: {Math.min(cv, 3)}/3</div>
       </div>
       <div className="list">
@@ -75,8 +79,60 @@ function Bank() {
   );
 }
 
+function HouseApp() {
+  const area = useGame((s) => s.area);
+  const rentDueDay = useGame((s) => s.rentDueDay);
+  const locked = useGame((s) => s.rentLocked);
+  const money = useGame((s) => s.money);
+  const day = useGame((s) => clockParts(s.time).day);
+  const payRent = useGame((s) => s.payRent);
+  const moveTo = useGame((s) => s.moveTo);
+  const home = AREAS[area];
+  const left = rentDueDay - day;
+  const owed = rentOwed(area, day, rentDueDay);
+  const status = locked
+    ? '🔒 Landlord don lock your door!'
+    : left < 0
+      ? `⚠️ Rent don pass due by ${-left} day${left < -1 ? 's' : ''} (+10% penalty)`
+      : left === 0
+        ? '⚠️ Rent due today'
+        : `Next rent: Day ${rentDueDay} (${left} day${left > 1 ? 's' : ''})`;
+  return (
+    <>
+      <div className={`balance ${locked || left < 0 ? 'overdue' : ''}`}>
+        <div className="muted small">You dey stay</div>
+        <div className="balance-amt" style={{ fontSize: 22 }}>{home.emoji} {home.home}</div>
+        <div className="small">{status}</div>
+        <button className="primary" style={{ marginTop: 10, width: '100%' }} disabled={left > 10 || owed > money} onClick={payRent}>
+          {left > 10 ? `Rent ${formatNaira(home.rent)} / 30 days` : `Pay rent ${formatNaira(owed)}`}
+        </button>
+      </div>
+      <p className="muted small">Move house: you go pay 2 months upfront + 10% agent fee. Better area = more 👔 and shorter road.</p>
+      <div className="list">
+        {(Object.keys(AREAS) as AreaId[]).filter((id) => id !== area).map((id) => {
+          const a = AREAS[id];
+          const cost = moveCost(id);
+          return (
+            <button key={id} className="action" disabled={cost > money || locked || left < 0} onClick={() => moveTo(id)}>
+              <span className="action-emoji">{a.emoji}</span>
+              <span className="action-body">
+                <span>{a.home}</span>
+                <span className="muted small">{a.blurb}</span>
+                <span className="muted small">
+                  {formatNaira(a.rent)}/30 days · 👔{a.packaging >= home.packaging ? '+' : ''}{a.packaging - home.packaging} · road {Math.round(a.commute * 100)}% · Move: {formatNaira(cost)}
+                </span>
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </>
+  );
+}
+
 function MapApp() {
   const place = useGame((s) => s.place);
+  const area = useGame((s) => s.area);
   const here = place === 'street' ? 'home' : place;
   return (
     <>
@@ -84,7 +140,7 @@ function MapApp() {
       <div className="list">
         {PLACES.map((p) => (
           <div key={p.name} className={`place ${p.open ? '' : 'locked'}`}>
-            <span>{p.emoji} {p.name}</span>
+            <span>{p.emoji} {p.place === 'home' ? `${AREAS[area].name} (your area)` : p.name}</span>
             <span className="small">{!p.open ? '🔒 Coming soon' : p.place === here ? '📍 You dey here' : p.note}</span>
           </div>
         ))}
@@ -108,6 +164,8 @@ function AppBody({ app }: { app: PhoneApp }) {
       return <ActivityList items={PHONE_ACTIVITIES} />;
     case 'map':
       return <MapApp />;
+    case 'house':
+      return <HouseApp />;
     case 'gram':
       return (
         <div className="empty">

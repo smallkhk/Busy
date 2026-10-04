@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
-import { activityById, ENTRY_SPOT, EXIT_SPOT, GEN_COST, PLACE_NAMES, type Activity, type Place } from '../content/activities';
+import { activityById, activityPlace, ENTRY_SPOT, EXIT_SPOT, GEN_COST, PLACE_NAMES, type Activity, type Place } from '../content/activities';
+import { AREAS, moveCost, placeLabel, RENT_CYCLE_DAYS, RENT_GRACE_DAYS, rentOwed, type AreaId } from '../content/housing';
 import { clockParts, formatNaira, inHours } from '../engine/clock';
 import { EVENTS } from '../content/events';
 import { effectChips, pickEvent, resolveChoice } from '../engine/events';
@@ -8,7 +9,7 @@ import { clamp, fullNeeds, LOW_NEED, NEED_KEYS, NEED_META, tickNeeds, type NeedK
 
 export type Txn = { at: number; label: string; amount: number };
 export type Toast = { id: number; text: string };
-export type PhoneApp = 'home' | 'bank' | 'jobs' | 'chat' | 'map' | 'gram';
+export type PhoneApp = 'home' | 'bank' | 'jobs' | 'chat' | 'map' | 'gram' | 'house';
 
 /** `total` is the actual duration (rush hour makes trips longer); old saves may lack it. */
 type Active = { id: string; remaining: number; gen: boolean; total?: number; eventAt?: number };
@@ -26,6 +27,10 @@ type GameState = {
   packaging: number;
   pantry: number;
   cv: number;
+  area: AreaId;
+  /** Day number when the next rent is due. */
+  rentDueDay: number;
+  rentLocked: boolean;
   power: boolean;
   nextPowerChange: number;
   pos: [number, number];
@@ -53,6 +58,8 @@ type GameState = {
   dismissToast: (id: number) => void;
   openMenu: (id: string | null) => void;
   openPhone: (app: PhoneApp | null) => void;
+  payRent: () => void;
+  moveTo: (area: AreaId) => void;
   answerEvent: (choice: number) => void;
   closeEvent: () => void;
   reset: () => void;
@@ -79,8 +86,9 @@ const RUSH_HOURS = [7, 8, 17, 18];
 const RUSH_FACTOR = 1.6;
 
 /** Real duration of an activity started at `time`. */
-export function durationAt(a: Activity, time: number): number {
-  return a.commute && RUSH_HOURS.includes(clockParts(time).hour) ? Math.round(a.minutes * RUSH_FACTOR) : a.minutes;
+export function durationAt(a: Activity, time: number, area: AreaId = 'kubwa'): number {
+  const base = a.homeLeg ? a.minutes * AREAS[area].commute : a.minutes;
+  return Math.round(a.commute && RUSH_HOURS.includes(clockParts(time).hour) ? base * RUSH_FACTOR : base);
 }
 
 let toastId = 0;
@@ -98,6 +106,9 @@ const initial = () => ({
   packaging: 5,
   pantry: 0,
   cv: 0,
+  area: 'kubwa' as AreaId,
+  rentDueDay: 1 + RENT_CYCLE_DAYS,
+  rentLocked: false,
   power: true,
   nextPowerChange: START_TIME + 180,
   pos: START_POS,
@@ -116,10 +127,11 @@ const initial = () => ({
 });
 
 /** Why an activity can't start right now, or null if it can. */
-export type BlockState = Pick<GameState, 'time' | 'money' | 'power' | 'active' | 'packaging' | 'pantry' | 'cv'>;
+export type BlockState = Pick<GameState, 'time' | 'money' | 'power' | 'active' | 'packaging' | 'pantry' | 'cv' | 'area' | 'rentLocked'>;
 
 export function blockReason(a: Activity, s: BlockState): string | null {
   if (a.locked) return a.locked;
+  if (s.rentLocked && activityPlace(a.id) === 'home' && !a.travelTo) return 'Landlord don lock your door 🔒 Pay rent for phone';
   if (a.requires?.packaging && s.packaging < a.requires.packaging) return `Need 👔 Packaging ${a.requires.packaging} (you get ${Math.round(s.packaging)})`;
   if (a.requires?.cv && s.cv < a.requires.cv) return `Dem never call you. Submit CV ${a.requires.cv - s.cv} more time`;
   if (s.active) return 'You dey do something already';
@@ -150,7 +162,7 @@ export const useGame = create<GameState>()(
         const txns = [...s.txns];
         if (a.cost) txns.unshift({ at: s.time, label: a.label, amount: -a.cost });
         if (gen) txns.unshift({ at: s.time, label: 'Fuel for gen', amount: -GEN_COST });
-        const total = durationAt(a, s.time);
+        const total = durationAt(a, s.time, s.area);
         const eventAt = a.commute && Math.random() < COMMUTE_EVENT_CHANCE ? total * randomBetween(0.3, 0.7) : undefined;
         set({
           active: { id, remaining: total, gen, total, eventAt },
@@ -191,14 +203,15 @@ export const useGame = create<GameState>()(
         set({ active: null, ...(a.away ? { pos: EXIT_SPOT[s.place] } : {}) });
         if (a.travelTo) {
           set({ place: a.travelTo, pos: ENTRY_SPOT[a.travelTo], target: null });
-          get().toast(`📍 ${PLACE_NAMES[a.travelTo]}`);
+          get().toast(`📍 ${placeLabel(a.travelTo, s.area, PLACE_NAMES)}`);
         }
       };
 
       const fireEvent = (trigger: 'idle' | 'commute', trip?: string) => {
         const s = get();
         const { hour, day } = clockParts(s.time);
-        const e = pickEvent(EVENTS, trigger, { place: s.place, hour, day, money: s.money, power: s.power, trip }, s.eventHistory, s.time);
+        const rentOverdue = day > s.rentDueDay && !s.rentLocked;
+        const e = pickEvent(EVENTS, trigger, { place: s.place, hour, day, money: s.money, power: s.power, rentOverdue, trip }, s.eventHistory, s.time);
         if (e) set({ event: e.id, eventHistory: { ...s.eventHistory, [e.id]: s.time }, menu: null, phone: null });
       };
 
@@ -228,6 +241,7 @@ export const useGame = create<GameState>()(
             pantry: s.pantry + (effect.pantry ?? 0),
             cv: s.cv + (effect.cv ?? 0),
             ...(effect.power === false ? { power: false, nextPowerChange: s.time + lost + 8 * 60 } : {}),
+            rentDueDay: s.rentDueDay + (effect.rentGraceDays ?? 0),
             txns: moneyDelta ? [{ at: s.time, label: e.title, amount: moneyDelta }, ...s.txns].slice(0, 40) : s.txns,
             eventResult: {
               emoji: e.emoji,
@@ -239,6 +253,44 @@ export const useGame = create<GameState>()(
         },
 
         closeEvent: () => set({ eventResult: null }),
+
+        payRent: () => {
+          const s = get();
+          const { day } = clockParts(s.time);
+          if (s.rentDueDay - day > 10) return get().toast(`🏠 Rent never due. Next one na Day ${s.rentDueDay}`);
+          const owed = rentOwed(s.area, day, s.rentDueDay);
+          if (owed > s.money) return get().toast(`😕 You need ${formatNaira(owed)} for rent`);
+          set({
+            money: s.money - owed,
+            rentDueDay: s.rentDueDay + RENT_CYCLE_DAYS,
+            rentLocked: false,
+            txns: [{ at: s.time, label: `Rent: ${AREAS[s.area].home}`, amount: -owed }, ...s.txns].slice(0, 40),
+          });
+          get().toast(s.rentLocked ? '🔓 Landlord don open your door. Sorry o!' : `🏠 Rent paid till Day ${s.rentDueDay + RENT_CYCLE_DAYS}`);
+        },
+
+        moveTo: (to) => {
+          const s = get();
+          const { day } = clockParts(s.time);
+          if (to === s.area) return;
+          if (s.active) return get().toast('😕 Finish wetin you dey do first');
+          if (s.rentLocked || day > s.rentDueDay) return get().toast('😕 Clear your rent first. Landlord no go release your load');
+          const cost = moveCost(to);
+          if (cost > s.money) return get().toast(`😕 You need ${formatNaira(cost)} to move`);
+          set({
+            money: s.money - cost,
+            area: to,
+            rentDueDay: day + RENT_CYCLE_DAYS * 2,
+            packaging: clamp(s.packaging + AREAS[to].packaging - AREAS[s.area].packaging),
+            place: 'home',
+            pos: START_POS,
+            target: null,
+            pending: null,
+            phone: null,
+            txns: [{ at: s.time, label: `Moved to ${AREAS[to].home}`, amount: -cost }, ...s.txns].slice(0, 40),
+          });
+          get().toast(`📦 You don pack enter ${AREAS[to].home}! ${AREAS[to].emoji}`);
+        },
 
         start: (name, shirt) => set({ ...initial(), started: true, name: name.trim() || 'Abuja Hustler', shirt }),
 
@@ -317,7 +369,17 @@ export const useGame = create<GameState>()(
           // New day greeting
           const prev = clockParts(s.time);
           const cur = clockParts(time);
-          if (cur.day !== prev.day) now.toast(`🌅 Day ${cur.day} for Abuja. Make today count!`);
+          if (cur.day !== prev.day) {
+            now.toast(`🌅 Day ${cur.day} for Abuja. Make today count!`);
+            const { rentDueDay, rentLocked, area } = get();
+            const left = rentDueDay - cur.day;
+            if (left === 7 || left === 1) now.toast(`🏠 Rent go due in ${left} day${left > 1 ? 's' : ''}: ${formatNaira(AREAS[area].rent)}`);
+            if (left === 0) now.toast('🏠 Rent don due today! Pay for phone → 🏠 Rent');
+            if (left < -RENT_GRACE_DAYS && !rentLocked) {
+              set({ rentLocked: true });
+              now.toast('🔒 Landlord don lock your room! Pay rent + 10% penalty to enter');
+            }
+          }
         },
 
         walkTo: (x, z) => {
@@ -390,6 +452,9 @@ export const useGame = create<GameState>()(
         packaging: s.packaging,
         pantry: s.pantry,
         cv: s.cv,
+        area: s.area,
+        rentDueDay: s.rentDueDay,
+        rentLocked: s.rentLocked,
         power: s.power,
         nextPowerChange: s.nextPowerChange,
         pos: s.pos,

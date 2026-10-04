@@ -7,6 +7,8 @@ export type EventContext = {
   day: number;
   money: number;
   power: boolean;
+  /** Rent due date don pass and door never lock. */
+  rentOverdue?: boolean;
   /** Id of the trip in progress, for commute events. */
   trip?: string;
 };
@@ -20,6 +22,8 @@ export type Effect = {
   /** Game minutes lost. */
   minutes?: number;
   power?: boolean;
+  /** Push the rent due date back. */
+  rentGraceDays?: number;
 };
 
 export type Outcome = { weight?: number; text: string; effect?: Effect };
@@ -85,5 +89,6 @@ export function effectChips(effect: Effect | undefined, cost = 0, needEmoji: Rec
   if (effect?.cv) chips.push(`+${effect.cv} 📄`);
   if (effect?.minutes) chips.push(`${effect.minutes >= 60 ? `${Math.round((effect.minutes / 60) * 10) / 10}h` : `${effect.minutes}m`} lost ⏳`);
   if (effect?.power === false) chips.push('Light cut 🕯️');
+  if (effect?.rentGraceDays) chips.push(`+${effect.rentGraceDays} days to pay rent 🏠`);
   return chips;
 }

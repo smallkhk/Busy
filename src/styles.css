@@ -48,11 +48,15 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
   background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 6px 10px;
   display: flex; flex-direction: column; justify-content: center; font-size: 18px; line-height: 1.1;
 }
-.pill:first-child { flex: 1; }
+.pill:first-child { flex: 1; min-width: 0; }
+.pill .big { white-space: nowrap; }
+.pill .muted { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pill.pair { flex-direction: row; gap: 2px; align-items: center; font-size: 17px; }
 .pill .big { font-size: 16px; font-weight: 700; letter-spacing: 0.3px; }
 .pill .muted { font-size: 11px; }
 .pill.small-pill { font-size: 13px; font-weight: 700; padding: 6px 8px; }
 .pill.money.debt { color: var(--bad); }
+.pill.money { white-space: nowrap; font-size: 14px !important; }
 .pill.money { font-size: 15px; font-weight: 800; color: var(--gold); }
 
 .needs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px 12px; padding: 10px 12px; max-width: 360px; }
@@ -134,6 +138,7 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
 .list { display: flex; flex-direction: column; gap: 8px; }
 .home-bar { width: 120px; height: 5px; border-radius: 99px; background: #555; margin: 8px auto 0; }
 .balance { background: linear-gradient(135deg, #1f7a5a, #0f4a37); border-radius: 16px; padding: 14px; margin-bottom: 12px; }
+.balance.overdue { background: linear-gradient(135deg, #8a2a2a, #4a1414); }
 .balance-amt { font-size: 28px; font-weight: 800; margin: 4px 0; }
 .txn { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; padding: 8px 2px; border-bottom: 1px solid rgba(255, 255, 255, 0.06); }
 .txn .pos { color: var(--green); font-weight: 700; white-space: nowrap; }
