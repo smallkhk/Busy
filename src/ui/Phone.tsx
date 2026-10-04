@@ -8,6 +8,7 @@ import { CHOP_ITEMS, HEADLINES, ridesFrom } from '../content/phoneapps';
 import { blockReason, useGame, type PhoneApp } from '../store/game';
 import { activityDetail } from './detail';
 import { EgoBank } from './EgoBank';
+import { MapView } from './MapView';
 
 const APPS: { id: PhoneApp; name: string; emoji: string; color: string }[] = [
   { id: 'bank', name: 'Ego Bank', emoji: '💜', color: '#4b1f86' },
@@ -22,14 +23,6 @@ const APPS: { id: PhoneApp; name: string; emoji: string; color: string }[] = [
   { id: 'news', name: 'News', emoji: '📰', color: '#34495e' },
 ];
 
-const PLACES = [
-  { place: 'home', name: 'Your area', emoji: '🏠', open: true, note: 'Bus/taxi from any motor park' },
-  { place: 'wuse', name: 'Wuse Market', emoji: '🛍️', open: true, note: 'Bus ₦700 · 1h' },
-  { place: 'jabi', name: 'Jabi Lake Mall', emoji: '🌊', open: true, note: 'Taxi ₦3,500 · 45m' },
-  { place: 'secretariat', name: 'Federal Secretariat', emoji: '🏛️', open: true, note: 'Bus ₦900 · 1h 15m' },
-  { place: 'lounge', name: 'Wuse 2 lounge', emoji: '🍾', open: true, note: 'Taxi ₦4,500 · night life (👔 25+)' },
-  { place: '', name: 'Maitama', emoji: '💎', open: false, note: '' },
-];
 
 function ActivityList({ items }: { items: Activity[] }) {
   const choose = useGame((s) => s.choose);
@@ -276,25 +269,6 @@ function GramApp() {
   );
 }
 
-function MapApp() {
-  const place = useGame((s) => s.place);
-  const area = useGame((s) => s.area);
-  const here = place === 'street' ? 'home' : place;
-  return (
-    <>
-      <p className="muted small">Go any bus stop or motor park to travel. Rush hour (7–9am, 5–7pm) go make the trip long 🚗</p>
-      <div className="list">
-        {PLACES.map((p) => (
-          <div key={p.name} className={`place ${p.open ? '' : 'locked'}`}>
-            <span>{p.emoji} {p.place === 'home' ? `${AREAS[area].name} (your area)` : p.name}</span>
-            <span className="small">{!p.open ? '🔒 Coming soon' : p.place === here ? '📍 You dey here' : p.note}</span>
-          </div>
-        ))}
-      </div>
-    </>
-  );
-}
-
 function AppBody({ app }: { app: PhoneApp }) {
   switch (app) {
     case 'bank':
@@ -320,7 +294,7 @@ function AppBody({ app }: { app: PhoneApp }) {
     case 'chat':
       return <ActivityList items={PHONE_ACTIVITIES} />;
     case 'map':
-      return <MapApp />;
+      return <MapView />;
     case 'contacts':
       return <ContactsApp />;
     case 'house':

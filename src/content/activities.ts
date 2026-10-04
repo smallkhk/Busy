@@ -1,5 +1,5 @@
 import { ride, type Activity, type Interactable, type Place } from './common';
-import { CHOP_ITEMS, RIDES } from './phoneapps';
+import { CHOP_ITEMS, RIDES, TREKS } from './phoneapps';
 import { TRAVEL_INTERACTABLES } from './travel';
 
 export * from './common';
@@ -209,6 +209,7 @@ export const ALL_ACTIVITIES: Activity[] = [
   ...PHONE_ACTIVITIES,
   ...CHOP_ITEMS,
   ...RIDES,
+  ...TREKS,
 ];
 
 export const activityById = (id: string) => ALL_ACTIVITIES.find((a) => a.id === id);
