@@ -2,6 +2,7 @@ import { useFrame, type ThreeEvent } from '@react-three/fiber';
 import { useRef } from 'react';
 import type { Group } from 'three';
 import { clockParts, daylight } from '../engine/clock';
+import { carById } from '../content/cars';
 import { useGame } from '../store/game';
 import { Person } from './Avatar';
 import { Box, Cyl, Tappable, type V3 } from './Room';
@@ -169,6 +170,18 @@ export function Tree({ p, s = 1 }: { p: V3; s?: number }) {
   );
 }
 
+/** Your own car, parked in front of your gate. */
+function MyCar() {
+  const car = useGame((s) => s.car);
+  const c = car ? carById(car.id) : undefined;
+  if (!c) return null;
+  return (
+    <group position={[-5.6, 0.03, -1.75]}>
+      <Car body={c.color} roof={c.color} />
+    </group>
+  );
+}
+
 export function Street() {
   const walkTo = useGame((s) => s.walkTo);
   const night = useGame((s) => daylight(clockParts(Math.floor(s.time / 10) * 10).minuteOfDay) < 0.3);
@@ -301,6 +314,7 @@ export function Street() {
         <meshStandardMaterial color="#6c8a52" flatShading />
       </mesh>
 
+      <MyCar />
       <Traffic />
       <Pedestrians />
     </group>

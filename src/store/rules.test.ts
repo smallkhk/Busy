@@ -184,3 +184,17 @@ describe('career & business', () => {
     expect(upgradeCost(pos, 2)).toBe(300000);
   });
 });
+
+describe('cars', () => {
+  it('driving needs a car and only costs fuel', () => {
+    expect(blockReason(act('drive-street-wuse'), base)).toMatch(/car/);
+    expect(blockReason(act('drive-street-wuse'), { ...base, hasCar: true })).toBeNull();
+    expect(blockReason(act('drive-street-wuse'), { ...base, car: { id: 'corolla', condition: 90 } })).toBeNull();
+    expect(act('drive-street-wuse').cost!).toBeLessThan(act('hail-street-wuse').cost!);
+    expect(act('drive-street-wuse').minutes).toBe(act('hail-street-wuse').minutes);
+  });
+
+  it('ride-app job needs a car', () => {
+    expect(blockReason(act('hailing'), base)).toMatch(/car/);
+  });
+});

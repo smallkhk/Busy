@@ -37,7 +37,7 @@ export type Activity = {
   homeLeg?: boolean;
   /** Meals of foodstuff used up when it starts. */
   usesPantry?: number;
-  requires?: { packaging?: number; cv?: number };
+  requires?: { packaging?: number; cv?: number; car?: boolean };
   /** Applied when it finishes. */
   effects?: { packaging?: number; pantry?: number; cv?: number; meet?: string };
   /** Shown instead of running, for content that isn't built yet. */

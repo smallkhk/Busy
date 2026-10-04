@@ -6,6 +6,7 @@ import { clockParts, formatNaira, inHours } from '../engine/clock';
 import { CALL_COST, contactById, FIRST_MEET_REL, GIFT_COST, longLeg, type ContactState } from '../content/contacts';
 import { businessById, dailyProfit, MAX_BIZ_LEVEL, upgradeCost, type OwnedBusiness } from '../content/business';
 import { GRADES, OFFICE_SHIFT_ID, payFor, promotionBlock } from '../content/career';
+import { carById, repairCost, RESALE } from '../content/cars';
 import { EVENTS } from '../content/events';
 import { ALL_GOALS } from '../content/goals';
 import { LOAN_DAYS, LOAN_FEE, LOAN_MAX, SAVINGS_DAILY_RATE, TOKEN_COST } from '../content/phoneapps';
@@ -15,7 +16,7 @@ import { clamp, fullNeeds, LOW_NEED, NEED_KEYS, NEED_META, tickNeeds, type NeedK
 
 export type Txn = { at: number; label: string; amount: number };
 export type Toast = { id: number; text: string };
-export type PhoneApp = 'home' | 'bank' | 'jobs' | 'chat' | 'map' | 'gram' | 'house' | 'contacts' | 'chop' | 'ride' | 'news' | 'goals' | 'biz';
+export type PhoneApp = 'home' | 'bank' | 'jobs' | 'chat' | 'map' | 'gram' | 'house' | 'contacts' | 'chop' | 'ride' | 'news' | 'goals' | 'biz' | 'cars';
 
 /** `total` is the actual duration (rush hour makes trips longer); old saves may lack it. */
 type Active = { id: string; remaining: number; gen: boolean; total?: number; eventAt?: number };
@@ -48,6 +49,7 @@ type GameState = {
   /** Office shifts done at the current grade. */
   gradeShifts: number;
   businesses: Record<string, OwnedBusiness>;
+  car: { id: string; condition: number } | null;
   /** Goal ids already completed. */
   goals: string[];
   savings: number;
@@ -85,6 +87,9 @@ type GameState = {
   dismissToast: (id: number) => void;
   openMenu: (id: string | null) => void;
   openPhone: (app: PhoneApp | null) => void;
+  buyCar: (id: string) => void;
+  sellCar: () => void;
+  repairCar: () => void;
   promote: () => void;
   buyBusiness: (id: string) => void;
   upgradeBusiness: (id: string) => void;
@@ -157,6 +162,7 @@ const initial = () => ({
   grade: 0,
   gradeShifts: 0,
   businesses: {} as Record<string, OwnedBusiness>,
+  car: null as { id: string; condition: number } | null,
   goals: [] as string[],
   savings: 0,
   savingsInterest: 0,
@@ -183,7 +189,7 @@ const initial = () => ({
 });
 
 /** Why an activity can't start right now, or null if it can. */
-export type BlockState = Pick<GameState, 'time' | 'money' | 'power' | 'active' | 'packaging' | 'pantry' | 'cv' | 'area' | 'rentLocked'> & { unlocks?: string[]; grade?: number };
+export type BlockState = Pick<GameState, 'time' | 'money' | 'power' | 'active' | 'packaging' | 'pantry' | 'cv' | 'area' | 'rentLocked'> & { unlocks?: string[]; grade?: number; hasCar?: boolean; car?: unknown };
 
 export function blockReason(a: Activity, s: BlockState): string | null {
   if (a.locked) return a.locked;
@@ -195,6 +201,8 @@ export function blockReason(a: Activity, s: BlockState): string | null {
   if (a.hours && !inHours(s.time, a.hours)) {
     return `Only from ${a.hours[0]}:00 to ${a.hours[1]}:00`;
   }
+  // UI passes hasCar; the store passes its full state with `car`.
+  if (a.requires?.car && !(s.hasCar ?? !!s.car)) return 'You no get car. Buy one for 🚗 Cars app';
   if (a.usesPantry && s.pantry < a.usesPantry) return 'No foodstuff. Buy for Wuse Market';
   const cost = (a.cost ?? 0) + (a.requiresPower && !s.power ? GEN_COST : 0);
   if (cost > s.money) return `You need ${formatNaira(cost)}`;
@@ -264,6 +272,11 @@ export const useGame = create<GameState>()(
         if (a.id.startsWith('trek-')) keys.push('treks');
         if (a.sleep && a.minutes >= 480) keys.push('sleeps');
         if (a.id === 'bottle') keys.push('bottles');
+        if (a.requires?.car && s.car) {
+          keys.push('drives');
+          const wear = a.id === 'hailing' ? 8 : 2 + Math.round(Math.random() * 4);
+          set({ car: { ...s.car, condition: Math.max(0, s.car.condition - wear) } });
+        }
         bump(...keys);
         if (fx?.meet) meetContact(fx.meet);
         if (fx) {
@@ -334,7 +347,7 @@ export const useGame = create<GameState>()(
         const gap = packagingGap(s.packaging, s.money, s.area);
         const loanOverdue = !!s.loan && day > s.loan.dueDay;
         const owned = Object.keys(s.businesses);
-        const e = pickEvent(EVENTS, trigger, { place: s.place, hour, day, money: s.money, power: s.power, rentOverdue, met, gap, followers: s.followers, loanOverdue, owned, grade: s.cv >= 3 ? s.grade : -1, trip }, s.eventHistory, s.time);
+        const e = pickEvent(EVENTS, trigger, { place: s.place, hour, day, money: s.money, power: s.power, rentOverdue, met, gap, followers: s.followers, loanOverdue, owned, grade: s.cv >= 3 ? s.grade : -1, carCondition: s.car?.condition, trip }, s.eventHistory, s.time);
         if (e) set({ event: e.id, eventHistory: { ...s.eventHistory, [e.id]: s.time }, menu: null, phone: null });
       };
 
@@ -377,6 +390,8 @@ export const useGame = create<GameState>()(
           const relAll = effect.relAll ? Object.fromEntries(Object.keys(get().contacts).map((id) => [id, effect.relAll!])) : {};
           const extra = [...(effect.meet ? [meetContact(effect.meet)] : []), ...changeRel({ ...relAll, ...(effect.rel ?? {}) })].filter((c): c is string => !!c);
           if (effect.payLoan) get().repayLoan();
+          const myCar = get().car;
+          if (effect.carRepair && myCar) set({ car: { ...myCar, condition: 100 } });
           const cb = effect.closeBusiness;
           if (cb && get().businesses[cb.id]) {
             const biz = get().businesses;
@@ -387,6 +402,53 @@ export const useGame = create<GameState>()(
         },
 
         closeEvent: () => set({ eventResult: null }),
+
+        buyCar: (id) => {
+          const s = get();
+          const c = carById(id);
+          if (!c || s.car?.id === id) return;
+          if (s.active) return get().toast('😕 Finish wetin you dey do first');
+          const old = s.car ? carById(s.car.id) : undefined;
+          const tradeIn = old ? Math.round(old.price * RESALE) : 0;
+          const cost = c.price - tradeIn;
+          if (cost > s.money) return get().toast(`😕 You need ${formatNaira(cost)}${old ? ' (after trade-in)' : ''}`);
+          set({
+            money: s.money - cost,
+            car: { id, condition: 100 },
+            packaging: clamp(s.packaging + c.packaging - (old?.packaging ?? 0)),
+            txns: [{ at: s.time, label: `Bought ${c.name}${old ? ` (traded in ${old.name})` : ''}`, amount: -cost }, ...s.txns].slice(0, 40),
+          });
+          get().toast(`${c.emoji} You don buy ${c.name}! 👔 +${c.packaging - (old?.packaging ?? 0)}`);
+        },
+
+        sellCar: () => {
+          const s = get();
+          const c = s.car ? carById(s.car.id) : undefined;
+          if (!c || !s.car) return;
+          if (s.active) return get().toast('😕 Finish wetin you dey do first');
+          const got = Math.round(c.price * RESALE * (0.5 + s.car.condition / 200));
+          set({
+            money: s.money + got,
+            car: null,
+            packaging: clamp(s.packaging - c.packaging),
+            txns: [{ at: s.time, label: `Sold ${c.name}`, amount: got }, ...s.txns].slice(0, 40),
+          });
+          get().toast(`🤝 You don sell ${c.name} for ${formatNaira(got)}`);
+        },
+
+        repairCar: () => {
+          const s = get();
+          if (!s.car) return;
+          const cost = repairCost(s.car.condition);
+          if (cost <= 0) return get().toast('🔧 Car dey perfect already');
+          if (cost > s.money) return get().toast(`😕 Mechanic want ${formatNaira(cost)}`);
+          set({
+            money: s.money - cost,
+            car: { ...s.car, condition: 100 },
+            txns: [{ at: s.time, label: 'Mechanic: car service', amount: -cost }, ...s.txns].slice(0, 40),
+          });
+          get().toast('🔧 Car don service. E dey run like new');
+        },
 
         promote: () => {
           const s = get();
@@ -846,6 +908,7 @@ export const useGame = create<GameState>()(
         grade: s.grade,
         gradeShifts: s.gradeShifts,
         businesses: s.businesses,
+        car: s.car,
         goals: s.goals,
         savings: s.savings,
         savingsInterest: s.savingsInterest,

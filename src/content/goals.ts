@@ -14,6 +14,7 @@ export type GoalState = {
   eventHistory: Record<string, number>;
   grade?: number;
   businesses?: Record<string, unknown>;
+  car?: { id: string } | null;
 };
 
 export type Goal = {
@@ -54,6 +55,8 @@ export const ACHIEVEMENTS: Goal[] = [
   { id: 'a-director', emoji: '🏛️', title: 'Director', hint: 'Reach Director', reward: 100000, done: (s) => (s.grade ?? 0) >= 4 },
   { id: 'a-biz', emoji: '🏪', title: 'Business owner', hint: 'Start your first business', reward: 10000, done: (s) => Object.keys(s.businesses ?? {}).length >= 1 },
   { id: 'a-mogul', emoji: '🤑', title: 'Mogul', hint: 'Own all 4 businesses', reward: 200000, done: (s) => Object.keys(s.businesses ?? {}).length >= 4 },
+  { id: 'a-car', emoji: '🚗', title: 'I don buy motor', hint: 'Buy your first car', reward: 20000, done: (s) => !!s.car },
+  { id: 'a-benz', emoji: '🚘', title: 'Benz owner (real one)', hint: 'Own the Benz SUV', reward: 100000, done: (s) => s.car?.id === 'benz' },
   { id: 'a-million', emoji: '💰', title: 'Millionaire', hint: 'Get ₦1,000,000 for your account', reward: 0, done: (s) => s.money >= 1_000_000 },
 ];
 
