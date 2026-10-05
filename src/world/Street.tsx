@@ -222,8 +222,10 @@ export function Tree({ p, s = 1 }: { p: V3; s?: number }) {
 /** Your own car, parked in front of your gate. */
 function MyCar() {
   const car = useGame((s) => s.car);
+  // Out driving, or parked somewhere else in town
+  const away = useGame((s) => s.driving || !!s.parked);
   const c = car ? carById(car.id) : undefined;
-  if (!c) return null;
+  if (!c || away) return null;
   return (
     <group position={[-5.6, 0.03, -1.75]} scale={0.92}>
       <CarModel kind={c.model} paint={car?.paint ?? c.color} />

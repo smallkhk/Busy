@@ -9,7 +9,7 @@ import { SICKNESS } from '../content/health';
 import { placeLabel } from '../content/housing';
 import { activityRealSeconds, clockParts, formatClock, formatNaira, formatSeconds } from '../engine/clock';
 import { mood, moodFace, NEED_KEYS, NEED_META } from '../engine/needs';
-import { blockReason, useGame } from '../store/game';
+import { blockReason, useGame, carSpot } from '../store/game';
 import { activityDetail } from './detail';
 
 export function TopBar() {
@@ -130,6 +130,30 @@ export function Toasts() {
       {toasts.map((t) => (
         <div key={t.id} className="toast card">{t.text}</div>
       ))}
+    </div>
+  );
+}
+
+/** Out in town with your own car: get in, or park and step out. */
+export function DriveButton() {
+  const has = useGame((s) => !!s.car && s.place !== 'home' && !s.active);
+  const driving = useGame((s) => s.driving);
+  const fuel = useGame((s) => s.car?.fuel);
+  const near = useGame((s) => {
+    const spot = carSpot(s);
+    return !!spot && Math.hypot(s.pos[0] - spot.pos[0], s.pos[1] - spot.pos[1]) < 2.5;
+  });
+  const enter = useGame((s) => s.enterCar);
+  const park = useGame((s) => s.parkCar);
+  if (!has) return null;
+  return (
+    <div className="drive-row">
+      {driving ? (
+        <button className="primary drive-btn" onClick={park}>🅿️ Park & comot</button>
+      ) : (
+        <button className="primary drive-btn" onClick={enter}>{near ? '🚗 Enter your motor' : '🚗 Go to your motor'}</button>
+      )}
+      {fuel !== undefined && <span className="drive-fuel">⛽ {fuel.toFixed(1)}L</span>}
     </div>
   );
 }

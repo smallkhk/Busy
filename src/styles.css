@@ -535,3 +535,8 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
 .admin-col > .admin-input { width: 100%; box-sizing: border-box; flex: none; }
 .admin-input { flex: 1; min-width: 0; font: inherit; font-size: 15px; padding: 8px 10px; border-radius: 10px; border: 1px solid var(--line); background: rgba(255, 255, 255, 0.06); color: var(--text); }
 .ghost.danger { color: var(--bad); border-color: rgba(239, 91, 91, 0.4); }
+
+/* Get in / park your car out in town */
+.drive-row { display: flex; align-items: center; gap: 8px; justify-content: flex-end; }
+.drive-btn { padding: 8px 14px; border-radius: 999px; font-size: 15px; }
+.drive-fuel { background: rgba(14, 33, 28, 0.85); color: #f1e3c8; border-radius: 999px; padding: 6px 10px; font-size: 13px; }
