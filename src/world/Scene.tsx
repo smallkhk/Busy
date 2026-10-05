@@ -1,7 +1,7 @@
 import { OrthographicCamera } from '@react-three/drei';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { useEffect, useMemo, type ReactElement } from 'react';
-import { Color, Vector3 } from 'three';
+import { useEffect, useMemo, useRef, type ReactElement } from 'react';
+import { Color, Object3D, Vector3, type AmbientLight, type InstancedMesh } from 'three';
 import { clockParts, daylight } from '../engine/clock';
 import { useGame } from '../store/game';
 import { Avatar } from './Avatar';
@@ -88,6 +88,52 @@ function IsoCamera({ place }: { place: Place }) {
   );
 }
 
+const RAIN_DROPS = 500;
+const dummy = new Object3D();
+
+/** Falling rain around the camera's view. Storms rain harder and flash lightning. */
+function Rain({ storm }: { storm: boolean }) {
+  const ref = useRef<InstancedMesh>(null);
+  const drops = useMemo(
+    () => Array.from({ length: RAIN_DROPS }, () => ({ x: (Math.random() - 0.5) * 26, y: Math.random() * 12, z: (Math.random() - 0.5) * 18, v: 9 + Math.random() * 5 })),
+    [],
+  );
+  useFrame((_, dt) => {
+    const mesh = ref.current;
+    if (!mesh) return;
+    const speed = storm ? 1.5 : 1;
+    drops.forEach((d, i) => {
+      d.y -= d.v * speed * Math.min(dt, 0.05);
+      if (d.y < 0) d.y += 12;
+      dummy.position.set(d.x + (storm ? d.y * 0.15 : 0), d.y, d.z);
+      dummy.rotation.set(0, 0, storm ? 0.15 : 0);
+      dummy.updateMatrix();
+      mesh.setMatrixAt(i, dummy.matrix);
+    });
+    mesh.instanceMatrix.needsUpdate = true;
+  });
+  return (
+    <instancedMesh ref={ref} args={[undefined, undefined, storm ? RAIN_DROPS : RAIN_DROPS / 2]}>
+      <boxGeometry args={[0.02, 0.35, 0.02]} />
+      <meshBasicMaterial color="#b9d3ee" transparent opacity={0.55} />
+    </instancedMesh>
+  );
+}
+
+function Lightning() {
+  const ref = useRef<AmbientLight>(null);
+  const next = useRef(3);
+  useFrame(({ clock }) => {
+    const t = clock.getElapsedTime();
+    if (!ref.current) return;
+    if (t > next.current) next.current = t + 4 + Math.random() * 8;
+    const since = next.current - t;
+    ref.current.intensity = since > 3.8 ? 2.5 : 0;
+  });
+  return <ambientLight ref={ref} intensity={0} color="#dfe8ff" />;
+}
+
+const GREY_SKY = new Color('#7c8a96');
 const NIGHT_SKY = new Color('#0b1626');
 const DAY_SKY = new Color('#8fc6e8');
 const DUSK = new Color('#f2a65a');
@@ -96,15 +142,18 @@ function Lights({ place }: { place: Place }) {
   // Re-render lights once per in-game ~10 minutes, not every frame.
   const bucket = useGame((s) => Math.floor(s.time / 10));
   const power = useGame((s) => s.power);
+  const weather = useGame((s) => s.weather ?? 'sunny');
   const { scene } = useThree();
   const { minuteOfDay, hour } = clockParts(bucket * 10);
-  const light = daylight(minuteOfDay);
+  const dim = { sunny: 1, cloudy: 0.82, rain: 0.62, storm: 0.45 }[weather];
+  const light = daylight(minuteOfDay) * dim;
 
   const sky = useMemo(() => {
     const c = NIGHT_SKY.clone().lerp(DAY_SKY, light);
     if ((hour >= 17 && hour < 20) || (hour >= 5 && hour < 8)) c.lerp(DUSK, 0.35 * (1 - Math.abs(light - 0.5) * 2));
+    if (dim < 1) c.lerp(GREY_SKY, (1 - dim) * light);
     return c;
-  }, [light, hour]);
+  }, [light, hour, dim]);
 
   useEffect(() => {
     scene.background = sky;
@@ -133,6 +182,8 @@ function Lights({ place }: { place: Place }) {
 
 export function Scene() {
   const place = useGame((s) => s.place);
+  const weather = useGame((s) => s.weather ?? 'sunny');
+  const wet = weather === 'rain' || weather === 'storm';
   const PlaceScene = SCENES[place];
   return (
     <Canvas shadows dpr={[1, 2]} className="scene">
@@ -143,6 +194,8 @@ export function Scene() {
       <PlaceScene />
       <Avatar />
       <RemotePlayers />
+      {wet && place !== 'home' && <Rain storm={weather === 'storm'} />}
+      {weather === 'storm' && <Lightning />}
     </Canvas>
   );
 }

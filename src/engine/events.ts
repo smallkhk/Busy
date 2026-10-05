@@ -29,6 +29,7 @@ export type EventContext = {
   /** Long Leg score 0–100. */
   longLeg?: number;
   packaging?: number;
+  weather?: 'sunny' | 'cloudy' | 'rain' | 'storm';
 };
 
 export type Effect = {

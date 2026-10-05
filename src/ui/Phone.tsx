@@ -1,3 +1,4 @@
+import { newsById, WEATHER } from '../content/world';
 import { useShallow } from 'zustand/react/shallow';
 import { JOBS, PHONE_ACTIVITIES, type Activity } from '../content/activities';
 import { clockParts, formatClock, formatNaira } from '../engine/clock';
@@ -35,7 +36,7 @@ const APPS: { id: PhoneApp; name: string; emoji: string; color: string }[] = [
 
 function ActivityList({ items }: { items: Activity[] }) {
   const choose = useGame((s) => s.choose);
-  const state = useGame(useShallow((s) => ({ time: s.time, money: s.money, power: s.power, active: s.active, packaging: s.packaging, pantry: s.pantry, cv: s.cv, area: s.area, rentLocked: s.rentLocked, unlocks: s.unlocks, grade: s.grade, hasCar: !!s.car, sick: s.sick, contacts: s.contacts })));
+  const state = useGame(useShallow((s) => ({ time: s.time, money: s.money, power: s.power, active: s.active, packaging: s.packaging, pantry: s.pantry, cv: s.cv, area: s.area, rentLocked: s.rentLocked, unlocks: s.unlocks, grade: s.grade, hasCar: !!s.car, sick: s.sick, contacts: s.contacts, weather: s.weather, news: s.news })));
   return (
     <div className="list">
       {items.map((a) => {
@@ -64,6 +65,9 @@ function NewsApp() {
   const area = useGame((s) => s.area);
   const rentDueDay = useGame((s) => s.rentDueDay);
   const followers = useGame((s) => s.followers);
+  const news = useGame((s) => s.news);
+  const weather = useGame((s) => s.weather ?? 'sunny');
+  const breaking = (news ?? []).filter((n) => n.until >= day).map((n) => ({ n, info: newsById(n.id) })).filter((x) => x.info);
   // A different set of headlines every day
   const headlines = HEADLINES.map((h, i) => ({ h, k: (i * 7 + day * 13) % HEADLINES.length })).sort((a, b) => a.k - b.k).slice(0, 5);
   return (
@@ -74,7 +78,14 @@ function NewsApp() {
         <div className="small">🧺 Foodstuff: {pantry} meals · 📄 CVs: {Math.min(cv, 3)}/3</div>
         <div className="small">👔 Packaging: {Math.round(packaging)} · 📸 {followers.toLocaleString('en-NG')} followers</div>
       </div>
+      <div className="news-weather">{WEATHER[weather].emoji} Abuja weather now: <b>{WEATHER[weather].name}</b>{WEATHER[weather].trip > 1 ? ` · road trips ${Math.round((WEATHER[weather].trip - 1) * 100)}% slower` : ''}</div>
       <div className="list">
+        {breaking.map(({ n, info }) => (
+          <div key={n.id} className="news-item breaking">
+            <span className="breaking-tag">BREAKING</span> {info!.headline}
+            <div className="small">{info!.detail} · till Day {n.until}</div>
+          </div>
+        ))}
         {headlines.map(({ h }) => (
           <div key={h} className="news-item">{h}</div>
         ))}

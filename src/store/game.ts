@@ -12,6 +12,7 @@ import { rollSickness, SICK_DRAIN, SICKNESS, type Sickness } from '../content/he
 import { ALL_GOALS } from '../content/goals';
 import { LOAN_DAYS, LOAN_FEE, LOAN_MAX, SAVINGS_DAILY_RATE, TOKEN_COST } from '../content/phoneapps';
 import { BRAND_COOLDOWN_DAYS, BRAND_MIN_FOLLOWERS, brandPay, followersGain, packagingGap, POST_COOLDOWN_MIN, postById } from '../content/gram';
+import { combinedMods, nextWeather, priceOf, tripFactor, weatherSpell, WORLD_NEWS, type ActiveNews, type Weather } from '../content/world';
 import { effectChips, pickEvent, resolveChoice, type EventContext } from '../engine/events';
 import { clamp, fullNeeds, LOW_NEED, NEED_KEYS, NEED_META, tickNeeds, type NeedKey, type Needs } from '../engine/needs';
 
@@ -54,6 +55,10 @@ type GameState = {
   sick: Sickness | null;
   /** Police suspicion 0–100. Goes down small small every day. */
   heat: number;
+  weather: Weather;
+  nextWeatherChange: number;
+  /** World news running now, with the day it ends. */
+  news: ActiveNews[];
   /** Trip in progress when the current event fired. */
   eventTrip: string | null;
   hasNet: boolean;
@@ -146,10 +151,15 @@ const RUSH_HOURS = [7, 8, 17, 18];
 const RUSH_FACTOR = 1.6;
 
 /** Real duration of an activity started at `time`. */
-export function durationAt(a: Activity, time: number, area: AreaId = 'kubwa'): number {
+export function durationAt(a: Activity, time: number, area: AreaId = 'kubwa', world?: { weather?: Weather; news?: ActiveNews[] }): number {
   const base = a.homeLeg ? a.minutes * AREAS[area].commute : a.minutes;
-  return Math.round(a.commute && RUSH_HOURS.includes(clockParts(time).hour) ? base * RUSH_FACTOR : base);
+  const rush = a.commute && RUSH_HOURS.includes(clockParts(time).hour) ? RUSH_FACTOR : 1;
+  const extra = world ? tripFactor(a, world.weather, combinedMods(world.news, clockParts(time).day)) : 1;
+  return Math.round(base * rush * extra);
 }
+
+/** What an activity costs right now, after today's news. */
+export const costAt = (a: Activity, s: { time: number; news?: ActiveNews[] }) => priceOf(a, combinedMods(s.news, clockParts(s.time).day));
 
 let toastId = 0;
 
@@ -178,6 +188,9 @@ const initial = () => ({
   car: null as { id: string; condition: number } | null,
   sick: null as Sickness | null,
   heat: 0,
+  weather: 'sunny' as Weather,
+  nextWeatherChange: START_TIME + 240,
+  news: [] as ActiveNews[],
   eventTrip: null as string | null,
   hasNet: false,
   goals: [] as string[],
@@ -206,7 +219,7 @@ const initial = () => ({
 });
 
 /** Why an activity can't start right now, or null if it can. */
-export type BlockState = Pick<GameState, 'time' | 'money' | 'power' | 'active' | 'packaging' | 'pantry' | 'cv' | 'area' | 'rentLocked'> & { unlocks?: string[]; grade?: number; hasCar?: boolean; car?: unknown; sick?: Sickness | null; contacts?: Record<string, ContactState> };
+export type BlockState = Pick<GameState, 'time' | 'money' | 'power' | 'active' | 'packaging' | 'pantry' | 'cv' | 'area' | 'rentLocked'> & { unlocks?: string[]; grade?: number; hasCar?: boolean; car?: unknown; sick?: Sickness | null; contacts?: Record<string, ContactState>; weather?: Weather; news?: ActiveNews[] };
 
 /** Everything events look at to decide if and how they happen. */
 export function eventContext(s: GameState, trip?: string | null): EventContext {
@@ -229,6 +242,7 @@ export function eventContext(s: GameState, trip?: string | null): EventContext {
     heat: s.heat ?? 0,
     longLeg: longLeg(s.contacts),
     packaging: s.packaging,
+    weather: s.weather ?? 'sunny',
   };
 }
 
@@ -247,7 +261,7 @@ export function blockReason(a: Activity, s: BlockState): string | null {
   if (a.requires?.car && !(s.hasCar ?? !!s.car)) return 'You no get car. Buy one for 🚗 Cars app';
   if (s.sick && (a.pay || a.id === OFFICE_SHIFT_ID)) return `You dey sick (${SICKNESS[s.sick].name}). Treat am first 🤒`;
   if (a.usesPantry && s.pantry < a.usesPantry) return 'No foodstuff. Buy for Wuse Market';
-  const cost = (a.cost ?? 0) + (a.requiresPower && !s.power ? GEN_COST : 0);
+  const cost = costAt(a, s) + (a.requiresPower && !s.power ? GEN_COST : 0);
   if (cost > s.money) return `You need ${formatNaira(cost)}`;
   return null;
 }
@@ -266,11 +280,12 @@ export const useGame = create<GameState>()(
           return;
         }
         const gen = !!a.requiresPower && !s.power;
-        const cost = (a.cost ?? 0) + (gen ? GEN_COST : 0);
+        const price = costAt(a, s);
+        const cost = price + (gen ? GEN_COST : 0);
         const txns = [...s.txns];
-        if (a.cost) txns.unshift({ at: s.time, label: a.label, amount: -a.cost });
+        if (price) txns.unshift({ at: s.time, label: a.label, amount: -price });
         if (gen) txns.unshift({ at: s.time, label: 'Fuel for gen', amount: -GEN_COST });
-        const total = durationAt(a, s.time, s.area);
+        const total = durationAt(a, s.time, s.area, s);
         const eventAt = a.commute && Math.random() < COMMUTE_EVENT_CHANCE ? total * randomBetween(0.3, 0.7) : undefined;
         set({
           active: { id, remaining: total, gen, total, eventAt },
@@ -342,7 +357,7 @@ export const useGame = create<GameState>()(
           set({
             packaging: Math.min(100, s.packaging + (fx.packaging ?? 0)),
             pantry: s.pantry + (fx.pantry ?? 0),
-            cv: s.cv + (fx.cv ?? 0),
+            cv: s.cv + (fx.cv ? fx.cv + (combinedMods(s.news, clockParts(s.time).day).cvBonus ?? 0) : 0),
           });
           if (fx.packaging) get().toast(`👔 Packaging +${fx.packaging}. You don dey look clean!`);
           if (fx.pantry) get().toast(`🧺 Foodstuff +${fx.pantry} meals. Cook am for house`);
@@ -800,6 +815,27 @@ export const useGame = create<GameState>()(
             }
           }
 
+          // Weather
+          if (time >= (s.nextWeatherChange ?? 0)) {
+            const prevW = s.weather ?? 'sunny';
+            const rainy = !!combinedMods(s.news, clockParts(time).day).rainy;
+            const weather = nextWeather(prevW, Math.random, rainy);
+            set({ weather, nextWeatherChange: time + weatherSpell(weather, Math.random) });
+            if (weather !== prevW) {
+              const msg: Record<Weather, string> = {
+                sunny: '☀️ Sun don come out. Hot like pepper!',
+                cloudy: '🌤️ Cloud don gather small',
+                rain: '🌧️ Rain don start! Road go slow',
+                storm: '⛈️ Heavy storm! Thunder dey fire. Road go slow well well',
+              };
+              get().toast(msg[weather]);
+              if (weather === 'storm' && get().power && Math.random() < 0.6) {
+                set({ power: false, nextPowerChange: time + randomBetween(120, 360) });
+                get().toast('🕯️ Storm don cut light 😩');
+              }
+            }
+          }
+
           // NEPA/AEDC light schedule
           if (time >= s.nextPowerChange) {
             const power = !s.power;
@@ -855,6 +891,17 @@ export const useGame = create<GameState>()(
               Object.entries(get().contacts).map(([id, c]) => [id, { ...c, rel: Math.max(5, c.rel - 1) }]),
             );
             set({ contacts, heat: Math.max(0, (get().heat ?? 0) - 4) });
+            // World news: old stories end, sometimes a new one breaks
+            const running = (get().news ?? []).filter((n) => n.until >= cur.day);
+            if (Math.random() < 0.5) {
+              const fresh = WORLD_NEWS.filter((n) => !running.some((r) => r.id === n.id));
+              const pick = fresh[Math.floor(Math.random() * fresh.length)];
+              if (pick) {
+                running.push({ id: pick.id, until: cur.day + pick.days - 1 });
+                now.toast(`📰 Breaking: ${pick.headline} ${pick.detail}`);
+              }
+            }
+            set({ news: running });
             // Sickness roll for the new day
             const hs = get();
             if (!hs.sick) {
@@ -874,7 +921,8 @@ export const useGame = create<GameState>()(
             for (const [id, owned] of Object.entries(bz.businesses)) {
               const b = businessById(id);
               if (!b || (owned.closedUntil !== undefined && cur.day < owned.closedUntil)) continue;
-              const p = dailyProfit(b, owned.level, Math.random());
+              const wet = bz.weather === 'rain' || bz.weather === 'storm' ? 0.8 : 1;
+              const p = Math.round(dailyProfit(b, owned.level, Math.random()) * wet);
               income += p;
               lines.push(b.name);
             }
@@ -981,6 +1029,9 @@ export const useGame = create<GameState>()(
         car: s.car,
         sick: s.sick,
         heat: s.heat,
+        weather: s.weather,
+        nextWeatherChange: s.nextWeatherChange,
+        news: s.news,
         eventTrip: s.eventTrip,
         hasNet: s.hasNet,
         goals: s.goals,

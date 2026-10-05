@@ -373,3 +373,8 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
 .gist-input input { flex: 1; }
 .gist-input button { width: 44px; height: 44px; border-radius: 50%; background: #25d366; color: #0a1713; font-size: 18px; flex: none; }
 .gist-addback { margin-top: 8px; padding: 12px; border-radius: 12px; background: #25d366; color: #0a1713; font-weight: 800; }
+
+/* News: weather and breaking stories */
+.news-weather { margin: 8px 0; padding: 8px 10px; border-radius: 10px; background: rgba(61, 143, 196, 0.18); font-size: 13px; }
+.news-item.breaking { border-left: 3px solid #e74c3c; }
+.breaking-tag { background: #e74c3c; color: #fff; font-size: 10px; font-weight: 800; padding: 1px 5px; border-radius: 4px; letter-spacing: 0.04em; }
