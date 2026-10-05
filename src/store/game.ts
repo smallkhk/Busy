@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import { activityById, activityPlace, ENTRY_SPOT, EXIT_SPOT, PLACE_NAMES, type Activity, type Place } from '../content/activities';
+import { AD_BIZ_BOOST } from '../content/billboards';
 import { areaAllows, genCostFor, homeItemById, TV_ACTIVITIES, WIFI_FREE } from '../content/homeup';
 import { AREAS, moveCost, placeLabel, RENT_CYCLE_DAYS, RENT_GRACE_DAYS, rentOwed, type AreaId } from '../content/housing';
 import { clockParts, formatNaira, inHours } from '../engine/clock';
@@ -58,6 +59,8 @@ type GameState = {
   sick: Sickness | null;
   /** Police suspicion 0–100. Goes down small small every day. */
   heat: number;
+  /** Real time (ms) your billboard ad runs till: business earns more meanwhile. */
+  adBoostUntil: number;
   /** Things you don buy for your house. */
   homeUps: string[];
   /** Abuja Love: people you matched with. */
@@ -123,6 +126,8 @@ type GameState = {
   /** Hire (+1) or sack (-1) a worker. */
   setStaff: (id: string, delta: number) => void;
   buyHomeItem: (id: string) => void;
+  /** Pay for a billboard you don rent; boosts business till `until` (real ms). */
+  payForAd: (cost: number, label: string, until: number) => void;
   saveMoney: (amount: number) => void;
   withdrawSavings: (amount: number) => void;
   takeLoan: (amount: number) => void;
@@ -224,6 +229,7 @@ const initial = () => ({
   flags: {} as Record<string, number>,
   loves: {} as Record<string, Love>,
   homeUps: [] as string[],
+  adBoostUntil: 0,
   swiped: [] as string[],
   weather: 'sunny' as Weather,
   nextWeatherChange: START_TIME + 240,
@@ -678,6 +684,17 @@ export const useGame = create<GameState>()(
           if (staff === (owned.staff ?? 0)) return;
           set({ businesses: { ...s.businesses, [id]: { ...owned, staff } } });
           get().toast(delta > 0 ? `🧑🏾‍🍳 You don hire one more worker for ${b.name} (${formatNaira(wageOf(b))}/day)` : `👋🏾 You don sack one worker for ${b.name}`);
+        },
+
+        payForAd: (cost, label, until) => {
+          const s = get();
+          set({
+            money: s.money - cost,
+            adBoostUntil: Math.max(s.adBoostUntil ?? 0, until),
+            packaging: clamp(s.packaging + 2),
+            txns: [{ at: s.time, label, amount: -cost }, ...s.txns].slice(0, 40),
+          });
+          get().toast(`📢 Your ad don go up! Everybody for Abuja go see am${Object.keys(s.businesses).length ? '. Business +10% while e dey' : ''}`);
         },
 
         buyHomeItem: (id) => {
@@ -1205,7 +1222,8 @@ export const useGame = create<GameState>()(
               const wet = bz.weather === 'rain' || bz.weather === 'storm' ? 0.8 : 1;
               const bad = Math.random() < badDayChance(owned.staff ?? 0);
               const net = dailyNet(b, owned, Math.random(), bad);
-              const p = net > 0 ? Math.round(net * wet) : net;
+              const adBoost = Date.now() < (bz.adBoostUntil ?? 0) ? 1 + AD_BIZ_BOOST : 1;
+              const p = net > 0 ? Math.round(net * wet * adBoost) : net;
               income += p;
               lines.push(b.name);
               if (bad) now.toast(`😩 Bad day for ${b.name}: ${formatNaira(-p)} loss (theft, NEPA or slow market)`);
@@ -1316,6 +1334,7 @@ export const useGame = create<GameState>()(
         flags: s.flags,
         loves: s.loves,
         homeUps: s.homeUps,
+        adBoostUntil: s.adBoostUntil,
         swiped: s.swiped,
         weather: s.weather,
         nextWeatherChange: s.nextWeatherChange,

@@ -1,11 +1,13 @@
 import { Instance, Instances, MapControls, OrthographicCamera } from '@react-three/drei';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { useMemo, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Vector3, type Group } from 'three';
 import { HOME_XY, ROADS, type MapSpot } from '../content/map';
 import { fromPlace } from '../content/phoneapps';
 import { useGame } from '../store/game';
 import { TravelSheet, useMapSpots } from './MapView';
+import { AdBoards, AdSheet } from './AdBoards';
+import { loadAds } from '../net/billboards';
 
 /** SVG map coords (300×360) → world units. */
 const W = (x: number, y: number): [number, number] => [(x - 150) / 9, (y - 180) / 9];
@@ -114,43 +116,6 @@ function Roads() {
 }
 
 const AD_COLORS = ['#e74c3c', '#2980b9', '#27ae60', '#8e44ad', '#f39c12', '#16a085', '#d35400', '#c0392b'];
-
-/** Billboards along the major roads. */
-function Billboards() {
-  const boards = useMemo(() => {
-    const r = rng(7);
-    return ROADS.filter((road) => road.major).flatMap((road) =>
-      road.points.slice(1).flatMap((p, i) => {
-        const [ax, az] = W(...road.points[i]);
-        const [bx, bz] = W(...p);
-        const n = Math.floor(Math.hypot(bx - ax, bz - az) / 2.2);
-        return Array.from({ length: n }, (_, k) => {
-          const t = (k + 0.5) / n;
-          const side = k % 2 ? 0.75 : -0.75;
-          const nx = -(bz - az), nz = bx - ax;
-          const nl = Math.hypot(nx, nz) || 1;
-          return { x: ax + (bx - ax) * t + (nx / nl) * side, z: az + (bz - az) * t + (nz / nl) * side, c: AD_COLORS[Math.floor(r() * AD_COLORS.length)] };
-        });
-      }),
-    );
-  }, []);
-  return (
-    <>
-      {boards.map((b, i) => (
-        <group key={i} position={[b.x, 0, b.z]} rotation={[0, Math.PI / 4, 0]}>
-          <mesh position={[0, 0.3, 0]}>
-            <boxGeometry args={[0.04, 0.6, 0.04]} />
-            <meshStandardMaterial color="#555" />
-          </mesh>
-          <mesh position={[0, 0.66, 0]}>
-            <boxGeometry args={[0.7, 0.36, 0.04]} />
-            <meshStandardMaterial color={b.c} emissive={b.c} emissiveIntensity={0.25} />
-          </mesh>
-        </group>
-      ))}
-    </>
-  );
-}
 
 /** Distance from a point to a road segment. */
 function segDist(px: number, pz: number, ax: number, az: number, bx: number, bz: number) {
@@ -317,6 +282,10 @@ export function WorldMap() {
   const place = useGame((s) => s.place);
   const spots = useMapSpots();
   const [selected, setSelected] = useState<string | null>(null);
+  const [board, setBoard] = useState<number | null>(null);
+  useEffect(() => {
+    void loadAds();
+  }, []);
   const here = fromPlace(place);
   const herePos = spots.find((s) => s.place === here) ?? spots[0];
   const hereW = W(herePos.x, herePos.y);
@@ -339,7 +308,7 @@ export function WorldMap() {
         <directionalLight position={[10, 20, 6]} intensity={1.3} castShadow shadow-mapSize={[2048, 2048]} shadow-camera-left={-25} shadow-camera-right={25} shadow-camera-top={25} shadow-camera-bottom={-25} />
         <LabelSync anchors={anchors} />
 
-        <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow onPointerDown={() => setSelected(null)}>
+        <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow onPointerDown={() => { setSelected(null); setBoard(null); }}>
           <planeGeometry args={[400, 400]} />
           <meshStandardMaterial color="#86ad5f" />
         </mesh>
@@ -359,7 +328,7 @@ export function WorldMap() {
 
         <CityBlocks avoid={avoid} />
         <Roads />
-        <Billboards />
+        <AdBoards onTap={(slot) => { setSelected(null); setBoard(slot); }} />
         <Trees />
 
         {/* Estates: your area and the satellite towns */}
@@ -369,7 +338,7 @@ export function WorldMap() {
         <Estate cx={W(286, 286)[0] - 1.2} cz={W(286, 286)[1] + 1.4} cols={6} rows={3} roof="#a33b2b" seed={4} />
 
         {spots.map((s) => (
-          <group key={s.id} onPointerDown={(e) => { e.stopPropagation(); setSelected(s.id); }}>
+          <group key={s.id} onPointerDown={(e) => { e.stopPropagation(); setSelected(s.id); setBoard(null); }}>
             <Landmark s={s} />
           </group>
         ))}
@@ -382,7 +351,7 @@ export function WorldMap() {
             key={s.id}
             ref={(el) => { if (el) labelEls.set(s.id, el); else labelEls.delete(s.id); }}
             className={`world-chip ${s.place ? '' : 'soon'} ${selected === s.id ? 'on' : ''} ${s.id === herePos.id ? 'here' : ''}`}
-            onPointerDown={(e) => { e.stopPropagation(); setSelected(s.id); }}
+            onPointerDown={(e) => { e.stopPropagation(); setSelected(s.id); setBoard(null); }}
           >
             {s.id === herePos.id ? '📍 ' : ''}{s.emoji} {s.short ?? s.name}{s.place ? '' : ' · Soon'}
           </button>
@@ -394,7 +363,12 @@ export function WorldMap() {
         <button className="world-close" onClick={() => openPhone(null)} aria-label="Close map">✕</button>
       </div>
 
-      {sel && (
+      {board !== null && (
+        <div className="world-sheet card">
+          <AdSheet slot={board} onClose={() => setBoard(null)} />
+        </div>
+      )}
+      {sel && board === null && (
         <div className="world-sheet card">
           <TravelSheet sel={sel} />
         </div>
