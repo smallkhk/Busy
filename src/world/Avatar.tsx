@@ -1,10 +1,11 @@
 import { useFrame } from '@react-three/fiber';
-import { useRef } from 'react';
+import { Suspense, useRef } from 'react';
 import type { Group } from 'three';
 import { activityById } from '../content/activities';
 import { useGame } from '../store/game';
 import { SKINS, type Hair, type Outfit } from '../content/fashion';
 import { avatarLabelPos } from './labels';
+import { HumanModel, type HumanKind } from './HumanModel';
 
 const SPEED = 2.6; // world units per second
 const BED_POS: [number, number] = [-2.9, -1.9];
@@ -205,6 +206,25 @@ export function Person({ shirt, skin = '#5a3825', trousers = '#24324a', legs, ou
   );
 }
 
+/** Which rigged model wears each outfit, and what to recolour so it fits Abuja. */
+function modelFor(outfit: Outfit | undefined, shirt: string): { kind: HumanKind; tint: Record<string, string> } {
+  const hair = { Hair: '#141010', Eyebrows: '#141010' };
+  switch (outfit) {
+    case 'suit':
+      return { kind: 'suit', tint: { ...hair, Tie: '#1b6b3a' } };
+    case 'agbada':
+      return { kind: 'king', tint: { Hair_White: '#141010', Blue: '#f2ead8', Beige: '#e8dcc0', Metal: '#5a3a22', Metal_Dark: '#4a2e1a', DarkBrown: '#e8dcc0', Gold: '#c9a23a' } };
+    case 'kaftan':
+      return { kind: 'farmer', tint: { LightBlue: '#e8e4da', Brown: '#e8e4da', Beige: '#7a1f2b', Red: '#c9a23a', Brown2: '#3a2a1c' } };
+    case 'native':
+      return { kind: 'beach', tint: { ...hair, LightBrown: '#e07a1f', Red_Dark: '#2c3e8c' } };
+    case 'jersey':
+      return { kind: 'casual_hoodie', tint: { ...hair, Purple: '#0f8a3c', White: '#f4f4f4' } };
+    default:
+      return { kind: 'casual_2', tint: { ...hair, LightBrown: shirt } };
+  }
+}
+
 export function Avatar() {
   const group = useRef<Group>(null);
   const legs = useRef<Group[]>([]);
@@ -213,6 +233,7 @@ export function Avatar() {
   const look = useGame((s) => s.look);
   const fitness = useGame((s) => s.fitness ?? 10);
   const active = useGame((s) => s.active);
+  const walking = useGame((s) => !!s.target);
   const activity = active ? activityById(active.id) : undefined;
   const hidden = !!activity?.away;
   const sleeping = !!activity?.sleep;
@@ -265,7 +286,9 @@ export function Avatar() {
     <group ref={group} visible={!hidden}>
       {/* Fitness shows: fit people get broader shoulders */}
       <group scale={[0.92 + fitness * 0.0016, 1, 0.94 + fitness * 0.0012]}>
-        <Person shirt={shirt} legs={legs} outfit={look?.outfit} hair={look?.hair} skin={SKINS[look?.skin ?? 2]} />
+        <Suspense fallback={<Person shirt={shirt} legs={legs} outfit={look?.outfit} hair={look?.hair} skin={SKINS[look?.skin ?? 2]} />}>
+          <HumanModel {...modelFor(look?.outfit, shirt)} skin={SKINS[look?.skin ?? 2]} move={walking ? 'Walk' : active && !sleeping ? 'Interact' : 'Idle'} />
+        </Suspense>
       </group>
     </group>
   );
