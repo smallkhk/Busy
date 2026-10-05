@@ -396,7 +396,7 @@ export const DISTRICT_INTERACTABLES: Interactable[] = [
     emoji: '🏃🏾',
     label: [2.8, 1.8, -2.2],
     activities: [
-      { id: 'jog', label: 'Jog round the park', doing: 'Jogging, sweating, feeling fit', emoji: '🏃🏾', minutes: 45, gains: { fun: 15, energy: -15, hygiene: -20, social: 5 }, effects: { packaging: 1 }, hours: [6, 19], spot: C },
+      { id: 'jog', label: 'Jog round the park', doing: 'Jogging, sweating, feeling fit', emoji: '🏃🏾', minutes: 45, gains: { fun: 15, energy: -15, hygiene: -20, social: 5 }, effects: { fitness: 2, packaging: 1 }, hours: [6, 19], spot: C },
       { id: 'icecream-park', label: 'Ice cream from the bicycle man', doing: 'Licking ice cream', emoji: '🍦', minutes: 10, cost: 1000, gains: { food: 8, fun: 12 }, hours: [9, 19], spot: C },
     ],
   },
@@ -433,8 +433,8 @@ export const DISTRICT_INTERACTABLES: Interactable[] = [
     emoji: '⚽',
     label: [2.8, 1.6, -2.0],
     activities: [
-      { id: 'fivea', label: 'Play 5-a-side with the boys', doing: 'Dribbling like Okocha', emoji: '⚽', minutes: 90, gains: { fun: 35, social: 20, energy: -25, hygiene: -25 }, hours: [6, 19], spot: C },
-      { id: 'track', label: 'Run for the athletics track', doing: 'Running laps', emoji: '🏃🏾', minutes: 45, gains: { fun: 10, energy: -18, hygiene: -15 }, effects: { packaging: 1 }, hours: [6, 18], spot: C },
+      { id: 'fivea', label: 'Play 5-a-side with the boys', doing: 'Dribbling like Okocha', emoji: '⚽', minutes: 90, gains: { fun: 35, social: 20, energy: -25, hygiene: -25 }, effects: { fitness: 3 }, hours: [6, 19], spot: C },
+      { id: 'track', label: 'Run for the athletics track', doing: 'Running laps', emoji: '🏃🏾', minutes: 45, gains: { fun: 10, energy: -18, hygiene: -15 }, effects: { fitness: 2, packaging: 1 }, hours: [6, 18], spot: C },
     ],
   },
   {

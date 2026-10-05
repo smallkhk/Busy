@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import { activityById, activityPlace, ENTRY_SPOT, EXIT_SPOT, PLACE_NAMES, type Activity, type Place } from '../content/activities';
 import { AD_BIZ_BOOST } from '../content/billboards';
+import { courseById, GYM_DAYS, GYM_FEE, sickDodge, workEnergyFactor, type CourseId } from '../content/learning';
 import { festivalOn } from '../content/festivals';
 import { DEFAULT_LOOK, HAIR_COST, OUTFITS, type Hair, type Look, type Outfit } from '../content/fashion';
 import { driveWear } from '../content/minigames';
@@ -25,7 +26,7 @@ import { clamp, fullNeeds, LOW_NEED, NEED_KEYS, NEED_META, tickNeeds, type NeedK
 
 export type Txn = { at: number; label: string; amount: number };
 export type Toast = { id: number; text: string };
-export type PhoneApp = 'home' | 'bank' | 'jobs' | 'chat' | 'map' | 'gram' | 'house' | 'contacts' | 'chop' | 'ride' | 'news' | 'goals' | 'biz' | 'cars' | 'gist' | 'love' | 'account' | 'rankings' | 'style';
+export type PhoneApp = 'home' | 'bank' | 'jobs' | 'chat' | 'map' | 'gram' | 'house' | 'contacts' | 'chop' | 'ride' | 'news' | 'goals' | 'biz' | 'cars' | 'gist' | 'love' | 'account' | 'rankings' | 'style' | 'learn';
 
 /** `total` is the actual duration (rush hour makes trips longer); old saves may lack it. */
 type Active = { id: string; remaining: number; gen: boolean; total?: number; eventAt?: number; /** Mini-game score 0–1. */ bonus?: number };
@@ -66,6 +67,14 @@ export type GameState = {
   adBoostUntil: number;
   /** Land and houses you own. */
   properties: Partial<Record<AreaId, Property>>;
+  /** Courses you don enroll for, with classes done. */
+  courses: Partial<Record<CourseId, number>>;
+  /** Courses you don finish. */
+  skills: CourseId[];
+  /** 0–100: how fit you be. */
+  fitness: number;
+  /** Last game day your gym membership covers. */
+  gymUntil: number;
   /** How you look: outfit, hair and skin. */
   look: Look;
   /** Outfits you own. */
@@ -118,6 +127,8 @@ export type GameState = {
 
   start: (name: string, shirt: string, look?: Look) => void;
   buyOutfit: (id: Outfit) => void;
+  enroll: (id: CourseId) => void;
+  joinGym: () => void;
   wearOutfit: (id: Outfit) => void;
   setHair: (id: Hair) => void;
   setShirt: (color: string) => void;
@@ -256,6 +267,10 @@ const initial = () => ({
   loves: {} as Record<string, Love>,
   homeUps: [] as string[],
   look: DEFAULT_LOOK,
+  courses: {} as Partial<Record<CourseId, number>>,
+  skills: [] as CourseId[],
+  fitness: 10,
+  gymUntil: 0,
   wardrobe: ['tee'] as Outfit[],
   properties: {} as Partial<Record<AreaId, Property>>,
   adBoostUntil: 0,
@@ -293,7 +308,7 @@ const initial = () => ({
 });
 
 /** Why an activity can't start right now, or null if it can. */
-export type BlockState = Pick<GameState, 'time' | 'money' | 'power' | 'active' | 'packaging' | 'pantry' | 'cv' | 'area' | 'rentLocked'> & { unlocks?: string[]; grade?: number; hasCar?: boolean; car?: { id: string; fuel?: number; condition?: number } | null; carId?: string; carFuel?: number; sick?: Sickness | null; contacts?: Record<string, ContactState>; weather?: Weather; news?: ActiveNews[]; homeUps?: string[] };
+export type BlockState = Pick<GameState, 'time' | 'money' | 'power' | 'active' | 'packaging' | 'pantry' | 'cv' | 'area' | 'rentLocked'> & { unlocks?: string[]; grade?: number; hasCar?: boolean; car?: { id: string; fuel?: number; condition?: number } | null; carId?: string; carFuel?: number; sick?: Sickness | null; contacts?: Record<string, ContactState>; weather?: Weather; news?: ActiveNews[]; homeUps?: string[]; courses?: Partial<Record<CourseId, number>>; skills?: CourseId[]; gymUntil?: number };
 
 /** Everything events look at to decide if and how they happen. */
 export function eventContext(s: GameState, trip?: string | null): EventContext {
@@ -358,6 +373,10 @@ export function blockReason(a: Activity, s: BlockState): string | null {
   if (a.effects?.fuel && !(s.hasCar ?? !!s.car)) return 'You no get car to put fuel';
   if (s.sick && (a.pay || a.id === OFFICE_SHIFT_ID)) return `You dey sick (${SICKNESS[s.sick].name}). Treat am first 🤒`;
   if (a.usesPantry && s.pantry < a.usesPantry) return 'No foodstuff. Buy for Wuse Market';
+  if (a.requires?.course && s.courses?.[a.requires.course as CourseId] === undefined) return `Enroll for ${courseById(a.requires.course)?.name ?? 'the course'} first (📚 Learn app)`;
+  if (a.requires?.course && s.skills?.includes(a.requires.course as CourseId)) return 'You don finish this course already 🎓';
+  if (a.requires?.skill && !s.skills?.includes(a.requires.skill as CourseId)) return `You need ${courseById(a.requires.skill)?.name ?? 'training'} first (📚 Learn app)`;
+  if (a.requires?.gym && clockParts(s.time).day > (s.gymUntil ?? 0)) return 'Your gym membership never pay (📚 Learn app)';
   if (a.requires?.homeItem && !s.homeUps?.includes(a.requires.homeItem)) return `Buy ${homeItemById(a.requires.homeItem)?.name ?? 'am'} first (🏠 Rent app)`;
   const cost = costAt(a, s) + (a.requiresPower && !s.power ? genCostFor(s.homeUps) : 0);
   if (cost > s.money) return `You need ${formatNaira(cost)}`;
@@ -429,6 +448,20 @@ export const useGame = create<GameState>()(
         const fx = a.effects;
         const keys: string[] = [];
         if ((a.gains.food ?? 0) > 0) keys.push('meals');
+        // Classes: count them, graduate at the end
+        if (a.requires?.course) {
+          const cid = a.requires.course as CourseId;
+          const c = courseById(cid);
+          const done = (s.courses?.[cid] ?? 0) + 1;
+          if (c && done >= c.classes) {
+            set({ courses: { ...s.courses, [cid]: done }, skills: [...(s.skills ?? []), cid], packaging: clamp(s.packaging + (cid === 'degree' ? 10 : 3)) });
+            get().toast(`🎓 You don graduate: ${c.name}! New: ${c.unlocks}`);
+          } else if (c) {
+            set({ courses: { ...s.courses, [cid]: done } });
+            get().toast(`${c.emoji} Class ${done}/${c.classes} done`);
+          }
+        }
+        if (fx?.fitness) set({ fitness: Math.min(100, (get().fitness ?? 0) + fx.fitness) });
         // Doing things with a real friend nearby feels better
         const buddy = !a.travelTo && !a.away ? companionCheck?.() : undefined;
         if (buddy) {
@@ -668,7 +701,7 @@ export const useGame = create<GameState>()(
         repairCar: () => {
           const s = get();
           if (!s.car) return;
-          const cost = repairCost(s.car.condition);
+          const cost = Math.round(repairCost(s.car.condition) * (s.skills?.includes('mechanic') ? 0.5 : 1));
           if (cost <= 0) return get().toast('🔧 Car dey perfect already');
           if (cost > s.money) return get().toast(`😕 Mechanic want ${formatNaira(cost)}`);
           set({
@@ -1199,17 +1232,35 @@ export const useGame = create<GameState>()(
 
         start: (name, shirt, look) => set({ ...initial(), started: true, name: name.trim() || 'Abuja Hustler', shirt, look: look ?? DEFAULT_LOOK }),
 
+        enroll: (id) => {
+          const s = get();
+          const c = courseById(id);
+          if (!c || s.courses?.[id] !== undefined) return;
+          if (s.money < c.fee) return get().toast(`😕 School fees na ${formatNaira(c.fee)}`);
+          set({ money: s.money - c.fee, courses: { ...s.courses, [id]: 0 }, txns: [{ at: s.time, label: `School fees: ${c.name}`, amount: -c.fee }, ...s.txns].slice(0, 40) });
+          get().toast(`${c.emoji} You don enroll for ${c.name}! ${c.classes} classes to go`);
+        },
+
+        joinGym: () => {
+          const s = get();
+          const { day } = clockParts(s.time);
+          if (s.money < GYM_FEE) return get().toast(`😕 Gym na ${formatNaira(GYM_FEE)} for ${GYM_DAYS} days`);
+          set({ money: s.money - GYM_FEE, gymUntil: Math.max(s.gymUntil ?? 0, day) + GYM_DAYS, txns: [{ at: s.time, label: 'Gym membership', amount: -GYM_FEE }, ...s.txns].slice(0, 40) });
+          get().toast(`🏋🏾 Gym membership active till Day ${Math.max(s.gymUntil ?? 0, day) + GYM_DAYS}`);
+        },
+
         buyOutfit: (id) => {
           const s = get();
           const o = OUTFITS.find((x) => x.id === id);
           if (!o || s.wardrobe?.includes(id)) return;
-          if (s.money < o.cost) return get().toast(`😕 ${o.name} na ${formatNaira(o.cost)}`);
+          const price = Math.round(o.cost * (s.skills?.includes('tailoring') ? 0.8 : 1));
+          if (s.money < price) return get().toast(`😕 ${o.name} na ${formatNaira(price)}`);
           set({
-            money: s.money - o.cost,
+            money: s.money - price,
             wardrobe: [...(s.wardrobe ?? ['tee']), id],
             look: { ...(s.look ?? DEFAULT_LOOK), outfit: id },
             packaging: clamp(s.packaging + o.packaging),
-            txns: [{ at: s.time, label: `Bought ${o.name}`, amount: -o.cost }, ...s.txns].slice(0, 40),
+            txns: [{ at: s.time, label: `Bought ${o.name}`, amount: -price }, ...s.txns].slice(0, 40),
           });
           get().toast(`${o.emoji} You don buy ${o.name}! 👔 +${o.packaging}`);
         },
@@ -1248,7 +1299,9 @@ export const useGame = create<GameState>()(
             const total = s.active.total ?? a.minutes;
             const speed = Math.max(10, total / 4);
             const step = Math.min(dtReal * speed, s.active.remaining);
-            needs = tickNeeds(needs, step, { gains: a.gains, activityMinutes: total, sleeping: a.sleep });
+            // Fit people get tired slower at work
+            const gains = a.pay && (a.gains.energy ?? 0) < 0 ? { ...a.gains, energy: (a.gains.energy ?? 0) * workEnergyFactor(s.fitness ?? 0) } : a.gains;
+            needs = tickNeeds(needs, step, { gains, activityMinutes: total, sleeping: a.sleep });
             time += step;
             const remaining = s.active.remaining - step;
             set({ needs, time, active: { ...s.active, remaining } });
@@ -1348,7 +1401,7 @@ export const useGame = create<GameState>()(
             const contacts = Object.fromEntries(
               Object.entries(get().contacts).map(([id, c]) => [id, { ...c, rel: Math.max(5, c.rel - 1) }]),
             );
-            set({ contacts, heat: Math.max(0, (get().heat ?? 0) - 4) });
+            set({ contacts, heat: Math.max(0, (get().heat ?? 0) - 4), fitness: Math.max(0, (get().fitness ?? 0) - 1) });
             // World news: old stories end, sometimes a new one breaks
             const running = (get().news ?? []).filter((n) => n.until >= cur.day);
             if (Math.random() < 0.5) {
@@ -1377,7 +1430,7 @@ export const useGame = create<GameState>()(
             // Sickness roll for the new day
             const hs = get();
             if (!hs.sick) {
-              const kind = rollSickness(hs.needs, hs.hasNet, Math.random);
+              const kind = Math.random() < sickDodge(hs.fitness ?? 0) ? null : rollSickness(hs.needs, hs.hasNet, Math.random);
               if (kind && !hs.event && !hs.eventResult) {
                 const info = SICKNESS[kind];
                 set({
@@ -1525,6 +1578,10 @@ export const useGame = create<GameState>()(
         loves: s.loves,
         homeUps: s.homeUps,
         look: s.look,
+        courses: s.courses,
+        skills: s.skills,
+        fitness: s.fitness,
+        gymUntil: s.gymUntil,
         wardrobe: s.wardrobe,
         properties: s.properties,
         adBoostUntil: s.adBoostUntil,

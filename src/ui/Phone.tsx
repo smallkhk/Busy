@@ -1,3 +1,4 @@
+import { CLASS_ACTIVITIES, COURSES, fitnessLevel, GYM_FEE, GYM_DAYS, GYM_WORKOUT } from '../content/learning';
 import { festivalOn, nextFestival } from '../content/festivals';
 import { areaAllows, HOME_ITEMS } from '../content/homeup';
 import { newsById, WEATHER } from '../content/world';
@@ -30,6 +31,7 @@ const APPS: { id: PhoneApp; name: string; emoji: string; color: string }[] = [
   { id: 'chat', name: 'Calls', emoji: '📞', color: '#2f7fd6' },
   { id: 'love', name: 'Abuja Love', emoji: '💕', color: '#e8336d' },
   { id: 'style', name: 'Drip', emoji: '👗', color: '#b0408f' },
+  { id: 'learn', name: 'Learn & Gym', emoji: '📚', color: '#2f6b4a' },
   { id: 'rankings', name: 'Rankings', emoji: '🏆', color: '#c9a24a' },
   { id: 'account', name: 'Account', emoji: '⚙️', color: '#5f6670' },
   { id: 'map', name: 'Map', emoji: '🗺️', color: '#6a4bc4' },
@@ -43,7 +45,7 @@ const APPS: { id: PhoneApp; name: string; emoji: string; color: string }[] = [
 
 function ActivityList({ items }: { items: Activity[] }) {
   const choose = useGame((s) => s.choose);
-  const state = useGame(useShallow((s) => ({ time: s.time, money: s.money, power: s.power, active: s.active, packaging: s.packaging, pantry: s.pantry, cv: s.cv, area: s.area, rentLocked: s.rentLocked, unlocks: s.unlocks, grade: s.grade, hasCar: !!s.car, carId: s.car?.id, carFuel: s.car?.fuel, sick: s.sick, contacts: s.contacts, weather: s.weather, news: s.news, homeUps: s.homeUps })));
+  const state = useGame(useShallow((s) => ({ time: s.time, money: s.money, power: s.power, active: s.active, packaging: s.packaging, pantry: s.pantry, cv: s.cv, area: s.area, rentLocked: s.rentLocked, unlocks: s.unlocks, grade: s.grade, hasCar: !!s.car, carId: s.car?.id, carFuel: s.car?.fuel, sick: s.sick, contacts: s.contacts, weather: s.weather, news: s.news, homeUps: s.homeUps, courses: s.courses, skills: s.skills, gymUntil: s.gymUntil })));
   return (
     <div className="list">
       {items.map((a) => {
@@ -119,6 +121,61 @@ function FestivalLine({ day }: { day: number }) {
     <div className="news-weather">
       {today ? <>{today.emoji} Today: <b>{today.name}</b>. {today.greeting}</> : <>📅 Next: {next.festival.emoji} <b>{next.festival.name}</b> in {next.inDays} day{next.inDays > 1 ? 's' : ''}</>}
     </div>
+  );
+}
+
+function LearnApp() {
+  const courses = useGame((s) => s.courses ?? {});
+  const skills = useGame((s) => s.skills ?? []);
+  const fitness = useGame((s) => s.fitness ?? 0);
+  const gymUntil = useGame((s) => s.gymUntil ?? 0);
+  const money = useGame((s) => s.money);
+  const day = useGame((s) => clockParts(s.time).day);
+  const g = useGame.getState();
+  const lvl = fitnessLevel(fitness);
+  return (
+    <>
+      <div className="balance">
+        <div className="muted small">💪🏾 Fitness · {lvl.emoji} {lvl.name}</div>
+        <div className="bar thin"><div className="fill good" style={{ width: `${fitness}%` }} /></div>
+        <div className="muted small">{Math.round(fitness)}/100 · fit people get tired slower at work and fall sick less. Drops small every day.</div>
+        {day <= gymUntil ? (
+          <div className="small" style={{ marginTop: 6 }}>🏋🏾 Gym membership till Day {gymUntil}</div>
+        ) : (
+          <button className="primary" style={{ marginTop: 8, width: '100%' }} disabled={money < GYM_FEE} onClick={g.joinGym}>🏋🏾 Join gym · {formatNaira(GYM_FEE)} / {GYM_DAYS} days</button>
+        )}
+      </div>
+      <ActivityList items={[GYM_WORKOUT]} />
+      <div className="love-section">📚 Courses & skills</div>
+      <div className="list">
+        {COURSES.map((c) => {
+          const done = courses[c.id];
+          const grad = skills.includes(c.id);
+          return (
+            <div key={c.id} className={`contact ${grad ? 'owned' : ''}`}>
+              <div className="contact-head">
+                <span className="contact-emoji">{c.emoji}</span>
+                <span className="action-body">
+                  <span>{c.name}{grad ? ' 🎓' : ''}</span>
+                  <span className="muted small">{c.where} · {c.classes} classes</span>
+                  <span className="small">Unlocks: {c.unlocks}</span>
+                </span>
+              </div>
+              {done !== undefined && !grad && (
+                <div className="bar thin"><div className="fill good" style={{ width: `${(done / c.classes) * 100}%` }} /></div>
+              )}
+              {grad ? (
+                <div className="muted small">✅ Graduated. Check 💼 Jobs for your new work</div>
+              ) : done === undefined ? (
+                <button className="ghost" disabled={money < c.fee} onClick={() => g.enroll(c.id)}>📝 Enroll · {formatNaira(c.fee)}</button>
+              ) : (
+                <ActivityList items={CLASS_ACTIVITIES.filter((a) => a.id === `class-${c.id}`)} />
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </>
   );
 }
 
@@ -428,6 +485,8 @@ function AppBody({ app }: { app: PhoneApp }) {
       return <GistApp />;
     case 'love':
       return <LoveApp />;
+    case 'learn':
+      return <LearnApp />;
     case 'account':
       return <AccountApp />;
     case 'rankings':

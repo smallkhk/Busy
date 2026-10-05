@@ -47,10 +47,10 @@ export type Activity = {
   homeLeg?: boolean;
   /** Meals of foodstuff used up when it starts. */
   usesPantry?: number;
-  requires?: { packaging?: number; cv?: number; car?: boolean; longLeg?: number; /** House upgrade you must own. */ homeItem?: string };
+  requires?: { packaging?: number; cv?: number; car?: boolean; longLeg?: number; /** House upgrade you must own. */ homeItem?: string; /** Enrolled in this course. */ course?: string; /** Finished this course. */ skill?: string; /** Active gym membership. */ gym?: boolean };
   /** Applied when it finishes. */
   /** `cure` lists sicknesses it treats (all of them if true); `net` buys a mosquito net. */
-  effects?: { packaging?: number; pantry?: number; cv?: number; meet?: string; cure?: true | ('malaria' | 'typhoid' | 'food')[]; net?: boolean; carFix?: number; /** Litres into your car tank. */ fuel?: number; /** Chance the fuel na adulterated and damages the engine. */ badFuel?: number };
+  effects?: { packaging?: number; pantry?: number; cv?: number; meet?: string; cure?: true | ('malaria' | 'typhoid' | 'food')[]; net?: boolean; carFix?: number; /** Litres into your car tank. */ fuel?: number; /** Chance the fuel na adulterated and damages the engine. */ badFuel?: number; /** Fitness points. */ fitness?: number };
   /** Play a quick mini-game first; how well you do changes the result. */
   minigame?: 'pos' | 'wash' | 'cook' | 'timing' | 'predict' | 'drive';
   /** Shown instead of running, for content that isn't built yet. */
