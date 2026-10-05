@@ -1,3 +1,4 @@
+import { festivalOn } from './festivals';
 import type { Activity } from './common';
 
 // ---------------- Weather ----------------
@@ -68,9 +69,10 @@ export const newsById = (id: string) => WORLD_NEWS.find((n) => n.id === id);
 /** All the news still running on `day`, folded into one set of modifiers. */
 export function combinedMods(news: ActiveNews[] | undefined, day: number): Mods {
   const out: Mods = {};
-  for (const n of news ?? []) {
-    if (day > n.until) continue;
-    const m = newsById(n.id)?.mods;
+  // Festivals move prices too (Christmas rice no be small money)
+  const fest = festivalOn(day)?.mods;
+  const all = [...(news ?? []).filter((n) => day <= n.until).map((n) => newsById(n.id)?.mods), fest];
+  for (const m of all) {
     if (!m) continue;
     if (m.fuel) out.fuel = (out.fuel ?? 1) * m.fuel;
     if (m.fares) out.fares = (out.fares ?? 1) * m.fares;

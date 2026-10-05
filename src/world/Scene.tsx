@@ -7,6 +7,7 @@ import { Color, Object3D, Vector3, type AmbientLight, type InstancedMesh } from 
 import { clockParts, daylight } from '../engine/clock';
 import { useGame } from '../store/game';
 import { useSettings } from '../settings';
+import { festivalOn } from '../content/festivals';
 import { Avatar } from './Avatar';
 import { Room } from './Room';
 import { Street } from './Street';
@@ -199,6 +200,40 @@ function Lightning() {
   return <ambientLight ref={ref} intensity={0} color="#dfe8ff" />;
 }
 
+/** Bunting and lights strung over the road on festival days. */
+function FestivalDecor({ colors, night }: { colors: string[]; night: boolean }) {
+  const bulbs = useMemo(() => {
+    const out: { x: number; y: number; z: number; c: string }[] = [];
+    for (const z of [-2.3, 3.9]) {
+      for (let i = 0; i <= 48; i++) {
+        const x = -12 + i * 0.5;
+        // Sagging string between poles every 6 units
+        const t = ((x + 12) % 6) / 6;
+        out.push({ x, y: 2.7 - Math.sin(t * Math.PI) * 0.35, z, c: colors[i % colors.length] });
+      }
+    }
+    return out;
+  }, [colors]);
+  return (
+    <group>
+      {[-12, -6, 0, 6, 12].flatMap((x) =>
+        [-2.3, 3.9].map((z) => (
+          <mesh key={`${x}${z}`} position={[x, 1.4, z]}>
+            <cylinderGeometry args={[0.04, 0.05, 2.8, 8]} />
+            <meshStandardMaterial color="#666" />
+          </mesh>
+        )),
+      )}
+      {bulbs.map((b, i) => (
+        <mesh key={i} position={[b.x, b.y, b.z]}>
+          <coneGeometry args={[0.12, 0.22, 3]} />
+          <meshStandardMaterial color={b.c} emissive={night ? b.c : '#000'} emissiveIntensity={night ? 1.4 : 0} />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
 const GREY_SKY = new Color('#7c8a96');
 const NIGHT_SKY = new Color('#0b1626');
 const DAY_SKY = new Color('#8fc6e8');
@@ -259,6 +294,8 @@ function Lights({ place }: { place: Place }) {
 
 export function Scene() {
   const low = useSettings((s) => s.quality === 'low');
+  const fest = useGame((s) => festivalOn(clockParts(s.time).day));
+  const night = useGame((s) => daylight(clockParts(Math.floor(s.time / 30) * 30).minuteOfDay) < 0.3);
   const place = useGame((s) => s.place);
   const weather = useGame((s) => s.weather ?? 'sunny');
   const wet = weather === 'rain' || weather === 'storm';
@@ -273,6 +310,7 @@ export function Scene() {
       <Neighborhood key={place} extent={low ? 15 : 26} far={low ? -13 : -19} frontFar={low ? 11 : 17} seed={SEEDS[place]} clear={CLEAR[place] ?? [[-8.6, -8, 8.6, 4.6]]} near={place === 'home' ? -4.6 : -5.5} />
       <Avatar />
       <RemotePlayers />
+      {fest && fest.decor.length > 0 && place !== 'home' && <FestivalDecor colors={fest.decor} night={night} />}
       <Npcs />
       {wet && place !== 'home' && <Rain storm={weather === 'storm'} />}
       {weather === 'storm' && <Lightning />}

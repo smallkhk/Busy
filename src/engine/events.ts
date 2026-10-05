@@ -40,6 +40,8 @@ export type EventContext = {
   fakeLife?: boolean;
   /** House upgrades you own. */
   homeUps?: string[];
+  /** Today's festival id (sallah, christmas, …). */
+  festival?: string;
   /** Areas where you get land or a building in progress. */
   landAt?: string[];
   area?: string;
