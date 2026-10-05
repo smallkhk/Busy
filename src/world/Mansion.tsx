@@ -6,7 +6,7 @@ import { CarModel } from './CarModel';
 import { Box, Cyl, Tappable } from './Room';
 import { At, Shell } from './Spread';
 import { Art, carpet, concrete, Floor, GOLD, marble, paint, Sconce, TRIM } from './Interior';
-import { Prop } from './Prop';
+import { HouseProp, Prop } from './Prop';
 
 /** Big-money house for Maitama, Asokoro and Guzape: many rooms, marble, and toys. */
 
@@ -15,10 +15,9 @@ const WALL_IN = '#c3d2c7';
 const CAP = '#2a2e33';
 
 /** Furniture colours: black frames, red fabric, white kitchen. */
-const BLACK_RED = { wood: '#18181b', woodDark: '#111113', carpet: '#a3141c', carpetDarker: '#7d0f15', carpetWhite: '#efece6', metal: '#c9a24a' };
-const RED_SOFA = { carpet: '#b0141d', wood: '#141416' };
 const WHITE_KITCHEN = { wood: '#f3f1ec', woodDark: '#d9d4c9', metal: '#bfc4c9' };
 const PLANT = { plant: '#2f8f3a', wood: '#f2f2f2', woodDark: '#d9d9d9' };
+const KING_BED = { Red: '#a3141c', DarkRed: '#7d0f15', Wood: '#18181b', White: '#f1eee8', Grey: '#2a2a2e' };
 const DARK_WOOD = { wood: '#4a2e1c', woodDark: '#3a2416', carpet: '#a3141c', metal: '#c9a24a' };
 
 /** Inside wall, cut low for the dollhouse view, with a dark cap on top. */
@@ -35,13 +34,13 @@ function LowWall({ x, z, w, d, h = 1.15, c = WALL_IN }: { x: number; z: number; 
 function DiningSet({ x, z }: { x: number; z: number }) {
   return (
     <group>
-      <Prop name="tableRound" p={[x, 0, z]} s={1.05} tint={DARK_WOOD} />
-      <Prop name="plantSmall2" tint={PLANT} p={[x, 0.62, z]} s={1.6} />
+      <HouseProp name="Table_RoundSmall" p={[x, 0, z]} s={1.15} tint={{ Wood: '#4a2e1c' }} />
+      <HouseProp name="Houseplant_2" p={[x, 0.51, z]} s={1.6} />
       {[0, 1, 2, 3].map((i) => {
         const a = (i * Math.PI) / 2 + Math.PI / 4;
         const dx = Math.sin(a) * 0.85;
         const dz = Math.cos(a) * 0.85;
-        return <Prop key={i} name="chairCushion" p={[x + dx, 0, z + dz]} rot={Math.atan2(-dx, -dz)} s={1.05} tint={DARK_WOOD} />;
+        return <HouseProp key={i} name="Chair_2" p={[x + dx, 0, z + dz]} rot={Math.atan2(-dx, -dz)} s={1.05} tint={{ Wood_Dark: '#3a2416', Cushin: '#a3141c' }} />;
       })}
     </group>
   );
@@ -110,20 +109,16 @@ export function Mansion({ onFloor }: { onFloor: (e: ThreeEvent<MouseEvent>) => v
       {/* ---------- Master bedroom ---------- */}
       <At id="bed">
         <Tappable id="bed">
-          <Prop name="bedDouble" p={[-2.9, 0, -1.95]} s={1.15} tint={BLACK_RED} />
+          <HouseProp name="Bed_King" p={[-2.9, 0, -1.95]} s={1.15} tint={KING_BED} />
           {ups.includes('mattress') && <Box p={[-2.9, 0.5, -2.0]} s={[1.6, 0.05, 1.9]} c="#ece7dd" />}
         </Tappable>
         {[-4.15, -1.65].map((x) => (
           <group key={x}>
-            <Prop name="sideTableDrawers" p={[x, 0, -2.85]} s={[0.75, 1, 1]} tint={BLACK_RED} />
-            <Prop name="lampRoundTable" p={[x, 0.61, -2.85]} s={1.2} tint={{ metal: GOLD }} />
-            <mesh position={[x, 0.95, -2.85]}>
-              <sphereGeometry args={[0.08, 12, 10]} />
-              <meshStandardMaterial color="#fff1cf" emissive="#ffc46b" emissiveIntensity={lit ? 3 : 0.2} />
-            </mesh>
+            <HouseProp name="NightStand_2" p={[x, 0, -2.78]} s={1.1} tint={{ Wood: '#18181b', Metal: GOLD }} />
+            <HouseProp name="Light_Desk" p={[x, 0.46, -2.78]} s={1.3} tint={{ Black: GOLD }} glow={lit ? 2.5 : 0.2} />
           </group>
         ))}
-        <Prop name="pottedPlant" tint={PLANT} p={[-1.65, 0, -0.55]} s={1.5} />
+        <HouseProp name="Houseplant_4" p={[-1.65, 0, -0.55]} s={2.2} />
       </At>
 
       {/* ---------- Kitchen ---------- */}
@@ -177,7 +172,7 @@ export function Mansion({ onFloor }: { onFloor: (e: ThreeEvent<MouseEvent>) => v
             {/* Step and towels */}
             <Box p={[-0.95, 0.08, 0.2]} s={[0.3, 0.16, 0.6]} c="#e9e9ee" />
             <Box p={[0.5, 0.56, -0.62]} s={[0.35, 0.06, 0.2]} c="#f8f8f8" />
-            <Prop name="pottedPlant" tint={PLANT} p={[0.9, 0, -0.7]} s={1.3} />
+            <HouseProp name="Houseplant_6" p={[0.9, 0, -0.7]} s={1.5} />
           </group>
         </Tappable>
       </At>
@@ -205,14 +200,10 @@ export function Mansion({ onFloor }: { onFloor: (e: ThreeEvent<MouseEvent>) => v
           {[-0.2, 2.2].map((z) => <Prop key={z} name="speaker" p={[-3.85, 0, z]} rot={Math.PI / 2} s={1.25} tint={{ wood: '#16171a' }} />)}
           {ups.includes('ps5') && <Box p={[-3.8, 0.55, 1.6]} s={[0.12, 0.3, 0.26]} c="#f4f4f4" />}
           {/* Red sofas round the rug */}
-          <Prop name="loungeSofa" p={[-1.45, 0, 1.0]} rot={-Math.PI / 2} s={1.15} tint={RED_SOFA} />
-          <Prop name="loungeSofa" p={[-2.75, 0, 2.45]} rot={Math.PI} s={1.0} tint={RED_SOFA} />
+          <HouseProp name="Couch_Large1" p={[-1.3, 0, 1.0]} rot={-Math.PI / 2} tint={{ Red: '#b0141d', DarkRed: '#7d0f15' }} />
+          <HouseProp name="Couch_Medium1" p={[-2.75, 0, 2.5]} rot={Math.PI} s={0.95} tint={{ Couch_Blue: '#b0141d', Black: '#141416' }} />
           <Prop name="tableCoffeeGlass" p={[-2.75, 0, 1.0]} rot={Math.PI / 2} s={1.15} tint={{ metal: GOLD }} />
-          <Prop name="lampSquareFloor" p={[-3.75, 0, -0.55]} s={1.4} tint={{ metal: '#16171a' }} />
-          <mesh position={[-3.75, 1.32, -0.55]}>
-            <sphereGeometry args={[0.07, 10, 8]} />
-            <meshStandardMaterial color="#fff1cf" emissive="#ffc46b" emissiveIntensity={lit ? 3 : 0.3} />
-          </mesh>
+          <HouseProp name="Light_Stand1" p={[-3.7, 0, -0.5]} s={1.05} tint={{ LightMetal: '#16171a' }} glow={lit ? 2.5 : 0.3} />
         </Tappable>
       </At>
       <At x={-2.7} z={1.0}>
@@ -274,17 +265,18 @@ export function Mansion({ onFloor }: { onFloor: (e: ThreeEvent<MouseEvent>) => v
           </group>
         </Tappable>
       </At>
-      <At x={-3.85} z={2.6}><Prop name="pottedPlant" tint={PLANT} p={[-3.75, 0, 2.6]} s={1.6} /></At>
-      <At x={1.8} z={-0.5}><Prop name="pottedPlant" tint={PLANT} p={[1.85, 0, -0.45]} s={1.3} /></At>
+      <At x={-3.85} z={2.6}><HouseProp name="Houseplant_7" p={[-3.65, 0, 2.55]} s={2.0} /></At>
+      <At x={1.8} z={-0.5}><HouseProp name="Houseplant_4" p={[1.85, 0, -0.45]} s={2.0} /></At>
 
       {/* ---------- Dining room ---------- */}
       <At x={-7.4} z={-1.4}><DiningSet x={-7.4} z={-1.4} /></At>
       <At x={-5.5} z={-1.4}><DiningSet x={-5.5} z={-1.4} /></At>
       <At x={-6.4} z={-3}><Prop name="cabinetTelevisionDoors" p={[-6.4, 0, -2.8]} s={1.4} tint={DARK_WOOD} /></At>
-      <At x={-8.2} z={-3}><Prop name="pottedPlant" tint={PLANT} p={[-8.25, 0, -2.7]} s={1.6} /></At>
-      <At x={-4.6} z={-3}><Prop name="pottedPlant" tint={PLANT} p={[-4.6, 0, -2.7]} s={1.3} /></At>
+      <At x={-8.2} z={-3}><HouseProp name="Houseplant_7" p={[-8.15, 0, -2.6]} s={2.0} /></At>
+      <At x={-4.6} z={-3}><HouseProp name="Houseplant_8" p={[-4.6, 0, -2.7]} s={1.4} /></At>
       {/* Chandelier */}
       <At x={-6.4} z={-1.4}>
+        <HouseProp name="Light_Chandelier" p={[-6.4, 1.95, -1.4]} s={2.2} tint={{ Grey: GOLD }} glow={lit ? 3 : 0.4} />
         <Cyl p={[-6.4, 2.45, -1.4]} r={0.02} h={0.3} c={GOLD} />
         <mesh position={[-6.4, 2.25, -1.4]}>
           <octahedronGeometry args={[0.24, 0]} />

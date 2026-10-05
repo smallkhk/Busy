@@ -5,7 +5,7 @@ import { useGame } from '../store/game';
 import { Art, Floor, marble, paint, Sconce, TRIM, WOOD } from './Interior';
 import { Box, Cyl, Tappable } from './Room';
 import { At, Shell } from './Spread';
-import { Prop } from './Prop';
+import { HouseProp, Prop } from './Prop';
 
 /** A proper flat (Gwarinpa, Garki, Wuse 2, your Kuje bungalow): bedroom, kitchen, bathroom, parlour, dining and a small study. */
 export function Flat({ onFloor }: { onFloor: (e: ThreeEvent<MouseEvent>) => void }) {
@@ -61,7 +61,7 @@ export function Flat({ onFloor }: { onFloor: (e: ThreeEvent<MouseEvent>) => void
       {/* ---------- Bedroom ---------- */}
       <At id="bed">
       <Tappable id="bed">
-          <Prop name="bedDouble" p={[-2.9, 0, -1.95]} s={1.1} tint={{ wood: WOOD, carpet: theme.bed, carpetWhite: '#f1eee8' }} />
+          <HouseProp name="Bed_King" p={[-2.9, 0, -1.95]} s={1.05} tint={{ Wood: WOOD, Red: theme.bed, DarkRed: theme.bed, White: '#f1eee8' }} />
           {has('mattress') && <Box p={[-2.9, 0.5, -2.0]} s={[1.5, 0.05, 1.8]} c="#ece7dd" />}
         </Tappable>
       <Box p={[-3.9, 0.25, -2.75]} s={[0.36, 0.5, 0.36]} c={WOOD} />
@@ -133,8 +133,8 @@ export function Flat({ onFloor }: { onFloor: (e: ThreeEvent<MouseEvent>) => void
           )}
           {has('ps5') && <Box p={[-3.8, 0.66, 1.65]} s={[0.12, 0.3, 0.26]} c="#f4f4f4" />}
           {/* Three-seater and an armchair */}
-          <Prop name="loungeSofa" p={[-1.5, 0, 1.0]} rot={-Math.PI / 2} s={1.1} tint={{ carpet: sofa, wood: '#2b2018' }} />
-          <Prop name="loungeChair" p={[-2.6, 0, 2.4]} rot={Math.PI} s={1.15} tint={{ carpet: sofa, wood: '#2b2018' }} />
+          <HouseProp name="Couch_Large2" p={[-1.35, 0, 1.0]} rot={-Math.PI / 2} s={0.9} tint={{ Couch_Beige: sofa, Couch_BeigeDark: sofa }} />
+          <HouseProp name="Couch_Small1" p={[-2.6, 0, 2.45]} rot={Math.PI} s={0.95} tint={{ Couch_Blue: sofa, Black: '#2b2018' }} />
           <Prop name="tableCoffee" p={[-2.6, 0, 1.0]} rot={Math.PI / 2} s={1.1} tint={{ wood: '#5a3e2a' }} />
         </Tappable>
       </At>
@@ -147,7 +147,7 @@ export function Flat({ onFloor }: { onFloor: (e: ThreeEvent<MouseEvent>) => void
       </group>
       </At>
       <At x={-3.85} z={2.6}>
-      <Prop name="pottedPlant" p={[-3.75, 0, 2.6]} s={1.3} tint={{ plant: '#2f8f3a' }} />
+      <HouseProp name="Houseplant_7" p={[-3.7, 0, 2.55]} s={1.7} />
       </At>
       <At id="tv">
       {has('wifi') && (
@@ -178,7 +178,7 @@ export function Flat({ onFloor }: { onFloor: (e: ThreeEvent<MouseEvent>) => void
         <Prop name="plantSmall1" p={[-5.4, 0.55, -1.4]} s={1.6} tint={{ plant: '#2f8f3a' }} />
       </At>
       <At x={-6.3} z={-3}>
-        <Prop name="pottedPlant" p={[-6.3, 0, -2.7]} s={1.3} tint={{ plant: '#2f8f3a' }} />
+        <HouseProp name="Houseplant_4" p={[-6.3, 0, -2.7]} s={1.9} />
       </At>
 
       {/* ---------- Small study ---------- */}
