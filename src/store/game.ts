@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import { activityById, activityPlace, ENTRY_SPOT, EXIT_SPOT, PLACE_NAMES, type Activity, type Place } from '../content/activities';
 import { AD_BIZ_BOOST } from '../content/billboards';
+import { DEFAULT_LOOK, HAIR_COST, OUTFITS, type Hair, type Look, type Outfit } from '../content/fashion';
 import { driveWear } from '../content/minigames';
 import { areaAllows, genCostFor, homeItemById, TV_ACTIVITIES, WIFI_FREE } from '../content/homeup';
 import { AREAS, moveCost, placeLabel, PROPERTY_SELL_FEE, propertyValue, RENT_CYCLE_DAYS, RENT_GRACE_DAYS, rentOwed, type AreaId, type Property } from '../content/housing';
@@ -23,7 +24,7 @@ import { clamp, fullNeeds, LOW_NEED, NEED_KEYS, NEED_META, tickNeeds, type NeedK
 
 export type Txn = { at: number; label: string; amount: number };
 export type Toast = { id: number; text: string };
-export type PhoneApp = 'home' | 'bank' | 'jobs' | 'chat' | 'map' | 'gram' | 'house' | 'contacts' | 'chop' | 'ride' | 'news' | 'goals' | 'biz' | 'cars' | 'gist' | 'love' | 'account' | 'rankings';
+export type PhoneApp = 'home' | 'bank' | 'jobs' | 'chat' | 'map' | 'gram' | 'house' | 'contacts' | 'chop' | 'ride' | 'news' | 'goals' | 'biz' | 'cars' | 'gist' | 'love' | 'account' | 'rankings' | 'style';
 
 /** `total` is the actual duration (rush hour makes trips longer); old saves may lack it. */
 type Active = { id: string; remaining: number; gen: boolean; total?: number; eventAt?: number; /** Mini-game score 0–1. */ bonus?: number };
@@ -64,6 +65,10 @@ export type GameState = {
   adBoostUntil: number;
   /** Land and houses you own. */
   properties: Partial<Record<AreaId, Property>>;
+  /** How you look: outfit, hair and skin. */
+  look: Look;
+  /** Outfits you own. */
+  wardrobe: Outfit[];
   /** Things you don buy for your house. */
   homeUps: string[];
   /** Abuja Love: people you matched with. */
@@ -110,7 +115,11 @@ export type GameState = {
   eventHistory: Record<string, number>;
   nextEventCheck: number;
 
-  start: (name: string, shirt: string) => void;
+  start: (name: string, shirt: string, look?: Look) => void;
+  buyOutfit: (id: Outfit) => void;
+  wearOutfit: (id: Outfit) => void;
+  setHair: (id: Hair) => void;
+  setShirt: (color: string) => void;
   tick: (realSeconds: number) => void;
   walkTo: (x: number, z: number) => void;
   choose: (activityId: string) => void;
@@ -245,6 +254,8 @@ const initial = () => ({
   flags: {} as Record<string, number>,
   loves: {} as Record<string, Love>,
   homeUps: [] as string[],
+  look: DEFAULT_LOOK,
+  wardrobe: ['tee'] as Outfit[],
   properties: {} as Partial<Record<AreaId, Property>>,
   adBoostUntil: 0,
   swiped: [] as string[],
@@ -1184,7 +1195,42 @@ export const useGame = create<GameState>()(
           get().toast(`📦 You don pack enter ${AREAS[to].home}! ${AREAS[to].emoji}`);
         },
 
-        start: (name, shirt) => set({ ...initial(), started: true, name: name.trim() || 'Abuja Hustler', shirt }),
+        start: (name, shirt, look) => set({ ...initial(), started: true, name: name.trim() || 'Abuja Hustler', shirt, look: look ?? DEFAULT_LOOK }),
+
+        buyOutfit: (id) => {
+          const s = get();
+          const o = OUTFITS.find((x) => x.id === id);
+          if (!o || s.wardrobe?.includes(id)) return;
+          if (s.money < o.cost) return get().toast(`😕 ${o.name} na ${formatNaira(o.cost)}`);
+          set({
+            money: s.money - o.cost,
+            wardrobe: [...(s.wardrobe ?? ['tee']), id],
+            look: { ...(s.look ?? DEFAULT_LOOK), outfit: id },
+            packaging: clamp(s.packaging + o.packaging),
+            txns: [{ at: s.time, label: `Bought ${o.name}`, amount: -o.cost }, ...s.txns].slice(0, 40),
+          });
+          get().toast(`${o.emoji} You don buy ${o.name}! 👔 +${o.packaging}`);
+        },
+
+        wearOutfit: (id) => {
+          const s = get();
+          if (!(s.wardrobe ?? ['tee']).includes(id)) return;
+          set({ look: { ...(s.look ?? DEFAULT_LOOK), outfit: id } });
+        },
+
+        setHair: (id) => {
+          const s = get();
+          if ((s.look ?? DEFAULT_LOOK).hair === id) return;
+          if (s.money < HAIR_COST) return get().toast(`😕 New hair na ${formatNaira(HAIR_COST)}`);
+          set({
+            money: s.money - HAIR_COST,
+            look: { ...(s.look ?? DEFAULT_LOOK), hair: id },
+            txns: [{ at: s.time, label: 'Barber / salon', amount: -HAIR_COST }, ...s.txns].slice(0, 40),
+          });
+          get().toast('💈 New look! You don fresh 😎');
+        },
+
+        setShirt: (color) => set({ shirt: color }),
 
         tick: (realSeconds) => {
           const s = get();
@@ -1475,6 +1521,8 @@ export const useGame = create<GameState>()(
         flags: s.flags,
         loves: s.loves,
         homeUps: s.homeUps,
+        look: s.look,
+        wardrobe: s.wardrobe,
         properties: s.properties,
         adBoostUntil: s.adBoostUntil,
         swiped: s.swiped,

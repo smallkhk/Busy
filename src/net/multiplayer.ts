@@ -43,7 +43,7 @@ function syncPlayers() {
     if (!m || id === me.id || !room || m.room !== room) continue;
     const prev = useNet.getState().players[id];
     // Keep the live position from broadcasts if we already have one
-    players[id] = { id, name: m.name, shirt: m.shirt, x: prev?.x ?? m.x, z: prev?.z ?? m.z, hidden: prev?.hidden ?? m.hidden };
+    players[id] = { id, name: m.name, shirt: m.shirt, look: m.look, x: prev?.x ?? m.x, z: prev?.z ?? m.z, hidden: prev?.hidden ?? m.hidden };
   }
   useNet.setState({ online: Object.keys(state).length, players });
 }
@@ -156,6 +156,13 @@ export function sendMove(x: number, z: number, hidden: boolean) {
   if (Math.abs(x - lastSent.x) < 0.05 && Math.abs(z - lastSent.z) < 0.05 && hidden === lastSent.hidden) return;
   lastSent = { x, z, hidden };
   void channel.send({ type: 'broadcast', event: 'move', payload: { id: me.id, room: me.room, x, z, hidden } });
+}
+
+/** Change how you look to other players (shirt colour and outfit). */
+export function setAppearance(shirt: string, look: string) {
+  if (me.shirt === shirt && me.look === look) return;
+  me = { ...me, shirt, look };
+  if (channel && subscribed) void channel.track(me);
 }
 
 /** Refresh presence so late joiners see where you stand. */

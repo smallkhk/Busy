@@ -3,7 +3,8 @@ import { activityById } from '../content/activities';
 import { setCompanionCheck, useGame } from '../store/game';
 import { formatNaira } from '../engine/clock';
 import { avatarLabelPos } from '../world/labels';
-import { joinRoom, refreshPresence, sendMove, startMultiplayer } from './multiplayer';
+import { joinRoom, refreshPresence, sendMove, setAppearance, startMultiplayer } from './multiplayer';
+import { DEFAULT_LOOK, encodeLook } from '../content/fashion';
 import { initSocial, setCashHandler, setIncomingHandler, useSocial } from './social';
 import { useNet } from './useNet';
 import { startCloud } from './cloud';
@@ -20,6 +21,7 @@ export function NetDirector() {
   useEffect(() => {
     const s = useGame.getState();
     startMultiplayer(s.name, s.shirt);
+    setAppearance(s.shirt, encodeLook(s.look ?? DEFAULT_LOOK));
     setIncomingHandler((from, body) => useGame.getState().toast(`💬 ${from?.name ?? 'Somebody'}: ${body.slice(0, 40)}`));
     setCashHandler((from, amount, note) => {
       useGame.getState().adjustMoney(amount, `Transfer from ${from?.name ?? 'a friend'}`);
@@ -35,6 +37,7 @@ export function NetDirector() {
     joinRoom(roomFor(s.place, s.area));
     const unsub = useGame.subscribe((n, p) => {
       if (n.place !== p.place || n.area !== p.area) joinRoom(roomFor(n.place, n.area));
+      if (n.look !== p.look || n.shirt !== p.shirt) setAppearance(n.shirt, encodeLook(n.look ?? DEFAULT_LOOK));
     });
     const move = window.setInterval(() => {
       const g = useGame.getState();

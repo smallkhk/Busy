@@ -3,22 +3,84 @@ import { useRef } from 'react';
 import type { Group } from 'three';
 import { activityById } from '../content/activities';
 import { useGame } from '../store/game';
+import { SKINS, type Hair, type Outfit } from '../content/fashion';
 import { avatarLabelPos } from './labels';
 
 const SPEED = 2.6; // world units per second
 const BED_POS: [number, number] = [-2.9, -1.9];
 
-/** Rounded little human: capsule limbs, round head, hair, hands and shoes. */
-export function Person({ shirt, skin = '#5a3825', trousers = '#24324a', legs }: {
+function Hairdo({ hair, color = '#111' }: { hair: Hair; color?: string }) {
+  switch (hair) {
+    case 'bald':
+      return null;
+    case 'afro':
+      return (
+        <mesh position={[0, 1.37, -0.05]} scale={[1, 0.9, 0.95]}>
+          <sphereGeometry args={[0.22, 16, 12]} />
+          <meshStandardMaterial color={color} roughness={1} />
+        </mesh>
+      );
+    case 'braids':
+      return (
+        <group>
+          <mesh position={[0, 1.27, -0.012]} scale={[1.05, 0.92, 1.06]}>
+            <sphereGeometry args={[0.172, 16, 10, 0, Math.PI * 2, 0, Math.PI / 2.1]} />
+            <meshStandardMaterial color={color} roughness={0.9} />
+          </mesh>
+          {[-0.1, 0, 0.1].map((x) => (
+            <mesh key={x} position={[x, 1.08, -0.16]}>
+              <capsuleGeometry args={[0.025, 0.28, 3, 6]} />
+              <meshStandardMaterial color={color} roughness={0.9} />
+            </mesh>
+          ))}
+        </group>
+      );
+    case 'fila':
+      return (
+        <mesh position={[0.02, 1.38, -0.01]} rotation={[0, 0, -0.18]}>
+          <cylinderGeometry args={[0.15, 0.175, 0.16, 16]} />
+          <meshStandardMaterial color="#8b1e3f" roughness={0.8} />
+        </mesh>
+      );
+    case 'cap':
+      return (
+        <group>
+          <mesh position={[0, 1.29, -0.01]} scale={[1.06, 0.9, 1.06]}>
+            <sphereGeometry args={[0.172, 16, 10, 0, Math.PI * 2, 0, Math.PI / 2.1]} />
+            <meshStandardMaterial color="#1f4f7a" roughness={0.8} />
+          </mesh>
+          <mesh position={[0, 1.31, 0.17]} rotation={[0.25, 0, 0]}>
+            <boxGeometry args={[0.24, 0.02, 0.16]} />
+            <meshStandardMaterial color="#1f4f7a" />
+          </mesh>
+        </group>
+      );
+    default:
+      return (
+        <mesh position={[0, 1.27, -0.012]} scale={[1.04, 0.9, 1.04]}>
+          <sphereGeometry args={[0.172, 16, 10, 0, Math.PI * 2, 0, Math.PI / 2.1]} />
+          <meshStandardMaterial color={color} roughness={0.95} />
+        </mesh>
+      );
+  }
+}
+
+/** Rounded little human: capsule limbs, round head, hair, hands and shoes, dressed in an outfit. */
+export function Person({ shirt, skin = '#5a3825', trousers = '#24324a', legs, outfit = 'tee', hair = 'short' }: {
   shirt: string;
   skin?: string;
   trousers?: string;
   /** Filled with [left leg, right leg, right arm, left arm] so walking can swing them. */
   legs?: React.RefObject<Group[]>;
+  outfit?: Outfit;
+  hair?: Hair;
 }) {
   const reg = (i: number) => (g: Group | null) => {
     if (legs?.current && g) legs.current[i] = g;
   };
+  const top = outfit === 'jersey' ? '#118a4c' : outfit === 'suit' ? '#1f2a36' : shirt;
+  const pants = outfit === 'suit' ? '#1f2a36' : outfit === 'kaftan' || outfit === 'agbada' || outfit === 'native' ? shirt : outfit === 'jersey' ? '#f4f4f4' : trousers;
+  const longSleeve = outfit === 'suit' || outfit === 'kaftan' || outfit === 'agbada' || outfit === 'native';
   return (
     <group>
       {/* Legs pivot at the hip */}
@@ -26,29 +88,79 @@ export function Person({ shirt, skin = '#5a3825', trousers = '#24324a', legs }: 
         <group key={x} position={[x, 0.46, 0]} ref={reg(i)}>
           <mesh position={[0, -0.2, 0]} castShadow>
             <capsuleGeometry args={[0.075, 0.28, 4, 8]} />
-            <meshStandardMaterial color={trousers} roughness={0.85} />
+            <meshStandardMaterial color={pants} roughness={0.85} />
           </mesh>
           <mesh position={[0, -0.42, 0.04]} castShadow scale={[1, 0.55, 1.5]}>
             <sphereGeometry args={[0.085, 10, 8]} />
-            <meshStandardMaterial color="#1a1a1a" roughness={0.5} />
+            <meshStandardMaterial color={outfit === 'jersey' ? '#f4f4f4' : '#1a1a1a'} roughness={0.5} />
           </mesh>
         </group>
       ))}
-      {/* Body: shirt with rounded shoulders */}
-      <mesh position={[0, 0.74, 0]} castShadow scale={[1, 1, 0.62]}>
-        <capsuleGeometry args={[0.2, 0.26, 4, 12]} />
-        <meshStandardMaterial color={shirt} roughness={0.8} />
-      </mesh>
+      {/* Body */}
+      {outfit === 'agbada' ? (
+        <group>
+          <mesh position={[0, 0.66, 0]} castShadow>
+            <cylinderGeometry args={[0.2, 0.36, 0.78, 16]} />
+            <meshStandardMaterial color={top} roughness={0.7} />
+          </mesh>
+          <mesh position={[0, 0.88, 0.16]}>
+            <boxGeometry args={[0.16, 0.22, 0.02]} />
+            <meshStandardMaterial color="#c9a24a" metalness={0.5} roughness={0.4} />
+          </mesh>
+        </group>
+      ) : outfit === 'kaftan' ? (
+        <mesh position={[0, 0.62, 0]} castShadow scale={[1, 1, 0.66]}>
+          <capsuleGeometry args={[0.2, 0.46, 4, 12]} />
+          <meshStandardMaterial color={top} roughness={0.75} />
+        </mesh>
+      ) : (
+        <mesh position={[0, 0.74, 0]} castShadow scale={[1, 1, 0.62]}>
+          <capsuleGeometry args={[0.2, 0.26, 4, 12]} />
+          <meshStandardMaterial color={top} roughness={0.8} />
+        </mesh>
+      )}
+      {outfit === 'suit' && (
+        <group>
+          <mesh position={[0, 0.84, 0.115]} rotation={[0, 0, Math.PI]}>
+            <coneGeometry args={[0.09, 0.22, 3]} />
+            <meshStandardMaterial color="#f4f4f4" />
+          </mesh>
+          <mesh position={[0, 0.78, 0.13]}>
+            <boxGeometry args={[0.04, 0.2, 0.02]} />
+            <meshStandardMaterial color="#8b1e3f" />
+          </mesh>
+        </group>
+      )}
+      {outfit === 'jersey' && (
+        <mesh position={[0, 0.76, 0.128]}>
+          <boxGeometry args={[0.12, 0.14, 0.01]} />
+          <meshStandardMaterial color="#f4f4f4" />
+        </mesh>
+      )}
+      {outfit === 'native' &&
+        [0.62, 0.78, 0.94].map((y) => (
+          <mesh key={y} position={[0, y, 0]} scale={[1, 1, 0.64]}>
+            <torusGeometry args={[0.2, 0.012, 4, 20]} />
+            <meshStandardMaterial color="#f2c230" />
+          </mesh>
+        ))}
       {/* Arms pivot at the shoulder */}
       {[0.27, -0.27].map((x, i) => (
-        <group key={x} position={[x, 0.92, 0]} ref={reg(2 + i)}>
-          <mesh position={[0, -0.1, 0]} castShadow>
-            <capsuleGeometry args={[0.065, 0.12, 4, 8]} />
-            <meshStandardMaterial color={shirt} roughness={0.8} />
-          </mesh>
+        <group key={x} position={[outfit === 'agbada' ? x * 1.15 : x, 0.92, 0]} ref={reg(2 + i)}>
+          {outfit === 'agbada' ? (
+            <mesh position={[0, -0.2, 0]} castShadow>
+              <boxGeometry args={[0.2, 0.42, 0.24]} />
+              <meshStandardMaterial color={top} roughness={0.7} />
+            </mesh>
+          ) : (
+            <mesh position={[0, -0.1, 0]} castShadow>
+              <capsuleGeometry args={[0.065, 0.12, 4, 8]} />
+              <meshStandardMaterial color={top} roughness={0.8} />
+            </mesh>
+          )}
           <mesh position={[0, -0.27, 0]} castShadow>
             <capsuleGeometry args={[0.052, 0.16, 4, 8]} />
-            <meshStandardMaterial color={skin} roughness={0.6} />
+            <meshStandardMaterial color={longSleeve && outfit !== 'agbada' ? top : skin} roughness={0.6} />
           </mesh>
           <mesh position={[0, -0.39, 0]}>
             <sphereGeometry args={[0.058, 8, 6]} />
@@ -71,10 +183,7 @@ export function Person({ shirt, skin = '#5a3825', trousers = '#24324a', legs }: 
           <meshStandardMaterial color={skin} roughness={0.6} />
         </mesh>
       ))}
-      <mesh position={[0, 1.27, -0.012]} scale={[1.04, 0.9, 1.04]}>
-        <sphereGeometry args={[0.172, 16, 10, 0, Math.PI * 2, 0, Math.PI / 2.1]} />
-        <meshStandardMaterial color="#111" roughness={0.95} />
-      </mesh>
+      <Hairdo hair={hair} />
       {/* Eyes and a small smile */}
       {[-0.06, 0.06].map((x) => (
         <group key={x} position={[x, 1.24, 0.152]}>
@@ -101,6 +210,7 @@ export function Avatar() {
   const legs = useRef<Group[]>([]);
   const walkPhase = useRef(0);
   const shirt = useGame((s) => s.shirt);
+  const look = useGame((s) => s.look);
   const active = useGame((s) => s.active);
   const activity = active ? activityById(active.id) : undefined;
   const hidden = !!activity?.away;
@@ -152,7 +262,7 @@ export function Avatar() {
 
   return (
     <group ref={group} visible={!hidden}>
-      <Person shirt={shirt} legs={legs} />
+      <Person shirt={shirt} legs={legs} outfit={look?.outfit} hair={look?.hair} skin={SKINS[look?.skin ?? 2]} />
     </group>
   );
 }
