@@ -1,6 +1,7 @@
 import { EVENTS } from '../content/events';
 import { formatNaira } from '../engine/clock';
-import { useGame } from '../store/game';
+import { visibleChoices } from '../engine/events';
+import { eventContext, useGame } from '../store/game';
 
 /** Random life events: pauses the game until you choose, then shows what happened. */
 export function EventModal() {
@@ -32,7 +33,7 @@ export function EventModal() {
   }
 
   if (!event) return null;
-  const danger = event.id.startsWith('accident');
+  const danger = event.id.startsWith('accident') || event.id.startsWith('police') || event.id === 'raid';
   return (
     <div className="event-backdrop">
       <div className={`event card ${danger ? 'danger' : ''}`}>
@@ -40,7 +41,7 @@ export function EventModal() {
         <div className="event-title">{event.title}</div>
         <p className="event-text">{event.text}</p>
         <div className="list">
-          {event.choices.map((c, i) => {
+          {visibleChoices(event, eventContext(useGame.getState(), useGame.getState().eventTrip)).map(({ c, i }) => {
             const short = (c.cost ?? 0) > money;
             return (
               <button key={c.label} className="action" disabled={short} onClick={() => answer(i)}>

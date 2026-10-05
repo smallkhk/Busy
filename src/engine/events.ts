@@ -24,6 +24,11 @@ export type EventContext = {
   loanOverdue?: boolean;
   /** Id of the trip in progress, for commute events. */
   trip?: string;
+  /** Police suspicion 0–100. */
+  heat?: number;
+  /** Long Leg score 0–100. */
+  longLeg?: number;
+  packaging?: number;
 };
 
 export type Effect = {
@@ -51,10 +56,15 @@ export type Effect = {
   carRepair?: boolean;
   /** Shut a business you own for some days. */
   closeBusiness?: { id: string; days: number };
+  /** Police suspicion change. */
+  heat?: number;
+  /** Damage to your car condition. */
+  carWear?: number;
 };
 
-export type Outcome = { weight?: number; text: string; effect?: Effect };
-export type Choice = { label: string; cost?: number; outcomes: Outcome[] };
+/** Weight can depend on who you be: Long Leg, Packaging, police heat… */
+export type Outcome = { weight?: number | ((c: EventContext) => number); text: string; effect?: Effect };
+export type Choice = { label: string; cost?: number; outcomes: Outcome[]; /** Hide the choice unless this holds. */ when?: (c: EventContext) => boolean };
 
 export type GameEvent = {
   id: string;
@@ -101,9 +111,22 @@ export function pickEvent(
   return weighted(eligible, (e) => e.weight, rand);
 }
 
-export function resolveChoice(choice: Choice, rand: Rand = Math.random): Outcome {
-  return weighted(choice.outcomes, (o) => o.weight ?? 1, rand) ?? choice.outcomes[0];
+export function resolveChoice(choice: Choice, rand: Rand = Math.random, ctx?: EventContext): Outcome {
+  const weightOf = (o: Outcome) => Math.max(0, typeof o.weight === 'function' ? (ctx ? o.weight(ctx) : 1) : (o.weight ?? 1));
+  return weighted(choice.outcomes, weightOf, rand) ?? choice.outcomes[0];
 }
+
+/** Choices you fit pick, with their original index (answerEvent takes that index). */
+export const visibleChoices = (e: GameEvent, ctx: EventContext) =>
+  e.choices.map((c, i) => ({ c, i })).filter(({ c }) => !c.when || c.when(ctx));
+
+export const HEAT_LEVELS = [
+  { min: 0, name: 'Normal', emoji: '🙂' },
+  { min: 20, name: 'Suspicious', emoji: '👀' },
+  { min: 50, name: 'Known', emoji: '📋' },
+  { min: 80, name: 'Wanted', emoji: '🚨' },
+] as const;
+export const heatLevel = (heat: number) => [...HEAT_LEVELS].reverse().find((l) => heat >= l.min)!;
 
 /** Human summary of an effect, e.g. "-₦5,000 · +20 💬 · 1h lost". */
 export function effectChips(effect: Effect | undefined, cost = 0, needEmoji: Record<string, string> = {}): string[] {
@@ -119,6 +142,8 @@ export function effectChips(effect: Effect | undefined, cost = 0, needEmoji: Rec
   if (effect?.followersPct) chips.push(`${effect.followersPct > 0 ? '+' : ''}${effect.followersPct}% 📸 followers`);
   if (effect?.closeBusiness) chips.push(`Business closed ${effect.closeBusiness.days} days 🔒`);
   if (effect?.carRepair) chips.push('Car don fix 🔧');
+  if (effect?.carWear) chips.push(`Car condition -${effect.carWear} 🚗`);
+  if (effect?.heat) chips.push(`🚨 Police heat ${effect.heat > 0 ? '+' : ''}${effect.heat}`);
   if (effect?.rentGraceDays) chips.push(`+${effect.rentGraceDays} days to pay rent 🏠`);
   return chips;
 }

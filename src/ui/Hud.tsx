@@ -1,3 +1,4 @@
+import { heatLevel } from '../engine/events';
 import { useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { isMuted, setMuted } from '../audio/sound';
@@ -18,6 +19,7 @@ export function TopBar() {
   const packaging = useGame((s) => s.packaging);
   const area = useGame((s) => s.area);
   const sick = useGame((s) => s.sick);
+  const heat = useGame((s) => s.heat ?? 0);
   const [soundOff, setSoundOff] = useState(isMuted());
   const { day } = clockParts(time);
   return (
@@ -29,6 +31,7 @@ export function TopBar() {
       <div className="pill pair" title={power ? 'Light dey' : 'No light'}>
         <span>{power ? '💡' : '🕯️'}</span>
         <span title={sick ? SICKNESS[sick].name : 'Mood'}>{sick ? '🤒' : moodFace(mood(needs))}</span>
+        {heat >= 20 && <span title={`Police: ${heatLevel(heat).name} (${Math.round(heat)})`}>{heatLevel(heat).emoji}</span>}
       </div>
       <button className="pill small-pill" onClick={() => { const m = !soundOff; setMuted(m); setSoundOff(m); }} aria-label={soundOff ? 'Turn sound on' : 'Turn sound off'}>
         {soundOff ? '🔇' : '🔊'}
