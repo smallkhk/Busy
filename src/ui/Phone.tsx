@@ -323,7 +323,7 @@ export function Phone() {
   const phone = useGame((s) => s.phone);
   const openPhone = useGame((s) => s.openPhone);
   const time = useGame((s) => Math.floor(s.time));
-  if (!phone) return null;
+  if (!phone || phone === 'map') return null;
   const current = APPS.find((a) => a.id === phone);
   return (
     <div className="sheet-backdrop" onPointerDown={() => openPhone(null)}>

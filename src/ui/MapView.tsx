@@ -47,21 +47,55 @@ function labelAt(pos: MapSpot['label'] = 'below', selected: boolean) {
   }
 }
 
-export function MapView() {
+/** Every map spot, with your home placed by the area you live in. */
+export function useMapSpots(): MapSpot[] {
+  const area = useGame((s) => s.area);
+  const homeXY = HOME_XY[area];
+  return [{ id: 'home', name: `${AREAS[area].name} (your area)`, short: AREAS[area].name, emoji: '🏠', x: homeXY[0], y: homeXY[1], place: 'street', label: 'right' }, ...MAP_SPOTS];
+}
+
+/** Distance and the ways to reach a spot from where you dey. */
+export function TravelSheet({ sel }: { sel: MapSpot }) {
   const place = useGame((s) => s.place);
   const area = useGame((s) => s.area);
   const hasCar = useGame((s) => !!s.car);
-  const [selected, setSelected] = useState<string | null>(null);
-  const homeXY = HOME_XY[area];
   const here = fromPlace(place);
-  const spots: MapSpot[] = [{ id: 'home', name: `${AREAS[area].name} (your area)`, short: AREAS[area].name, emoji: '🏠', x: homeXY[0], y: homeXY[1], place: 'street', label: 'right' }, ...MAP_SPOTS];
+  const to = sel.place;
+  return (
+    <>
+      <div className="map-sheet-title">
+        {sel.emoji} {sel.name}
+        {to && to !== here && <span className="muted small"> · {Math.round(rideKm(here, to) * (to === 'street' || here === 'street' ? AREAS[area].commute : 1))} km</span>}
+      </div>
+      {!to && <p className="muted small">{sel.note}</p>}
+      {to && to === here && <p className="muted small">📍 You dey here.</p>}
+      {to && to !== here && (
+        <div className="list">
+          <Option a={trekBetween(place, to)} title="🚶 Trek (free, but e go tire you)" />
+          <Option
+            a={place === 'home' ? undefined : publicRoute(place, to)}
+            title="🚌 Bus / taxi"
+            note={place === 'home' ? 'Comot go bus stop for your street first' : publicRoute(place, to) ? undefined : 'No direct bus from here'}
+          />
+          <Option a={rideBetween(place, to)} title="🚘 Book ride" />
+          {hasCar && <Option a={driveBetween(place, to)} title="🚗 Drive your car (fuel only)" />}
+        </div>
+      )}
+    </>
+  );
+}
+
+export function MapView() {
+  const place = useGame((s) => s.place);
+  const [selected, setSelected] = useState<string | null>(null);
+  const here = fromPlace(place);
+  const spots = useMapSpots();
   const herePos = spots.find((s) => s.place === here) ?? spots[0];
   const sel = spots.find((s) => s.id === selected);
   const sheet = useRef<HTMLDivElement>(null);
   useEffect(() => {
     sheet.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
   }, [selected]);
-  const to = sel?.place;
 
   return (
     <div className="map-wrap">
@@ -103,24 +137,7 @@ export function MapView() {
 
       {sel && (
         <div className="map-sheet" ref={sheet}>
-          <div className="map-sheet-title">
-            {sel.emoji} {sel.name}
-            {to && to !== here && <span className="muted small"> · {Math.round(rideKm(here, to) * (to === 'street' || here === 'street' ? AREAS[area].commute : 1))} km</span>}
-          </div>
-          {!to && <p className="muted small">{sel.note}</p>}
-          {to && to === here && <p className="muted small">📍 You dey here.</p>}
-          {to && to !== here && (
-            <div className="list">
-              <Option a={trekBetween(place, to)} title="🚶 Trek (free, but e go tire you)" />
-              <Option
-                a={place === 'home' ? undefined : publicRoute(place, to)}
-                title="🚌 Bus / taxi"
-                note={place === 'home' ? 'Comot go bus stop for your street first' : publicRoute(place, to) ? undefined : 'No direct bus from here'}
-              />
-              <Option a={rideBetween(place, to)} title="🚘 Book ride" />
-              {hasCar && <Option a={driveBetween(place, to)} title="🚗 Drive your car (fuel only)" />}
-            </div>
-          )}
+          <TravelSheet sel={sel} />
         </div>
       )}
     </div>
