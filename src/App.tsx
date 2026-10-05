@@ -11,6 +11,7 @@ import { Labels } from './ui/Labels';
 import { Phone } from './ui/Phone';
 import { Start } from './ui/Start';
 import { WorldMap } from './ui/WorldMap';
+import { Showroom } from './ui/Showroom';
 import { useGame } from './store/game';
 import { Scene } from './world/Scene';
 
@@ -38,10 +39,11 @@ export default function App() {
   const started = useGame((s) => s.started);
   // The 3D map replaces the scene while open (one WebGL canvas at a time on phones).
   const mapOpen = useGame((s) => s.phone === 'map');
+  const showroomOpen = useGame((s) => s.phone === 'cars');
   return (
     <div className="app-root">
       <AudioDirector />
-      {!mapOpen && <Scene />}
+      {!mapOpen && !showroomOpen && <Scene />}
       {started ? (
         <>
           <NetDirector />
@@ -60,6 +62,7 @@ export default function App() {
           <ActionMenu />
           <Phone />
           {mapOpen && <WorldMap />}
+          {showroomOpen && <Showroom />}
           <NearbyMenu />
           <NpcSheet />
           <EventModal />

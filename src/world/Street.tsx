@@ -3,6 +3,7 @@ import { useRef } from 'react';
 import type { Group } from 'three';
 import { clockParts, daylight } from '../engine/clock';
 import { carById } from '../content/cars';
+import { CarModel } from './CarModel';
 import { useGame } from '../store/game';
 import { Person } from './Avatar';
 import { Box, Cyl, Tappable, type V3 } from './Room';
@@ -176,8 +177,8 @@ function MyCar() {
   const c = car ? carById(car.id) : undefined;
   if (!c) return null;
   return (
-    <group position={[-5.6, 0.03, -1.75]}>
-      <Car body={c.color} roof={c.color} />
+    <group position={[-5.6, 0.03, -1.75]} scale={0.92}>
+      <CarModel kind={c.model} paint={car?.paint ?? c.color} />
     </group>
   );
 }

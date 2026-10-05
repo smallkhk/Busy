@@ -11,7 +11,6 @@ import { blockReason, useGame, type PhoneApp } from '../store/game';
 import { activityDetail } from './detail';
 import { EgoBank } from './EgoBank';
 import { BusinessApp, CareerCard } from './Career';
-import { CarsApp } from './Cars';
 import { GistApp } from './GistApp';
 import { LoveApp } from './LoveApp';
 import { GoalsApp } from './Goals';
@@ -413,8 +412,6 @@ function AppBody({ app }: { app: PhoneApp }) {
       return <GistApp />;
     case 'love':
       return <LoveApp />;
-    case 'cars':
-      return <CarsApp />;
     case 'jobs':
       return (
         <>
@@ -443,7 +440,7 @@ export function Phone() {
   const openPhone = useGame((s) => s.openPhone);
   const time = useGame((s) => Math.floor(s.time));
   const unread = useSocial(totalUnread);
-  if (!phone || phone === 'map') return null;
+  if (!phone || phone === 'map' || phone === 'cars') return null;
   const current = APPS.find((a) => a.id === phone);
   return (
     <div className="sheet-backdrop" onPointerDown={() => openPhone(null)}>
