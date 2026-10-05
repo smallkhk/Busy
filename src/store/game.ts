@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import { activityById, activityPlace, ENTRY_SPOT, EXIT_SPOT, PLACE_NAMES, type Activity, type Place } from '../content/activities';
 import { AD_BIZ_BOOST } from '../content/billboards';
+import { appointChance, CAMPAIGN_DAYS, canRun, electionWon, MOVES, moveSupport, NO_POLITICS, OFFICES, startingSupport, TERM_DAYS, type CampaignMove, type Politics } from '../content/politics';
 import { courseById, GYM_DAYS, GYM_FEE, sickDodge, workEnergyFactor, type CourseId } from '../content/learning';
 import { festivalOn } from '../content/festivals';
 import { DEFAULT_LOOK, HAIR_COST, OUTFITS, type Hair, type Look, type Outfit } from '../content/fashion';
@@ -26,7 +27,7 @@ import { clamp, fullNeeds, LOW_NEED, NEED_KEYS, NEED_META, tickNeeds, type NeedK
 
 export type Txn = { at: number; label: string; amount: number };
 export type Toast = { id: number; text: string };
-export type PhoneApp = 'home' | 'bank' | 'jobs' | 'chat' | 'map' | 'gram' | 'house' | 'contacts' | 'chop' | 'ride' | 'news' | 'goals' | 'biz' | 'cars' | 'gist' | 'love' | 'account' | 'rankings' | 'style' | 'learn';
+export type PhoneApp = 'home' | 'bank' | 'jobs' | 'chat' | 'map' | 'gram' | 'house' | 'contacts' | 'chop' | 'ride' | 'news' | 'goals' | 'biz' | 'cars' | 'gist' | 'love' | 'account' | 'rankings' | 'style' | 'learn' | 'politics';
 
 /** `total` is the actual duration (rush hour makes trips longer); old saves may lack it. */
 type Active = { id: string; remaining: number; gen: boolean; total?: number; eventAt?: number; /** Mini-game score 0–1. */ bonus?: number };
@@ -67,6 +68,8 @@ export type GameState = {
   adBoostUntil: number;
   /** Land and houses you own. */
   properties: Partial<Record<AreaId, Property>>;
+  /** Your political career. */
+  politics: Politics;
   /** Courses you don enroll for, with classes done. */
   courses: Partial<Record<CourseId, number>>;
   /** Courses you don finish. */
@@ -128,6 +131,9 @@ export type GameState = {
   start: (name: string, shirt: string, look?: Look) => void;
   buyOutfit: (id: Outfit) => void;
   enroll: (id: CourseId) => void;
+  /** Buy the nomination form (or lobby for an appointment). */
+  declare: (target: number) => void;
+  campaign: (move: CampaignMove) => void;
   joinGym: () => void;
   wearOutfit: (id: Outfit) => void;
   setHair: (id: Hair) => void;
@@ -268,6 +274,7 @@ const initial = () => ({
   homeUps: [] as string[],
   look: DEFAULT_LOOK,
   courses: {} as Partial<Record<CourseId, number>>,
+  politics: NO_POLITICS as Politics,
   skills: [] as CourseId[],
   fitness: 10,
   gymUntil: 0,
@@ -337,6 +344,9 @@ export function eventContext(s: GameState, trip?: string | null): EventContext {
     dating: Object.values(s.loves ?? {}).filter((l) => l.interest >= 55 && !l.married).length,
     fakeLife: Object.values(s.loves ?? {}).some((l) => l.fakeLife),
     homeUps: s.homeUps ?? [],
+    office: s.politics?.office ?? -1,
+    campaigning: !!s.politics?.campaign,
+    votesBought: !!s.politics?.votesBought,
     festival: festivalOn(day)?.id,
     landAt: Object.entries(s.properties ?? {}).filter(([, p]) => p && p.status !== 'built').map(([id]) => id),
     area: s.area,
@@ -621,6 +631,7 @@ export const useGame = create<GameState>()(
             eventTrip: null,
             heat: clamp((s.heat ?? 0) + (effect.heat ?? 0)),
             loves: effect.partnerLove ? applyPartnerLove(s.loves ?? {}, effect.partnerLove) : s.loves,
+            politics: effect.support && s.politics?.campaign ? { ...s.politics, campaign: { ...s.politics.campaign, support: Math.max(0, Math.min(95, s.politics.campaign.support + effect.support)) } } : s.politics,
             flags: effect.flag ? { ...(s.flags ?? {}), ...Object.fromEntries([effect.flag].flat().map((f) => [f, clockParts(s.time).day])) } : s.flags,
             money: s.money + moneyDelta,
             needs,
@@ -1232,6 +1243,52 @@ export const useGame = create<GameState>()(
 
         start: (name, shirt, look) => set({ ...initial(), started: true, name: name.trim() || 'Abuja Hustler', shirt, look: look ?? DEFAULT_LOOK }),
 
+        declare: (target) => {
+          const s = get();
+          const p = s.politics ?? NO_POLITICS;
+          const reason = canRun(target, p, { longLeg: longLeg(s.contacts), packaging: s.packaging, money: s.money });
+          if (reason) return get().toast(`😕 ${reason}`);
+          const o = OFFICES[target];
+          const { day } = clockParts(s.time);
+          set({ money: s.money - o.form, txns: [{ at: s.time, label: o.appointed ? `Lobbying for ${o.name}` : `Nomination form: ${o.name}`, amount: -o.form }, ...s.txns].slice(0, 40) });
+          if (o.appointed) {
+            const ok = Math.random() < appointChance(longLeg(s.contacts));
+            set({
+              politics: ok ? { ...p, office: target, termEnds: day + TERM_DAYS, campaign: undefined } : p,
+              packaging: clamp(get().packaging + (ok ? 15 : 0)),
+              eventResult: ok
+                ? { emoji: '👑', title: 'Presidential appointment!', text: `The President don appoint you ${o.name}! Convoy, siren, everything. Abuja na your own now 🚨`, chips: [`${o.emoji} ${o.title}`, `+${formatNaira(o.allowance)}/day`, '+15 👔'] }
+                : { emoji: '📵', title: 'No appointment', text: 'Your name no reach the President table this time. The money don go "consultants" 😩 Build more Long Leg.', chips: [] },
+            });
+            return;
+          }
+          set({ politics: { ...p, campaign: { target, support: startingSupport(s.packaging), electionDay: day + CAMPAIGN_DAYS, done: {} } } });
+          get().toast(`🗳️ You don declare for ${o.name}! Election na Day ${day + CAMPAIGN_DAYS}. Go campaign!`);
+        },
+
+        campaign: (move) => {
+          const s = get();
+          const p = s.politics ?? NO_POLITICS;
+          const c = p.campaign;
+          const m = MOVES.find((x) => x.id === move);
+          if (!c || !m) return;
+          if (s.active) return get().toast('😕 Finish wetin you dey do first');
+          const { day } = clockParts(s.time);
+          if (c.done[move] === day) return get().toast(`${m.emoji} You don do this one today. Try another move`);
+          const cost = m.cost(c.target);
+          if (s.money < cost) return get().toast(`😕 You need ${formatNaira(cost)}`);
+          const gain = moveSupport(move, { packaging: s.packaging, longLeg: longLeg(s.contacts) });
+          set({
+            money: s.money - cost,
+            time: s.time + m.minutes,
+            needs: { ...tickNeeds(s.needs, m.minutes), energy: clamp(s.needs.energy - 20), social: clamp(s.needs.social + 15) },
+            heat: clamp((s.heat ?? 0) + (move === 'rice' ? 10 : 0)),
+            politics: { ...p, votesBought: p.votesBought || move === 'rice', campaign: { ...c, support: Math.min(95, c.support + gain), done: { ...c.done, [move]: day } } },
+            txns: cost ? [{ at: s.time, label: `Campaign: ${m.label}`, amount: -cost }, ...s.txns].slice(0, 40) : s.txns,
+          });
+          get().toast(`${m.emoji} Support +${gain}%! (${Math.min(95, c.support + gain)}%)`);
+        },
+
         enroll: (id) => {
           const s = get();
           const c = courseById(id);
@@ -1402,6 +1459,32 @@ export const useGame = create<GameState>()(
               Object.entries(get().contacts).map(([id, c]) => [id, { ...c, rel: Math.max(5, c.rel - 1) }]),
             );
             set({ contacts, heat: Math.max(0, (get().heat ?? 0) - 4), fitness: Math.max(0, (get().fitness ?? 0) - 1) });
+            // Politics: allowance, billboard support, election day, end of term
+            const pol = get().politics ?? NO_POLITICS;
+            if (pol.office >= 0) {
+              const pay = OFFICES[pol.office].allowance;
+              set({ money: get().money + pay, txns: [{ at: time, label: `${OFFICES[pol.office].name} allowance`, amount: pay }, ...get().txns].slice(0, 40) });
+            }
+            const camp = pol.campaign;
+            if (camp && Date.now() < (get().adBoostUntil ?? 0)) set({ politics: { ...pol, campaign: { ...camp, support: Math.min(95, camp.support + 2) } } });
+            const pc = get().politics?.campaign;
+            if (pc && cur.day >= pc.electionDay) {
+              const o = OFFICES[pc.target];
+              const won = electionWon(pc.support, Math.random());
+              const after = get().politics ?? NO_POLITICS;
+              set({
+                politics: won ? { ...after, office: pc.target, termEnds: cur.day + TERM_DAYS, campaign: undefined } : { ...after, campaign: undefined },
+                packaging: clamp(get().packaging + (won ? 5 * (pc.target + 1) : 0)),
+                needs: { ...get().needs, fun: clamp(get().needs.fun + (won ? 30 : -30)) },
+                contacts: won ? Object.fromEntries(Object.entries(get().contacts).map(([id, cs]) => [id, { ...cs, rel: clamp(cs.rel + 10) }])) : get().contacts,
+                eventResult: won
+                  ? { emoji: '🗳️🎉', title: `You don win! ${o.title} ${get().name}`, text: `INEC don declare you winner for ${o.name} with ${pc.support}% support! Supporters dey dance for street 💃🏾🕺🏾`, chips: [`${o.emoji} ${o.name}`, `+${formatNaira(o.allowance)}/day`, `+${5 * (pc.target + 1)} 👔`, '🦵 Everybody +10'] }
+                  : { emoji: '😞', title: 'Election lost', text: `You get ${pc.support}% but the other candidate win. Some people say na rigging 🤷🏾. Build more support and try again.`, chips: ['-30 🎉'] },
+              });
+            } else if (pol.office >= 0 && pol.termEnds !== undefined && cur.day > pol.termEnds && !pol.campaign) {
+              set({ politics: { ...pol, office: -1, termEnds: undefined } });
+              now.toast(`🗳️ Your term as ${OFFICES[pol.office].name} don end. Run again for 🗳️ Politics app`);
+            }
             // World news: old stories end, sometimes a new one breaks
             const running = (get().news ?? []).filter((n) => n.until >= cur.day);
             if (Math.random() < 0.5) {
@@ -1579,6 +1662,7 @@ export const useGame = create<GameState>()(
         homeUps: s.homeUps,
         look: s.look,
         courses: s.courses,
+        politics: s.politics,
         skills: s.skills,
         fitness: s.fitness,
         gymUntil: s.gymUntil,

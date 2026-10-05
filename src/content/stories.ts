@@ -476,6 +476,65 @@ export const STORIES: GameEvent[] = [
     ],
   },
 
+  // ---------------- Politics ----------------
+  {
+    id: 'godfather',
+    caller: 'Chief Adamu (party godfather) 🎩',
+    emoji: '🧓🏾',
+    title: 'The godfather wan help you',
+    text: '"My son, I fit deliver the whole ward for you. But when you win, 30% of your allowance na my own. You understand?"',
+    trigger: 'idle',
+    weight: 8,
+    cooldownHours: 240,
+    when: (c) => !!c.campaigning && free(c),
+    choices: [
+      { label: '"Yes Chief, I dey your hand"', cost: 200000, outcomes: [{ text: 'Chief don make calls. Your posters full everywhere overnight 📈', effect: { support: 15, needs: { social: 10 } } }] },
+      { label: '"I go win with the people"', outcomes: [{ weight: 1, text: 'Chief laugh. "We go see." Your opponent don get godfather 😬', effect: { support: -5, needs: { fun: -10 } } }, { weight: 1, text: 'Young people love your stand! "No godfather!" trend for AbujaGram 🔥', effect: { support: 6, followersPct: 10, needs: { fun: 15 } } }] },
+    ],
+  },
+  {
+    id: 'smear',
+    emoji: '📰',
+    title: 'Opponent dey smear you',
+    text: 'Blog post: "Candidate once owed landlord 3 months rent!" E don go viral for WhatsApp groups.',
+    trigger: 'idle',
+    weight: 6,
+    cooldownHours: 120,
+    when: (c) => !!c.campaigning && free(c),
+    choices: [
+      { label: 'Press conference: tell your story', outcomes: [{ weight: 2, text: '"Na struggle make me who I be." People feel you 💪🏾', effect: { support: 4, followersPct: 5, needs: { social: 10 } } }, { weight: 1, text: 'Journalists twist your words 😩', effect: { packaging: -2, needs: { fun: -10 } } }] },
+      { label: 'Ignore am', outcomes: [{ text: 'The gist die down after two days.', effect: { support: -4, needs: { fun: -5 } } }] },
+    ],
+  },
+  {
+    id: 'constituency',
+    emoji: '🚰',
+    title: 'Your people dey call you',
+    text: '"Honourable! Our borehole don spoil, and school roof dey leak. Na you we vote o!"',
+    trigger: 'idle',
+    weight: 5,
+    cooldownHours: 96,
+    when: (c) => (c.office ?? -1) >= 0 && free(c),
+    choices: [
+      { label: 'Fix am from your pocket', cost: 150000, outcomes: [{ text: 'Plaque with your name don enter the wall: "Donated by our able representative" 🏆', effect: { packaging: 4, relAll: 3, needs: { social: 20 } } }] },
+      { label: '"E dey the budget"', outcomes: [{ text: 'Dem don dey call you "Honourable Promise" for the street 😬', effect: { packaging: -3, needs: { social: -10 } } }] },
+    ],
+  },
+  {
+    id: 'efcc',
+    emoji: '🚔',
+    title: 'EFCC invitation',
+    text: '"You are invited to answer questions on alleged vote-buying during your last election." Cameras dey outside.',
+    trigger: 'idle',
+    weight: 10,
+    cooldownHours: 336,
+    when: (c) => !!c.votesBought && (c.office ?? -1) >= 1 && free(c),
+    choices: [
+      { label: 'Honour the invitation with lawyers', cost: 500000, outcomes: [{ weight: 2, text: 'After long questions, dem release you "pending investigation". Phew 😮‍💨', effect: { heat: 10, minutes: 300 } }, { weight: 1, text: 'Case dismissed for lack of evidence! 🙌🏾', effect: { heat: -10, minutes: 300 } }] },
+      { label: 'Travel abroad for "medical check-up" ✈️', outcomes: [{ text: 'Everybody know wetin you do 😂 Your name don dey "wanted" list', effect: { heat: 40, packaging: -5 } }] },
+    ],
+  },
+
   // ---------------- Scam call ----------------
   {
     id: 'scam-call',

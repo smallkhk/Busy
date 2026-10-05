@@ -40,6 +40,10 @@ export type EventContext = {
   fakeLife?: boolean;
   /** House upgrades you own. */
   homeUps?: string[];
+  /** Political office you hold (-1 = none). */
+  office?: number;
+  campaigning?: boolean;
+  votesBought?: boolean;
   /** Today's festival id (sallah, christmas, …). */
   festival?: string;
   /** Areas where you get land or a building in progress. */
@@ -80,6 +84,8 @@ export type Effect = {
   fuel?: number;
   /** Love change with your partner. */
   partnerLove?: number;
+  /** Campaign support change (percentage points). */
+  support?: number;
   /** Story flags to set (remembered with today's day). */
   flag?: string | string[];
 };
@@ -166,6 +172,7 @@ export function effectChips(effect: Effect | undefined, cost = 0, needEmoji: Rec
   if (effect?.followersPct) chips.push(`${effect.followersPct > 0 ? '+' : ''}${effect.followersPct}% 📸 followers`);
   if (effect?.closeBusiness) chips.push(`Business closed ${effect.closeBusiness.days} days 🔒`);
   if (effect?.carRepair) chips.push('Car don fix 🔧');
+  if (effect?.support) chips.push(`🗳️ Support ${effect.support > 0 ? '+' : ''}${effect.support}%`);
   if (effect?.partnerLove) chips.push(`${effect.partnerLove > 0 ? '+' : ''}${effect.partnerLove} 💕`);
   if (effect?.fuel) chips.push(`+${effect.fuel}L ⛽`);
   if (effect?.carWear) chips.push(`Car condition -${effect.carWear} 🚗`);
