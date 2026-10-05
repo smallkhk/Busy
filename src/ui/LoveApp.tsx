@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ASK_OUT_AT, DATE_TIERS, MATCHES, matchById, officialPartner, PROPOSE_AFTER_DAYS, RING_COST, STAGE_NAMES, stageOf, WEDDING_COST } from '../content/dating';
+import { LOVE_GIFT_COST, ASK_OUT_AT, DATE_TIERS, MATCHES, matchById, officialPartner, PROPOSE_AFTER_DAYS, RING_COST, STAGE_NAMES, stageOf, WEDDING_COST } from '../content/dating';
 import { clockParts, formatNaira } from '../engine/clock';
 import { useGame } from '../store/game';
 
@@ -27,6 +27,10 @@ function Profile({ id }: { id: string }) {
         <button className="action" disabled={l.lastTextDay === day} onClick={() => g.textLove(id)}>
           <span className="action-emoji">💬</span>
           <span className="action-body"><span>Gist on chat</span><span className="muted small">{l.lastTextDay === day ? 'Una don gist today' : '₦200 data · 💕 +6'}</span></span>
+        </button>
+        <button className="action" disabled={money < LOVE_GIFT_COST || (l.lastGiftDay !== undefined && day - l.lastGiftDay < 2)} onClick={() => g.giftLove(id)}>
+          <span className="action-emoji">🎁</span>
+          <span className="action-body"><span>Send flowers & perfume</span><span className="muted small">{formatNaira(LOVE_GIFT_COST)} · 💕 +8 · every 2 days</span></span>
         </button>
         <div className="love-section">📅 Take {m.name} out {l.interest < 25 && <span className="muted small">(gist small first)</span>}</div>
         {DATE_TIERS.map((t) => (

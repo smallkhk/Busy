@@ -56,4 +56,13 @@ describe('Abuja Love in the game', () => {
     g().propose('amina');
     expect(g().loves.amina.engaged).toBe(true);
   });
+
+  it('gifts raise love, but not every day', () => {
+    const g = useGame.getState;
+    useGame.setState({ loves: { amina: { interest: 40 } } });
+    g().giftLove('amina');
+    expect(g().loves.amina.interest).toBe(48);
+    g().giftLove('amina');
+    expect(g().loves.amina.interest).toBe(48);
+  });
 });

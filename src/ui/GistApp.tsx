@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNet } from '../net/useNet';
 import { useGame } from '../store/game';
-import { addFriend, markRead, searchPlayers, sendMessage, sendVoice, tag, unreadFrom, useSocial, voiceUrl, type Msg, type Profile } from '../net/social';
+import { addFriend, sendCash, markRead, searchPlayers, sendMessage, sendVoice, tag, unreadFrom, useSocial, voiceUrl, type Msg, type Profile } from '../net/social';
 import { canRecord, formatMs, MAX_VOICE_MS, startRecording, type Recorder } from '../net/voice';
 
 function Avatar({ p, size = 42 }: { p?: Profile; size?: number }) {
@@ -117,6 +117,41 @@ function RecordBar({ to, onDone }: { to: string; onDone: () => void }) {
   );
 }
 
+const CASH_CHIPS = [1000, 5000, 20000, 50000];
+
+/** Send naira from your Ego Bank to a friend (in-game money). */
+function PayPanel({ to, name, onDone }: { to: string; name: string; onDone: () => void }) {
+  const money = useGame((s) => s.money);
+  const [amount, setAmount] = useState(5000);
+  const [note, setNote] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const send = async () => {
+    if (amount > money) return setErr('You no get reach that one 😅');
+    setBusy(true);
+    const e = await sendCash(to, amount, note);
+    setBusy(false);
+    if (e) return setErr(e);
+    useGame.getState().adjustMoney(-amount, `Transfer to ${name}`);
+    useGame.getState().toast(`💸 You don send ${name} ₦${amount.toLocaleString('en-NG')}`);
+    void sendMessage(to, `💸 I don send you ₦${amount.toLocaleString('en-NG')}${note.trim() ? `: ${note.trim()}` : ''}`);
+    onDone();
+  };
+  return (
+    <div className="gist-pay">
+      <div className="small">Send money to <b>{name}</b> (Ego Bank · you get ₦{money.toLocaleString('en-NG')})</div>
+      <div className="gist-pay-chips">
+        {CASH_CHIPS.map((c) => (
+          <button key={c} className={amount === c ? 'on' : ''} onClick={() => setAmount(c)}>₦{c.toLocaleString('en-NG')}</button>
+        ))}
+      </div>
+      <input value={note} maxLength={60} placeholder="Note (e.g. for transport 🚕)" onChange={(e) => setNote(e.target.value)} />
+      {err && <div className="small" style={{ color: '#f5b7b1' }}>{err}</div>}
+      <button className="primary" disabled={busy || amount > money} onClick={() => void send()}>{busy ? 'Sending…' : `Send ₦${amount.toLocaleString('en-NG')}`}</button>
+    </div>
+  );
+}
+
 function Setup() {
   const reason = useSocial((s) => s.setupReason);
   return (
@@ -140,6 +175,7 @@ function Conversation({ id }: { id: string }) {
   const isFriend = useSocial((s) => s.friends.includes(id));
   const [text, setText] = useState('');
   const [recording, setRecording] = useState(false);
+  const [paying, setPaying] = useState(false);
   const end = useRef<HTMLDivElement>(null);
   useEffect(() => {
     void markRead(id);
@@ -154,7 +190,9 @@ function Conversation({ id }: { id: string }) {
         <button onClick={() => useSocial.setState({ openChat: null })} aria-label="Back">‹</button>
         <Avatar p={p} size={34} />
         <span className="gist-convo-name">{p?.name ?? 'Player'} <span className="gist-tag">{tag(id)}</span></span>
+        {isFriend && <button className="gist-cash-btn" onClick={() => setPaying((v) => !v)} aria-label="Send money">💸</button>}
       </div>
+      {paying && <PayPanel to={id} name={p?.name ?? 'your friend'} onDone={() => setPaying(false)} />}
       <div className="gist-wall">
         {msgs.length === 0 && <div className="gist-hint">Say hi to {p?.name ?? 'your friend'} 👋🏾</div>}
         {msgs.map((m: Msg) => {

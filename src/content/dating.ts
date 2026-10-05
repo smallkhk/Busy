@@ -68,6 +68,7 @@ export type Love = {
   married?: boolean;
   lastTextDay?: number;
   lastDateDay?: number;
+  lastGiftDay?: number;
   /** Day you became official, for "meet parents". */
   sinceDay?: number;
   /** You took them on a date you can't really afford. */
@@ -84,6 +85,7 @@ export function stageOf(l: Love): Stage {
 }
 
 export const TEXT_INTEREST = 6;
+export const LOVE_GIFT_COST = 15000;
 export const DAILY_COOL = 3;
 /** Interest needed to ask them out officially. */
 export const ASK_OUT_AT = 75;
