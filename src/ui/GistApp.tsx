@@ -3,6 +3,8 @@ import { useNet } from '../net/useNet';
 import { useGame } from '../store/game';
 import { addFriend, sendCash, markRead, searchPlayers, sendMessage, sendVoice, tag, unreadFrom, useSocial, voiceUrl, type Msg, type Profile } from '../net/social';
 import { canRecord, formatMs, MAX_VOICE_MS, startRecording, type Recorder } from '../net/voice';
+import { canPlaceCalls, phoneLine } from '../net/phoneLine';
+import { AIRTIME_PER_MIN, CALL_MIN_BALANCE } from '../net/calls';
 
 function Avatar({ p, size = 42 }: { p?: Profile; size?: number }) {
   return (
@@ -171,6 +173,12 @@ function Setup() {
   );
 }
 
+/** Dial a friend; if you no get money, tell you why. */
+async function callPlayer(id: string, name: string) {
+  const why = await phoneLine.call(id, name);
+  if (why) useGame.getState().toast(`📞 ${why}`);
+}
+
 function Conversation({ id }: { id: string }) {
   const uid = useSocial((s) => s.uid);
   const p = useSocial((s) => s.profiles[id]);
@@ -195,6 +203,7 @@ function Conversation({ id }: { id: string }) {
         <Avatar p={p} size={34} />
         <span className="gist-convo-name">{p?.name ?? 'Player'} <span className="gist-tag">{tag(id)}</span></span>
         {isFriend && <button className="gist-cash-btn" onClick={() => setPaying((v) => !v)} aria-label="Send money">💸</button>}
+        {isFriend && canPlaceCalls() && <button className="gist-cash-btn" onClick={() => void callPlayer(id, p?.name ?? 'Player')} aria-label="Call">📞</button>}
       </div>
       {paying && <PayPanel to={id} name={p?.name ?? 'your friend'} onDone={() => setPaying(false)} />}
       <div className="gist-wall">
@@ -358,6 +367,12 @@ export function NearbyMenu() {
             <button className="action" disabled={!isFriend && !done} onClick={() => { useSocial.setState({ nearbyMenu: null, openChat: id }); useGame.getState().openPhone('gist'); }}>
               <span className="action-emoji">💬</span><span className="action-body"><span>Send message</span></span>
             </button>
+            {canPlaceCalls() && (
+              <button className="action" disabled={!isFriend && !done} onClick={() => { close(); void callPlayer(id, p.name); }}>
+                <span className="action-emoji">📞</span>
+                <span className="action-body"><span>Call {p.name}</span><span className="muted small">Need ₦{CALL_MIN_BALANCE.toLocaleString('en-NG')}+ for account · ₦{AIRTIME_PER_MIN}/min</span></span>
+              </button>
+            )}
           </>
         )}
       </div>

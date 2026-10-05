@@ -99,6 +99,10 @@ function burst(start: number, dur: number, filterFreq: number, vol: number, to: 
 // ---------------- sound effects ----------------
 
 export const sfx = {
+  /** Soft beep the caller hears while it dey ring the other side. */
+  ringback() {
+    if (ctx) tone(440, ctx.currentTime, 0.9, 'sine', 0.06);
+  },
   click() {
     if (ctx) tone(880, ctx.currentTime, 0.05, 'triangle', 0.08);
   },
