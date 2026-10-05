@@ -5,7 +5,7 @@ import { JOBS, PHONE_ACTIVITIES, type Activity } from '../content/activities';
 import { clockParts, formatClock, formatNaira } from '../engine/clock';
 import { CALL_COST, CONTACTS, GIFT_COST, longLeg } from '../content/contacts';
 import { BRAND_COOLDOWN_DAYS, BRAND_MIN_FOLLOWERS, brandPay, GAP_DANGER, POST_COOLDOWN_MIN, POSTS, realWealth } from '../content/gram';
-import { AREAS, moveCost, rentOwed, type AreaId } from '../content/housing';
+import { AREAS, moveCost, PROPERTY_SELL_FEE, propertyValue, RENT_AREAS, rentOwed, type AreaId } from '../content/housing';
 import { CHOP_ITEMS, HEADLINES, ridesFrom } from '../content/phoneapps';
 import { blockReason, useGame, type PhoneApp } from '../store/game';
 import { activityDetail } from './detail';
@@ -135,6 +135,67 @@ function HomeShop() {
   );
 }
 
+function PropertySection() {
+  const properties = useGame((s) => s.properties ?? {});
+  const area = useGame((s) => s.area);
+  const money = useGame((s) => s.money);
+  const day = useGame((s) => clockParts(s.time).day);
+  const g = useGame.getState();
+  const forSale = (Object.keys(AREAS) as AreaId[]).filter((id) => AREAS[id].own);
+  return (
+    <>
+      <div className="love-section">🏡 Own your house</div>
+      <div className="list">
+        {forSale.map((id) => {
+          const a = AREAS[id];
+          const own = a.own!;
+          const p = properties[id];
+          const value = p ? propertyValue(p, day) : 0;
+          return (
+            <div key={id} className={`contact ${p ? 'owned' : ''}`}>
+              <div className="contact-head">
+                <span className="contact-emoji">{a.emoji}</span>
+                <span className="action-body">
+                  <span>{a.home}</span>
+                  <span className="muted small">{a.blurb}</span>
+                  <span className="small">
+                    {!p
+                      ? own.land
+                        ? `Land ${formatNaira(own.land)} + build ${formatNaira(own.build!)} (${own.buildDays} days)`
+                        : `Price ${formatNaira(own.price!)}`
+                      : p.status === 'land'
+                        ? '📜 Land dey your name. Build when you ready'
+                        : p.status === 'building'
+                          ? `🏗️ Building… ready Day ${p.readyDay}`
+                          : area === id
+                            ? '🔑 You dey live here'
+                            : p.rentedOut
+                              ? `💰 Rented out · ${formatNaira(own.rentOut)}/day`
+                              : '🏠 Empty. Move in or rent am out'}
+                  </span>
+                  {p && <span className="muted small">Worth about {formatNaira(value)} now · 👔 +{a.packaging} when you live there</span>}
+                </span>
+              </div>
+              <div className="contact-actions">
+                {!p && (
+                  <button className="ghost" disabled={money < (own.land ?? own.price ?? 0)} onClick={() => g.buyProperty(id)}>
+                    {own.land ? `📜 Buy land ${formatNaira(own.land)}` : `🔑 Buy ${formatNaira(own.price!)}`}
+                  </button>
+                )}
+                {p?.status === 'land' && <button className="ghost" disabled={money < own.build!} onClick={() => g.buildHouse(id)}>🏗️ Build {formatNaira(own.build!)}</button>}
+                {p?.status === 'built' && area !== id && <button className="ghost" onClick={() => g.toggleRentOut(id)}>{p.rentedOut ? '🚪 End tenancy' : `💰 Rent out`}</button>}
+                {p && p.status !== 'building' && area !== id && (
+                  <button className="ghost" onClick={() => confirm(`Sell for about ${formatNaira(Math.round(value * (1 - PROPERTY_SELL_FEE)))}?`) && g.sellProperty(id)}>🤝 Sell</button>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </>
+  );
+}
+
 function HouseApp() {
   const area = useGame((s) => s.area);
   const rentDueDay = useGame((s) => s.rentDueDay);
@@ -143,6 +204,7 @@ function HouseApp() {
   const day = useGame((s) => clockParts(s.time).day);
   const payRent = useGame((s) => s.payRent);
   const moveTo = useGame((s) => s.moveTo);
+  const properties = useGame((s) => s.properties);
   const home = AREAS[area];
   const left = rentDueDay - day;
   const owed = rentOwed(area, day, rentDueDay);
@@ -158,19 +220,26 @@ function HouseApp() {
       <div className={`balance ${locked || left < 0 ? 'overdue' : ''}`}>
         <div className="muted small">You dey stay</div>
         <div className="balance-amt" style={{ fontSize: 22 }}>{home.emoji} {home.home}</div>
-        <div className="small">{status}</div>
-        <button className="primary" style={{ marginTop: 10, width: '100%' }} disabled={left > 10 || owed > money} onClick={payRent}>
-          {left > 10 ? `Rent ${formatNaira(home.rent)} / 30 days` : `Pay rent ${formatNaira(owed)}`}
-        </button>
+        {home.own ? (
+          <div className="small">🔑 Na your own house. No landlord, no rent 🙌🏾</div>
+        ) : (
+          <>
+            <div className="small">{status}</div>
+            <button className="primary" style={{ marginTop: 10, width: '100%' }} disabled={left > 10 || owed > money} onClick={payRent}>
+              {left > 10 ? `Rent ${formatNaira(home.rent)} / 30 days` : `Pay rent ${formatNaira(owed)}`}
+            </button>
+          </>
+        )}
       </div>
       <HomeShop />
+      <PropertySection />
       <p className="muted small">Move house: you go pay 2 months upfront + 10% agent fee. Better area = more 👔 and shorter road.</p>
       <div className="list">
-        {(Object.keys(AREAS) as AreaId[]).filter((id) => id !== area).map((id) => {
+        {(Object.keys(AREAS) as AreaId[]).filter((id) => id !== area && (RENT_AREAS.includes(id) || properties?.[id]?.status === 'built')).map((id) => {
           const a = AREAS[id];
           const cost = moveCost(id);
           return (
-            <button key={id} className="action" disabled={cost > money || locked || left < 0} onClick={() => moveTo(id)}>
+            <button key={id} className="action" disabled={cost > money || locked || (!home.own && left < 0)} onClick={() => moveTo(id)}>
               <span className="action-emoji">{a.emoji}</span>
               <span className="action-body">
                 <span>{a.home}</span>

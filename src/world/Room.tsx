@@ -161,10 +161,10 @@ export function Room() {
         {/* Sofa in better areas, red plastic chairs in Kubwa */}
         {(upgraded || has('sofa')) && (
           <group position={[-1.6, 0, 1.0]}>
-            <Box p={[0, 0.3, 0]} s={[0.8, 0.4, 1.8]} c={area === 'wuse2' ? '#3d4a5c' : '#6b4f3a'} />
-            <Box p={[0.32, 0.7, 0]} s={[0.18, 0.6, 1.8]} c={area === 'wuse2' ? '#3d4a5c' : '#6b4f3a'} />
-            <Box p={[0, 0.55, -0.85]} s={[0.8, 0.3, 0.14]} c={area === 'wuse2' ? '#2c3646' : '#5a412f'} />
-            <Box p={[0, 0.55, 0.85]} s={[0.8, 0.3, 0.14]} c={area === 'wuse2' ? '#2c3646' : '#5a412f'} />
+            <Box p={[0, 0.3, 0]} s={[0.8, 0.4, 1.8]} c={(area === 'wuse2' || area === 'guzape') ? '#3d4a5c' : '#6b4f3a'} />
+            <Box p={[0.32, 0.7, 0]} s={[0.18, 0.6, 1.8]} c={(area === 'wuse2' || area === 'guzape') ? '#3d4a5c' : '#6b4f3a'} />
+            <Box p={[0, 0.55, -0.85]} s={[0.8, 0.3, 0.14]} c={(area === 'wuse2' || area === 'guzape') ? '#2c3646' : '#5a412f'} />
+            <Box p={[0, 0.55, 0.85]} s={[0.8, 0.3, 0.14]} c={(area === 'wuse2' || area === 'guzape') ? '#2c3646' : '#5a412f'} />
           </group>
         )}
         {!upgraded && !has('sofa') && [0.6, 1.4].map((z) => (
@@ -189,10 +189,10 @@ export function Room() {
         <>
           {/* Wall art */}
           <Box p={[-3.98, 1.7, -0.6]} s={[0.03, 0.8, 1.1]} c="#2b2b2b" />
-          <Box p={[-3.96, 1.7, -0.6]} s={[0.02, 0.66, 0.96]} c={area === 'wuse2' ? '#e8b04b' : '#3ccf8e'} />
+          <Box p={[-3.96, 1.7, -0.6]} s={[0.02, 0.66, 0.96]} c={(area === 'wuse2' || area === 'guzape') ? '#e8b04b' : '#3ccf8e'} />
         </>
       )}
-      {area === 'wuse2' && (
+      {(area === 'wuse2' || area === 'guzape') && (
         <>
           {/* Potted plant and a coffee table */}
           <Cyl p={[-3.5, 0.2, 2.6]} r={0.2} h={0.4} c="#8a5a3b" />

@@ -17,7 +17,7 @@ export const HOME_ITEMS: HomeItem[] = [
   { id: 'art', name: 'Big wall art', emoji: '🖼️', cost: 1200000, packaging: 6, minArea: 'wuse2', perk: 'Pure packaging 😎' },
 ];
 
-const AREA_RANK: Record<AreaId, number> = { kubwa: 0, gwarinpa: 1, wuse2: 2 };
+const AREA_RANK: Record<AreaId, number> = { kubwa: 0, gwarinpa: 1, kuje: 1, wuse2: 2, guzape: 3 };
 export const areaAllows = (area: AreaId, item: HomeItem) => AREA_RANK[area] >= AREA_RANK[item.minArea];
 export const homeItemById = (id: string) => HOME_ITEMS.find((i) => i.id === id);
 

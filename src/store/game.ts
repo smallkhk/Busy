@@ -3,7 +3,7 @@ import { createJSONStorage, persist } from 'zustand/middleware';
 import { activityById, activityPlace, ENTRY_SPOT, EXIT_SPOT, PLACE_NAMES, type Activity, type Place } from '../content/activities';
 import { AD_BIZ_BOOST } from '../content/billboards';
 import { areaAllows, genCostFor, homeItemById, TV_ACTIVITIES, WIFI_FREE } from '../content/homeup';
-import { AREAS, moveCost, placeLabel, RENT_CYCLE_DAYS, RENT_GRACE_DAYS, rentOwed, type AreaId } from '../content/housing';
+import { AREAS, moveCost, placeLabel, PROPERTY_SELL_FEE, propertyValue, RENT_CYCLE_DAYS, RENT_GRACE_DAYS, rentOwed, type AreaId, type Property } from '../content/housing';
 import { clockParts, formatNaira, inHours } from '../engine/clock';
 import { CALL_COST, contactById, FIRST_MEET_REL, GIFT_COST, longLeg, type ContactState } from '../content/contacts';
 import { badDayChance, businessById, dailyNet, MAX_BIZ_LEVEL, MAX_STAFF, upgradeCost, wageOf, type OwnedBusiness } from '../content/business';
@@ -61,6 +61,8 @@ type GameState = {
   heat: number;
   /** Real time (ms) your billboard ad runs till: business earns more meanwhile. */
   adBoostUntil: number;
+  /** Land and houses you own. */
+  properties: Partial<Record<AreaId, Property>>;
   /** Things you don buy for your house. */
   homeUps: string[];
   /** Abuja Love: people you matched with. */
@@ -155,6 +157,11 @@ type GameState = {
   askFavour: (id: string) => void;
   payRent: () => void;
   moveTo: (area: AreaId) => void;
+  /** Buy land (Kuje) or a finished house (Guzape). */
+  buyProperty: (area: AreaId) => void;
+  buildHouse: (area: AreaId) => void;
+  toggleRentOut: (area: AreaId) => void;
+  sellProperty: (area: AreaId) => void;
   answerEvent: (choice: number) => void;
   closeEvent: () => void;
   reset: () => void;
@@ -229,6 +236,7 @@ const initial = () => ({
   flags: {} as Record<string, number>,
   loves: {} as Record<string, Love>,
   homeUps: [] as string[],
+  properties: {} as Partial<Record<AreaId, Property>>,
   adBoostUntil: 0,
   swiped: [] as string[],
   weather: 'sunny' as Weather,
@@ -293,6 +301,7 @@ export function eventContext(s: GameState, trip?: string | null): EventContext {
     dating: Object.values(s.loves ?? {}).filter((l) => l.interest >= 55 && !l.married).length,
     fakeLife: Object.values(s.loves ?? {}).some((l) => l.fakeLife),
     homeUps: s.homeUps ?? [],
+    landAt: Object.entries(s.properties ?? {}).filter(([, p]) => p && p.status !== 'built').map(([id]) => id),
     area: s.area,
   };
 }
@@ -1036,18 +1045,80 @@ export const useGame = create<GameState>()(
           bump('rentPaid');
         },
 
+        buyProperty: (area) => {
+          const s = get();
+          const own = AREAS[area].own;
+          const { day } = clockParts(s.time);
+          if (!own || s.properties?.[area]) return;
+          const price = own.land ?? own.price ?? 0;
+          if (s.money < price) return get().toast(`😕 You need ${formatNaira(price)}`);
+          set({
+            money: s.money - price,
+            properties: { ...s.properties, [area]: { status: own.land ? 'land' : 'built', boughtDay: day, spent: price } },
+            packaging: clamp(s.packaging + (own.land ? 3 : 10)),
+            txns: [{ at: s.time, label: own.land ? `Land for ${AREAS[area].name}` : `Bought ${AREAS[area].home}`, amount: -price }, ...s.txns].slice(0, 40),
+          });
+          get().toast(own.land ? `📜 You don buy land for ${AREAS[area].name}! C of O dey your hand. Next: build` : `🔑 ${AREAS[area].home} na your own now! 🎉`);
+        },
+
+        buildHouse: (area) => {
+          const s = get();
+          const own = AREAS[area].own;
+          const p = s.properties?.[area];
+          const { day } = clockParts(s.time);
+          if (!own?.build || p?.status !== 'land') return;
+          if (s.money < own.build) return get().toast(`😕 Building cost ${formatNaira(own.build)}`);
+          set({
+            money: s.money - own.build,
+            properties: { ...s.properties, [area]: { ...p, status: 'building', readyDay: day + (own.buildDays ?? 10), spent: p.spent + own.build } },
+            txns: [{ at: s.time, label: `Building house, ${AREAS[area].name}`, amount: -own.build }, ...s.txns].slice(0, 40),
+          });
+          get().toast(`🏗️ Bricklayers don start work! House go ready Day ${day + (own.buildDays ?? 10)}`);
+        },
+
+        toggleRentOut: (area) => {
+          const s = get();
+          const p = s.properties?.[area];
+          if (p?.status !== 'built') return;
+          if (s.area === area && !p.rentedOut) return get().toast('😅 You dey live there. Move out first before you rent am out');
+          set({ properties: { ...s.properties, [area]: { ...p, rentedOut: !p.rentedOut } } });
+          get().toast(p.rentedOut ? `🏠 Tenant don pack comot from ${AREAS[area].name}` : `💰 Tenant don pack enter! ${formatNaira(AREAS[area].own!.rentOut)} go dey land every morning`);
+        },
+
+        sellProperty: (area) => {
+          const s = get();
+          const p = s.properties?.[area];
+          if (!p) return;
+          if (s.area === area) return get().toast('😅 You dey live there. Move out first');
+          if (p.status === 'building') return get().toast('🏗️ Wait make building finish first');
+          const got = Math.round(propertyValue(p, clockParts(s.time).day) * (1 - PROPERTY_SELL_FEE));
+          const properties = { ...s.properties };
+          delete properties[area];
+          set({
+            money: s.money + got,
+            properties,
+            packaging: clamp(s.packaging - (p.status === 'land' ? 3 : 10)),
+            txns: [{ at: s.time, label: `Sold property, ${AREAS[area].name}`, amount: got }, ...s.txns].slice(0, 40),
+          });
+          get().toast(`🤝 You don sell am for ${formatNaira(got)}`);
+        },
+
         moveTo: (to) => {
           const s = get();
           const { day } = clockParts(s.time);
           if (to === s.area) return;
           if (s.active) return get().toast('😕 Finish wetin you dey do first');
+          const ownP = s.properties?.[to];
+          if (AREAS[to].own && ownP?.status !== 'built') return get().toast('🏗️ Your house never ready');
           if (s.rentLocked || day > s.rentDueDay) return get().toast('😕 Clear your rent first. Landlord no go release your load');
           const cost = moveCost(to);
           if (cost > s.money) return get().toast(`😕 You need ${formatNaira(cost)} to move`);
           set({
             money: s.money - cost,
             area: to,
-            rentDueDay: day + RENT_CYCLE_DAYS * 2,
+            // Your own house: no rent again
+            rentDueDay: AREAS[to].own ? day + 100000 : day + RENT_CYCLE_DAYS * 2,
+            ...(AREAS[to].own && ownP ? { properties: { ...s.properties, [to]: { ...ownP, rentedOut: false } } } : {}),
             packaging: clamp(s.packaging + AREAS[to].packaging - AREAS[s.area].packaging),
             place: 'home',
             pos: START_POS,
@@ -1168,8 +1239,8 @@ export const useGame = create<GameState>()(
             if (fl['boss-ot'] === cur.day - 1) now.toast('📌 Today: overtime for office, Federal Secretariat before 2pm!');
             const { rentDueDay, rentLocked, area } = get();
             const left = rentDueDay - cur.day;
-            if (left === 7 || left === 1) now.toast(`🏠 Rent go due in ${left} day${left > 1 ? 's' : ''}: ${formatNaira(AREAS[area].rent)}`);
-            if (left === 0) now.toast('🏠 Rent don due today! Pay for phone → 🏠 Rent');
+            if (AREAS[area].rent && (left === 7 || left === 1)) now.toast(`🏠 Rent go due in ${left} day${left > 1 ? 's' : ''}: ${formatNaira(AREAS[area].rent)}`);
+            if (AREAS[area].rent && left === 0) now.toast('🏠 Rent don due today! Pay for phone → 🏠 Rent');
             // People forget you if you no dey check on them
             const contacts = Object.fromEntries(
               Object.entries(get().contacts).map(([id, c]) => [id, { ...c, rel: Math.max(5, c.rel - 1) }]),
@@ -1242,7 +1313,23 @@ export const useGame = create<GameState>()(
             // Followers drift away if you no post for 2 days
             const g = get();
             if (g.time - g.lastPostAt > 2 * 24 * 60 && g.followers > 0) set({ followers: Math.floor(g.followers * 0.98) });
-            if (left < -RENT_GRACE_DAYS && !rentLocked) {
+            // Property: buildings finish, tenants pay
+            const props = { ...(get().properties ?? {}) };
+            let rentIn = 0;
+            for (const [id, p] of Object.entries(props) as [AreaId, Property][]) {
+              if (p.status === 'building' && p.readyDay !== undefined && cur.day >= p.readyDay) {
+                props[id] = { ...p, status: 'built' };
+                now.toast(`🏡 Your house for ${AREAS[id].name} don finish! Move in or rent am out (🏠 Rent app)`);
+              }
+              if (p.status === 'built' && p.rentedOut && get().area !== id) rentIn += AREAS[id].own?.rentOut ?? 0;
+            }
+            set({ properties: props });
+            if (rentIn) {
+              const pm = get();
+              set({ money: pm.money + rentIn, txns: [{ at: time, label: 'Rent from your tenants', amount: rentIn }, ...pm.txns].slice(0, 40) });
+              now.toast(`🏘️ Your tenants pay ${formatNaira(rentIn)}`);
+            }
+            if (AREAS[area].rent && left < -RENT_GRACE_DAYS && !rentLocked) {
               set({ rentLocked: true });
               now.toast('🔒 Landlord don lock your room! Pay rent + 10% penalty to enter');
             }
@@ -1334,6 +1421,7 @@ export const useGame = create<GameState>()(
         flags: s.flags,
         loves: s.loves,
         homeUps: s.homeUps,
+        properties: s.properties,
         adBoostUntil: s.adBoostUntil,
         swiped: s.swiped,
         weather: s.weather,
