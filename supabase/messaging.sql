@@ -67,3 +67,6 @@ grant update (read_at) on public.messages to authenticated;
 do $$ begin
   alter publication supabase_realtime add table public.messages;
 exception when duplicate_object then null; end $$;
+do $$ begin
+  alter publication supabase_realtime add table public.friends;
+exception when duplicate_object then null; end $$;
