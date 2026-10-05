@@ -17,6 +17,8 @@ import { BusinessApp, CareerCard } from './Career';
 import { GistApp } from './GistApp';
 import { LoveApp } from './LoveApp';
 import { AccountApp, RankingsApp } from './CloudApps';
+import { AdminApp } from './AdminApp';
+import { useAdmin } from '../net/admin';
 import { GoalsApp } from './Goals';
 import { totalUnread, useSocial } from '../net/social';
 import { MapView } from './MapView';
@@ -47,6 +49,7 @@ const APPS: { id: PhoneApp; name: string; emoji: string; color: string }[] = [
   { id: 'goals', name: 'Goals', emoji: '🎯', color: '#9a7b1c' },
   { id: 'rankings', name: 'Rankings', emoji: '🏆', color: '#c9a24a' },
   { id: 'account', name: 'Account', emoji: '⚙️', color: '#5f6670' },
+  { id: 'admin', name: 'Admin', emoji: '🛡️', color: '#7a1f2b' },
 ];
 
 
@@ -570,6 +573,8 @@ function AppBody({ app }: { app: PhoneApp }) {
       return <PoliticsApp />;
     case 'account':
       return <AccountApp />;
+    case 'admin':
+      return <AdminApp />;
     case 'rankings':
       return <RankingsApp />;
     case 'jobs':
@@ -600,6 +605,7 @@ export function Phone() {
   const openPhone = useGame((s) => s.openPhone);
   const time = useGame((s) => Math.floor(s.time));
   const unread = useSocial(totalUnread);
+  const isAdmin = useAdmin((s) => s.isAdmin);
   if (!phone || phone === 'map' || phone === 'cars' || phone === 'style') return null;
   const current = APPS.find((a) => a.id === phone);
   return (
@@ -611,7 +617,7 @@ export function Phone() {
         </div>
         {phone === 'home' ? (
           <div className="app-grid">
-            {APPS.map((a) => (
+            {APPS.filter((a) => a.id !== 'admin' || isAdmin).map((a) => (
               <button key={a.id} className="app-icon" onClick={() => openPhone(a.id)}>
                 <span className="app-tile" style={{ background: a.color }}>
                   {a.emoji}

@@ -520,3 +520,17 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
 .call-btn.decline { background: var(--bad); }
 .call-btn.mute { background: rgba(255, 255, 255, 0.12); }
 .call-btn.mute.on { background: var(--gold); }
+
+/* ---------- Admin ---------- */
+.admin-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.admin-tile { display: flex; flex-direction: column; gap: 2px; padding: 10px; border-radius: 12px; background: rgba(255, 255, 255, 0.06); }
+.admin-tile b { font-size: 18px; }
+.admin-player { border: 1px solid var(--line); border-radius: 12px; padding: 8px; display: flex; flex-direction: column; gap: 6px; }
+.admin-player-head { display: flex; gap: 10px; align-items: center; text-align: left; color: var(--text); }
+.admin-dot { width: 18px; height: 18px; border-radius: 50%; flex: none; }
+.admin-tools { display: flex; flex-direction: column; gap: 6px; }
+.admin-row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.admin-col { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+.admin-col > .admin-input { width: 100%; box-sizing: border-box; flex: none; }
+.admin-input { flex: 1; min-width: 0; font: inherit; font-size: 15px; padding: 8px 10px; border-radius: 10px; border: 1px solid var(--line); background: rgba(255, 255, 255, 0.06); color: var(--text); }
+.ghost.danger { color: var(--bad); border-color: rgba(239, 91, 91, 0.4); }
