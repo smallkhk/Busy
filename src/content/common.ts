@@ -46,7 +46,7 @@ export type Activity = {
   requires?: { packaging?: number; cv?: number; car?: boolean; longLeg?: number };
   /** Applied when it finishes. */
   /** `cure` lists sicknesses it treats (all of them if true); `net` buys a mosquito net. */
-  effects?: { packaging?: number; pantry?: number; cv?: number; meet?: string; cure?: true | ('malaria' | 'typhoid' | 'food')[]; net?: boolean; carFix?: number };
+  effects?: { packaging?: number; pantry?: number; cv?: number; meet?: string; cure?: true | ('malaria' | 'typhoid' | 'food')[]; net?: boolean; carFix?: number; /** Litres into your car tank. */ fuel?: number; /** Chance the fuel na adulterated and damages the engine. */ badFuel?: number };
   /** Shown instead of running, for content that isn't built yet. */
   locked?: string;
 };

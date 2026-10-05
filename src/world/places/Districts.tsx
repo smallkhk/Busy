@@ -46,6 +46,32 @@ function Bus({ c = '#f2c230' }: { c?: string }) {
   );
 }
 
+/** Station canopy with two pumps, front left. `queue` lines cars up. */
+function FillingStation({ canopy, queue }: { canopy: string; queue?: boolean }) {
+  return (
+    <group position={[-4.6, 0, 3.0]}>
+      <Box p={[0, 0.02, 0]} s={[3.0, 0.04, 1.8]} c="#4a4d52" />
+      {[-0.9, 0.9].map((x) => (
+        <Box key={x} p={[x, 1.1, 0]} s={[0.12, 2.2, 0.12]} c="#ddd" />
+      ))}
+      <Box p={[0, 2.25, 0]} s={[3.0, 0.18, 1.6]} c={canopy} />
+      <Box p={[0, 2.25, 0.81]} s={[2.4, 0.12, 0.02]} c="#f4f4f4" />
+      {[-0.4, 0.4].map((x) => (
+        <group key={x} position={[x, 0, -0.1]}>
+          <Box p={[0, 0.45, 0]} s={[0.3, 0.9, 0.25]} c="#f4f4f4" />
+          <Box p={[0, 0.7, 0.13]} s={[0.2, 0.15, 0.02]} c="#222" />
+        </group>
+      ))}
+      {queue &&
+        [0, 1, 2].map((i) => (
+          <group key={i} position={[1.8 + i * 2.1, 0, 0.1]} rotation={[0, 0, 0]} scale={0.9}>
+            <Car body={['#b9bcc2', '#8b1e3f', '#20232a'][i]} roof={['#b9bcc2', '#8b1e3f', '#20232a'][i]} />
+          </group>
+        ))}
+    </group>
+  );
+}
+
 function Umbrella({ x, z, c }: { x: number; z: number; c: string }) {
   return (
     <group position={[x, 0, z]}>
@@ -127,11 +153,9 @@ export function Maitama() {
       </Tappable>
 
       <Park id="maitama-park" taxi />
-      {[[-5.6, '#20232a'], [-3.4, '#f4f4f4']].map(([x, c]) => (
-        <group key={x as number} position={[x as number, 0, 3.0]}>
-          <Car body={c as string} roof={c as string} />
-        </group>
-      ))}
+      <Tappable id="maitama-fuel">
+        <FillingStation canopy="#c0392b" />
+      </Tappable>
       <Tree p={[-7.0, 0, -1.4]} />
       <Tree p={[6.8, 0, -1.6]} s={1.1} />
       <Tree p={[0.8, 0, 3.3]} s={0.8} />
@@ -257,9 +281,9 @@ export function Garki() {
       </Tappable>
 
       <Park id="garki-park" color="#c0392b" />
-      <group position={[-4.4, 0, 3.0]}>
-        <Bus c="#ffffff" />
-      </group>
+      <Tappable id="nnpc">
+        <FillingStation canopy="#118a4c" queue />
+      </Tappable>
       <Tree p={[-7.0, 0, -1.6]} />
       <Tree p={[6.9, 0, -1.2]} s={0.9} />
       <Walkers walkers={GARKI_WALKERS} />
@@ -316,9 +340,17 @@ export function Nyanya() {
       <group position={[-4.6, 0, 3.0]}>
         <Bus />
       </group>
-      <group position={[-1.6, 0, 3.0]}>
-        <Bus c="#f4f4f4" />
-      </group>
+      <Tappable id="jerrycan">
+        <group position={[-1.6, 0, 3.0]}>
+          {[-0.5, -0.1, 0.3].map((x, i) => (
+            <Box key={x} p={[x, 0.3, i % 2 ? 0.2 : -0.1]} s={[0.35, 0.6, 0.25]} c={['#f2c230', '#2e6fa8', '#27ae60'][i]} />
+          ))}
+          <Cyl p={[0.6, 0.02, 0.4]} r={0.6} h={0.02} c="#3b2a1a" />
+          <group position={[0.8, 0, -0.2]}>
+            <Person shirt="#7f8c8d" trousers="#2d2d2d" />
+          </group>
+        </group>
+      </Tappable>
       <Tree p={[-7.0, 0, -1.4]} s={0.9} />
       <Walkers walkers={NYANYA_WALKERS} />
     </group>

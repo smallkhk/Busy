@@ -1,4 +1,4 @@
-import { CARS, carById, repairCost, RESALE } from '../content/cars';
+import { CARS, carById, repairCost, RESALE, START_FUEL, TANK } from '../content/cars';
 import { formatNaira } from '../engine/clock';
 import { useGame } from '../store/game';
 
@@ -18,11 +18,13 @@ export function CarsApp() {
           <div className="balance-amt" style={{ fontSize: 22 }}>{mine.emoji} {mine.name}</div>
           <div className="small">Condition {car.condition}%</div>
           <div className="bar thin"><div className={`fill ${car.condition < 40 ? 'bad' : car.condition < 70 ? 'mid' : 'good'}`} style={{ width: `${car.condition}%` }} /></div>
+          <div className="small">⛽ Fuel {(car.fuel ?? START_FUEL).toFixed(1)}L / {TANK}L · uses {mine.litresPer100}L per 100km</div>
+          <div className="bar thin"><div className={`fill ${(car.fuel ?? START_FUEL) < 8 ? 'bad' : (car.fuel ?? START_FUEL) < 20 ? 'mid' : 'good'}`} style={{ width: `${((car.fuel ?? START_FUEL) / TANK) * 100}%` }} /></div>
           <div className="share-buttons">
             <button className="primary" disabled={car.condition >= 100 || money < repairCost(car.condition)} onClick={repair}>🔧 Service {formatNaira(repairCost(car.condition))}</button>
             <button className="ghost" onClick={sell}>🤝 Sell</button>
           </div>
-          <div className="muted small">Drive anywhere from 🗺️ Map (you pay only fuel), or do "Drive for ride app" for 💼 Jobs.</div>
+          <div className="muted small">Drive anywhere from 🗺️ Map. Buy fuel: ⛽ NNPC for Garki (cheap, long queue), filling station for Maitama (fast), or jerrycan boys for Nyanya (risky).</div>
         </div>
       ) : (
         <p className="muted small">Own car mean say: no more bus, real Packaging 👔, and you fit drive for ride app make money. But fuel, VIO and mechanic go dey find you 😅</p>
@@ -36,7 +38,7 @@ export function CarsApp() {
               <span className="action-body">
                 <span>{c.name}</span>
                 <span className="muted small">{c.blurb}</span>
-                <span className="muted small">{formatNaira(c.price)}{mine ? ` · pay ${formatNaira(cost)} after trade-in` : ''} · 👔 +{c.packaging - (mine?.packaging ?? 0)}</span>
+                <span className="muted small">{formatNaira(c.price)}{mine ? (cost >= 0 ? ` · pay ${formatNaira(cost)} after trade-in` : ` · you collect ${formatNaira(-cost)} change after trade-in`) : ''} · 👔 {c.packaging - (mine?.packaging ?? 0) >= 0 ? '+' : ''}{c.packaging - (mine?.packaging ?? 0)}</span>
               </span>
             </button>
           );

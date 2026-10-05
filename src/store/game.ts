@@ -6,7 +6,7 @@ import { clockParts, formatNaira, inHours } from '../engine/clock';
 import { CALL_COST, contactById, FIRST_MEET_REL, GIFT_COST, longLeg, type ContactState } from '../content/contacts';
 import { businessById, dailyProfit, MAX_BIZ_LEVEL, upgradeCost, type OwnedBusiness } from '../content/business';
 import { GRADES, OFFICE_SHIFT_ID, payFor, promotionBlock } from '../content/career';
-import { carById, repairCost, RESALE } from '../content/cars';
+import { carById, litresFor, repairCost, RESALE, START_FUEL, TANK } from '../content/cars';
 import { EVENTS } from '../content/events';
 import { rollSickness, SICK_DRAIN, SICKNESS, type Sickness } from '../content/health';
 import { ALL_GOALS } from '../content/goals';
@@ -52,7 +52,7 @@ type GameState = {
   /** Office shifts done at the current grade. */
   gradeShifts: number;
   businesses: Record<string, OwnedBusiness>;
-  car: { id: string; condition: number } | null;
+  car: { id: string; condition: number; /** Litres in the tank (old saves: undefined = START_FUEL). */ fuel?: number } | null;
   sick: Sickness | null;
   /** Police suspicion 0–100. Goes down small small every day. */
   heat: number;
@@ -195,7 +195,7 @@ const initial = () => ({
   grade: 0,
   gradeShifts: 0,
   businesses: {} as Record<string, OwnedBusiness>,
-  car: null as { id: string; condition: number } | null,
+  car: null as { id: string; condition: number; fuel?: number } | null,
   sick: null as Sickness | null,
   heat: 0,
   flags: {} as Record<string, number>,
@@ -231,7 +231,7 @@ const initial = () => ({
 });
 
 /** Why an activity can't start right now, or null if it can. */
-export type BlockState = Pick<GameState, 'time' | 'money' | 'power' | 'active' | 'packaging' | 'pantry' | 'cv' | 'area' | 'rentLocked'> & { unlocks?: string[]; grade?: number; hasCar?: boolean; car?: unknown; sick?: Sickness | null; contacts?: Record<string, ContactState>; weather?: Weather; news?: ActiveNews[] };
+export type BlockState = Pick<GameState, 'time' | 'money' | 'power' | 'active' | 'packaging' | 'pantry' | 'cv' | 'area' | 'rentLocked'> & { unlocks?: string[]; grade?: number; hasCar?: boolean; car?: { id: string; fuel?: number; condition?: number } | null; carId?: string; carFuel?: number; sick?: Sickness | null; contacts?: Record<string, ContactState>; weather?: Weather; news?: ActiveNews[] };
 
 /** Everything events look at to decide if and how they happen. */
 export function eventContext(s: GameState, trip?: string | null): EventContext {
@@ -272,6 +272,10 @@ export function blockReason(a: Activity, s: BlockState): string | null {
   }
   // UI passes hasCar; the store passes its full state with `car`.
   if (a.requires?.car && !(s.hasCar ?? !!s.car)) return 'You no get car. Buy one for 🚗 Cars app';
+  const need = litresFor(a, s.carId ?? s.car?.id);
+  const tank = s.carFuel ?? s.car?.fuel ?? START_FUEL;
+  if (need > tank) return `Fuel no reach: need ${need.toFixed(1)}L, tank get ${tank.toFixed(1)}L ⛽ Buy fuel for filling station`;
+  if (a.effects?.fuel && !(s.hasCar ?? !!s.car)) return 'You no get car to put fuel';
   if (s.sick && (a.pay || a.id === OFFICE_SHIFT_ID)) return `You dey sick (${SICKNESS[s.sick].name}). Treat am first 🤒`;
   if (a.usesPantry && s.pantry < a.usesPantry) return 'No foodstuff. Buy for Wuse Market';
   const cost = costAt(a, s) + (a.requiresPower && !s.power ? GEN_COST : 0);
@@ -299,6 +303,8 @@ export const useGame = create<GameState>()(
         if (price) txns.unshift({ at: s.time, label: a.label, amount: -price });
         if (gen) txns.unshift({ at: s.time, label: 'Fuel for gen', amount: -GEN_COST });
         const total = durationAt(a, s.time, s.area, s);
+        const burn = litresFor(a, s.car?.id);
+        if (burn && s.car) set({ car: { ...s.car, fuel: Math.max(0, (s.car.fuel ?? START_FUEL) - burn) } });
         const eventAt = a.commute && Math.random() < COMMUTE_EVENT_CHANCE ? total * randomBetween(0.3, 0.7) : undefined;
         set({
           active: { id, remaining: total, gen, total, eventAt },
@@ -353,6 +359,13 @@ export const useGame = create<GameState>()(
         if (fx?.carFix && car) {
           set({ car: { ...car, condition: Math.min(100, car.condition + fx.carFix) } });
           get().toast(`🔧 Car condition +${fx.carFix}`);
+        }
+        const tankCar = get().car;
+        if (fx?.fuel && tankCar) {
+          const fuel = Math.min(TANK, (tankCar.fuel ?? START_FUEL) + fx.fuel);
+          const bad = !!fx.badFuel && Math.random() < fx.badFuel;
+          set({ car: { ...tankCar, fuel, condition: bad ? Math.max(0, tankCar.condition - 20) : tankCar.condition } });
+          get().toast(bad ? '⛽😩 Na adulterated fuel! Engine dey knock. Car condition -20' : `⛽ Tank: ${fuel.toFixed(0)}L / ${TANK}L`);
         }
         if (fx?.meet) meetContact(fx.meet);
         if (fx?.net && !s.hasNet) {
@@ -477,6 +490,7 @@ export const useGame = create<GameState>()(
           if (effect.payLoan) get().repayLoan();
           const myCar = get().car;
           if (effect.carRepair && myCar) set({ car: { ...myCar, condition: 100 } });
+          if (effect.fuel && get().car) set({ car: { ...get().car!, fuel: Math.min(TANK, (get().car!.fuel ?? START_FUEL) + effect.fuel) } });
           if (effect.carWear && myCar) set({ car: { ...myCar, condition: Math.max(0, myCar.condition - effect.carWear) } });
           const cb = effect.closeBusiness;
           if (cb && get().businesses[cb.id]) {
@@ -500,7 +514,7 @@ export const useGame = create<GameState>()(
           if (cost > s.money) return get().toast(`😕 You need ${formatNaira(cost)}${old ? ' (after trade-in)' : ''}`);
           set({
             money: s.money - cost,
-            car: { id, condition: 100 },
+            car: { id, condition: 100, fuel: s.car?.fuel ?? START_FUEL },
             packaging: clamp(s.packaging + c.packaging - (old?.packaging ?? 0)),
             txns: [{ at: s.time, label: `Bought ${c.name}${old ? ` (traded in ${old.name})` : ''}`, amount: -cost }, ...s.txns].slice(0, 40),
           });

@@ -1,3 +1,4 @@
+import { litresFor } from '../content/cars';
 import { describe, expect, it } from 'vitest';
 import { activityById, INTERACTABLES } from '../content/activities';
 import { CONTACTS, longLeg } from '../content/contacts';
@@ -191,8 +192,16 @@ describe('cars', () => {
     expect(blockReason(act('drive-street-wuse'), base)).toMatch(/car/);
     expect(blockReason(act('drive-street-wuse'), { ...base, hasCar: true })).toBeNull();
     expect(blockReason(act('drive-street-wuse'), { ...base, car: { id: 'corolla', condition: 90 } })).toBeNull();
-    expect(act('drive-street-wuse').cost!).toBeLessThan(act('hail-street-wuse').cost!);
+    expect(act('drive-street-wuse').cost ?? 0).toBe(0);
     expect(act('drive-street-wuse').minutes).toBe(act('hail-street-wuse').minutes);
+  });
+
+  it('driving burns fuel from the tank, bigger cars burn more', () => {
+    const drive = act('drive-street-airport');
+    expect(litresFor(drive, 'benz')).toBeGreaterThan(litresFor(drive, 'corolla'));
+    expect(blockReason(drive, { ...base, car: { id: 'benz', fuel: 1 } })).toMatch(/Fuel no reach/);
+    expect(blockReason(drive, { ...base, car: { id: 'benz', fuel: 40 } })).toBeNull();
+    expect(blockReason(act('hailing'), { ...base, time: 10 * 60, car: { id: 'corolla', fuel: 2 } })).toMatch(/Fuel/);
   });
 
   it('ride-app job needs a car', () => {

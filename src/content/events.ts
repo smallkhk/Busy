@@ -732,16 +732,16 @@ const BASE_EVENTS: GameEvent[] = [
     cooldownHours: 48,
     when: (c) => !!c.trip?.startsWith('drive-'),
     choices: [
-      { label: 'Join the queue', cost: 8000, outcomes: [{ text: '90 minutes for queue. At least na correct fuel.', effect: { minutes: 90, needs: { fun: -15 } } }] },
+      { label: 'Join the queue (8 litres)', cost: 8000, outcomes: [{ text: '90 minutes for queue. At least na correct fuel.', effect: { minutes: 90, fuel: 8, needs: { fun: -15 } } }] },
       {
         label: 'Buy black market jerrycan',
         cost: 12000,
         outcomes: [
-          { weight: 3, text: 'Boy pour am inside your tank sharp sharp. You move 🏃🏾' },
-          { weight: 1, text: 'Na adulterated fuel! Engine dey knock 😩', effect: { carWear: 15, needs: { fun: -15 } } },
+          { weight: 3, text: 'Boy pour am inside your tank sharp sharp. You move 🏃🏾', effect: { fuel: 8 } },
+          { weight: 1, text: 'Na adulterated fuel! Engine dey knock 😩', effect: { carWear: 15, fuel: 8, needs: { fun: -15 } } },
         ],
       },
-      { label: 'Beg passer-by for small fuel', outcomes: [{ text: 'One okada man siphon 2 litres give you. "God go bless you, my brother." 🙏', effect: { minutes: 45, needs: { social: 10, fun: -5 } } }] },
+      { label: 'Beg passer-by for small fuel', outcomes: [{ text: 'One okada man siphon 2 litres give you. "God go bless you, my brother." 🙏', effect: { minutes: 45, fuel: 2, needs: { social: 10, fun: -5 } } }] },
     ],
   },
   {
@@ -790,6 +790,34 @@ const BASE_EVENTS: GameEvent[] = [
     choices: [
       { label: 'Put bucket, manage am', outcomes: [{ text: 'Bucket full two times. You no sleep well 😩', effect: { needs: { energy: -15, fun: -10 } } }] },
       { label: 'Call carpenter to patch am', cost: 6000, outcomes: [{ text: 'Carpenter climb roof inside rain. Leak don stop 🔨', effect: { needs: { fun: 5 } } }] },
+    ],
+  },
+  {
+    id: 'nnpc-queue',
+    emoji: '⛽',
+    title: 'Wahala for fuel queue',
+    text: 'One Prado driver jump queue for front of everybody. Drivers don start to shout. Attendant say "fuel fit finish anytime o!"',
+    trigger: 'idle',
+    weight: 6,
+    cooldownHours: 24,
+    when: (c) => c.place === 'garki' && c.hour >= 7 && c.hour < 19,
+    choices: [
+      { label: 'Join the shouting', outcomes: [{ weight: 1, text: 'Everybody shout am down. E go back to the end 😂', effect: { needs: { fun: 15, social: 10 } } }, { weight: 1, text: 'E bodyguard come down. Everybody quiet 😶', effect: { needs: { fun: -10 } } }] },
+      { label: 'Mind your business', outcomes: [{ text: 'You scroll phone, wait your turn. Wise.', effect: { minutes: 15 } }] },
+    ],
+  },
+  {
+    id: 'jerrycan-raid',
+    emoji: '🚔',
+    title: 'Task force raid!',
+    text: 'Task force van don land Nyanya roadside. Jerrycan boys dey run. One officer point at you: "You dey buy illegal fuel?"',
+    trigger: 'idle',
+    weight: 5,
+    cooldownHours: 48,
+    when: (c) => c.place === 'nyanya',
+    choices: [
+      { label: '"Me? I just dey pass"', outcomes: [{ weight: 2, text: 'E believe you. You waka quick 😅' }, { weight: 1, text: '"Na wetin all of una dey talk." ₦10,000 fine.', effect: { money: -10000, heat: 5 } }] },
+      { label: 'Run with the boys 🏃🏾', outcomes: [{ text: 'You escape, but your heart dey beat like drum 🥁', effect: { needs: { energy: -15, fun: 5 }, heat: 8 } }] },
     ],
   },
   {

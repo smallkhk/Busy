@@ -59,6 +59,18 @@ export const DISTRICT_INTERACTABLES: Interactable[] = [
     ],
   },
 
+  {
+    id: 'maitama-fuel',
+    place: 'maitama',
+    name: 'Filling station',
+    emoji: '⛽',
+    label: [-4.6, 2.6, 3.0],
+    activities: [
+      { id: 'indie-fill', label: 'Fill 20 litres (no queue)', doing: 'Attendant dey pump fuel', emoji: '⛽', minutes: 15, cost: 23000, gains: {}, effects: { fuel: 20 }, spot: [-3.4, 2.4] },
+      { id: 'indie-top', label: 'Top up 5 litres', doing: 'Attendant dey pump fuel', emoji: '⛽', minutes: 10, cost: 5800, gains: {}, effects: { fuel: 5 }, spot: [-3.4, 2.4] },
+    ],
+  },
+
   // ---------------- Asokoro: government and VIPs ----------------
   {
     id: 'golf',
@@ -155,6 +167,17 @@ export const DISTRICT_INTERACTABLES: Interactable[] = [
     ],
   },
 
+  {
+    id: 'nnpc',
+    place: 'garki',
+    name: 'NNPC mega station',
+    emoji: '⛽',
+    label: [-4.6, 2.6, 3.0],
+    activities: [
+      { id: 'nnpc-fill', label: 'Join queue, fill 20 litres (cheapest)', doing: 'Waiting for fuel queue 😮‍💨', emoji: '⛽', minutes: 90, cost: 19000, gains: { fun: -10 }, effects: { fuel: 20 }, hours: [7, 19], spot: [-3.4, 2.4] },
+    ],
+  },
+
   // ---------------- Nyanya: where Abuja workers sleep ----------------
   {
     id: 'nyanya-mamaput',
@@ -198,6 +221,17 @@ export const DISTRICT_INTERACTABLES: Interactable[] = [
       ride('nyanya-garki', 'Bus go Garki Area 1', '🚌', 'garki', 40, 500, PARK),
       ride('nyanya-sec', 'Bus go Federal Secretariat', '🏛️', 'secretariat', 45, 500, PARK),
       ride('nyanya-aso', 'Bus go Asokoro', '🚌', 'asokoro', 30, 400, PARK),
+    ],
+  },
+
+  {
+    id: 'jerrycan',
+    place: 'nyanya',
+    name: 'Black market fuel',
+    emoji: '🛢️',
+    label: [-1.6, 2.0, 3.0],
+    activities: [
+      { id: 'jerrycan-10', label: '10 litres from jerrycan boys (risky)', doing: 'Boys dey siphon fuel into your tank', emoji: '🛢️', minutes: 5, cost: 15000, gains: {}, effects: { fuel: 10, badFuel: 0.25 }, spot: [-1.6, 2.4] },
     ],
   },
 
