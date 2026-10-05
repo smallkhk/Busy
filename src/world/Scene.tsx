@@ -157,6 +157,9 @@ function Lights({ place }: { place: Place }) {
   const { minuteOfDay, hour } = clockParts(bucket * 10);
   const dim = { sunny: 1, cloudy: 0.82, rain: 0.62, storm: 0.45 }[weather];
   const light = daylight(minuteOfDay) * dim;
+  // Sun angle: 0 at 6am, π at 6pm; at night the "sun" is the moon, low and cool
+  const sunAngle = Math.min(Math.PI - 0.25, Math.max(0.25, ((minuteOfDay - 360) / 720) * Math.PI));
+  const sun: [number, number, number] = [Math.cos(sunAngle) * 14, 4 + Math.sin(sunAngle) * 14, 7];
 
   const sky = useMemo(() => {
     const c = NIGHT_SKY.clone().lerp(DAY_SKY, light);
@@ -171,17 +174,24 @@ function Lights({ place }: { place: Place }) {
 
   return (
     <>
-      <ambientLight intensity={0.25 + light * 0.45} color={light > 0.2 ? '#fff6e8' : '#7d8fbf'} />
+      {/* Sky fill from above, warm bounce from the ground */}
+      <hemisphereLight args={[light > 0.2 ? '#cfe8ff' : '#5a6f9e', '#8a6a45', 0.25 + light * 0.55]} />
+      <ambientLight intensity={0.12 + light * 0.18} color={light > 0.2 ? '#fff6e8' : '#7d8fbf'} />
+      {/* The sun: rises in the east, crosses the sky, sets warm in the west */}
       <directionalLight
-        position={[6, 12, 4]}
-        intensity={0.15 + light * 1.4}
-        color={light < 0.6 && light > 0 ? '#ffc58a' : '#fff'}
+        position={sun}
+        intensity={0.15 + light * 2.1}
+        color={light < 0.6 && light > 0 ? '#ffb877' : '#fff4e0'}
         castShadow
-        shadow-mapSize={[1024, 1024]}
-        shadow-camera-left={-10}
-        shadow-camera-right={10}
-        shadow-camera-top={10}
-        shadow-camera-bottom={-10}
+        shadow-mapSize={[2048, 2048]}
+        shadow-bias={-0.0004}
+        shadow-normalBias={0.03}
+        shadow-camera-left={-11}
+        shadow-camera-right={11}
+        shadow-camera-top={11}
+        shadow-camera-bottom={-11}
+        shadow-camera-near={0.5}
+        shadow-camera-far={60}
       />
       {place === 'home' && power && <pointLight position={[0, 2.5, 0]} intensity={light > 0.7 ? 3 : 14} distance={9} decay={1.6} color="#ffd9a0" />}
       {/* Mai Shayi's lantern keeps the kiosk lit at night */}
@@ -196,7 +206,7 @@ export function Scene() {
   const wet = weather === 'rain' || weather === 'storm';
   const PlaceScene = SCENES[place];
   return (
-    <Canvas shadows dpr={[1, 2]} className="scene">
+    <Canvas shadows="soft" dpr={[1, 2]} className="scene">
       <IsoCamera key={place} place={place} />
       <Lights place={place} />
       <GameLoop />

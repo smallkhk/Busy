@@ -3,23 +3,38 @@ import { useState, type ReactNode } from 'react';
 import { AREAS } from '../content/housing';
 import { useGame } from '../store/game';
 import { Person } from './Avatar';
+import { BoxGeometry, type BufferGeometry } from 'three';
+import { RoundedBoxGeometry } from 'three-stdlib';
 
 export type V3 = [number, number, number];
 
+const geoCache = new Map<string, BufferGeometry>();
+
+/** Box with softly rounded edges (thin panels stay sharp). Geometries are shared between same-size boxes. */
+function boxGeometry(s: V3): BufferGeometry {
+  const key = s.map((n) => n.toFixed(3)).join(',');
+  let g = geoCache.get(key);
+  if (!g) {
+    const min = Math.min(...s);
+    g = min >= 0.08 ? new RoundedBoxGeometry(s[0], s[1], s[2], 2, Math.min(0.06, min * 0.18)) : new BoxGeometry(...s);
+    geoCache.set(key, g);
+  }
+  return g;
+}
+
 export function Box({ p, s, c, r }: { p: V3; s: V3; c: string; r?: V3 }) {
   return (
-    <mesh position={p} rotation={r} castShadow receiveShadow>
-      <boxGeometry args={s} />
-      <meshStandardMaterial color={c} />
+    <mesh position={p} rotation={r} geometry={boxGeometry(s)} castShadow receiveShadow>
+      <meshStandardMaterial color={c} roughness={0.78} />
     </mesh>
   );
 }
 
 export function Cyl({ p, r, h, c }: { p: V3; r: number; h: number; c: string }) {
   return (
-    <mesh position={p} castShadow>
-      <cylinderGeometry args={[r, r, h, 16]} />
-      <meshStandardMaterial color={c} />
+    <mesh position={p} castShadow receiveShadow>
+      <cylinderGeometry args={[r, r, h, 20]} />
+      <meshStandardMaterial color={c} roughness={0.7} />
     </mesh>
   );
 }
