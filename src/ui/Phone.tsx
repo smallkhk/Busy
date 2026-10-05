@@ -1,3 +1,4 @@
+import { areaAllows, HOME_ITEMS } from '../content/homeup';
 import { newsById, WEATHER } from '../content/world';
 import { useShallow } from 'zustand/react/shallow';
 import { JOBS, PHONE_ACTIVITIES, type Activity } from '../content/activities';
@@ -38,7 +39,7 @@ const APPS: { id: PhoneApp; name: string; emoji: string; color: string }[] = [
 
 function ActivityList({ items }: { items: Activity[] }) {
   const choose = useGame((s) => s.choose);
-  const state = useGame(useShallow((s) => ({ time: s.time, money: s.money, power: s.power, active: s.active, packaging: s.packaging, pantry: s.pantry, cv: s.cv, area: s.area, rentLocked: s.rentLocked, unlocks: s.unlocks, grade: s.grade, hasCar: !!s.car, carId: s.car?.id, carFuel: s.car?.fuel, sick: s.sick, contacts: s.contacts, weather: s.weather, news: s.news })));
+  const state = useGame(useShallow((s) => ({ time: s.time, money: s.money, power: s.power, active: s.active, packaging: s.packaging, pantry: s.pantry, cv: s.cv, area: s.area, rentLocked: s.rentLocked, unlocks: s.unlocks, grade: s.grade, hasCar: !!s.car, carId: s.car?.id, carFuel: s.car?.fuel, sick: s.sick, contacts: s.contacts, weather: s.weather, news: s.news, homeUps: s.homeUps })));
   return (
     <div className="list">
       {items.map((a) => {
@@ -106,6 +107,34 @@ function RideApp() {
   );
 }
 
+function HomeShop() {
+  const ups = useGame((s) => s.homeUps ?? []);
+  const area = useGame((s) => s.area);
+  const money = useGame((s) => s.money);
+  const buy = useGame((s) => s.buyHomeItem);
+  return (
+    <>
+      <div className="love-section">🛋️ Upgrade your house ({ups.length}/{HOME_ITEMS.length})</div>
+      <div className="list">
+        {HOME_ITEMS.map((i) => {
+          const owned = ups.includes(i.id);
+          const allowed = areaAllows(area, i);
+          return (
+            <button key={i.id} className={`action ${owned ? 'owned' : ''}`} disabled={owned || !allowed || money < i.cost} onClick={() => buy(i.id)}>
+              <span className="action-emoji">{i.emoji}</span>
+              <span className="action-body">
+                <span>{i.name}{owned ? ' ✅' : ''}</span>
+                <span className="muted small">{i.perk}</span>
+                <span className="muted small">{owned ? 'E dey your house' : !allowed ? `Need ${AREAS[i.minArea].home} or better` : `${formatNaira(i.cost)} · 👔 +${i.packaging}`}</span>
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </>
+  );
+}
+
 function HouseApp() {
   const area = useGame((s) => s.area);
   const rentDueDay = useGame((s) => s.rentDueDay);
@@ -134,6 +163,7 @@ function HouseApp() {
           {left > 10 ? `Rent ${formatNaira(home.rent)} / 30 days` : `Pay rent ${formatNaira(owed)}`}
         </button>
       </div>
+      <HomeShop />
       <p className="muted small">Move house: you go pay 2 months upfront + 10% agent fee. Better area = more 👔 and shorter road.</p>
       <div className="list">
         {(Object.keys(AREAS) as AreaId[]).filter((id) => id !== area).map((id) => {

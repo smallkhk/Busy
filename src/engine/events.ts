@@ -38,6 +38,9 @@ export type EventContext = {
   dating?: number;
   /** You took someone on a date wey pass your pocket. */
   fakeLife?: boolean;
+  /** House upgrades you own. */
+  homeUps?: string[];
+  area?: string;
 };
 
 export type Effect = {
