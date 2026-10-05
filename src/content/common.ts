@@ -1,6 +1,6 @@
 import type { Needs } from '../engine/needs';
 
-export type Place = 'home' | 'street' | 'wuse' | 'jabi' | 'secretariat' | 'lounge' | 'hospital';
+export type Place = 'home' | 'street' | 'wuse' | 'jabi' | 'secretariat' | 'lounge' | 'hospital' | 'maitama' | 'asokoro' | 'garki' | 'nyanya' | 'airport';
 
 export const PLACE_NAMES: Record<Place, string> = {
   home: 'Your compound',
@@ -10,6 +10,11 @@ export const PLACE_NAMES: Record<Place, string> = {
   secretariat: 'Federal Secretariat',
   lounge: 'Wuse 2 lounge',
   hospital: 'General Hospital',
+  maitama: 'Maitama',
+  asokoro: 'Asokoro',
+  garki: 'Garki Area 1',
+  nyanya: 'Nyanya',
+  airport: 'Nnamdi Azikiwe Airport',
 };
 
 export type Activity = {
@@ -38,10 +43,10 @@ export type Activity = {
   homeLeg?: boolean;
   /** Meals of foodstuff used up when it starts. */
   usesPantry?: number;
-  requires?: { packaging?: number; cv?: number; car?: boolean };
+  requires?: { packaging?: number; cv?: number; car?: boolean; longLeg?: number };
   /** Applied when it finishes. */
   /** `cure` lists sicknesses it treats (all of them if true); `net` buys a mosquito net. */
-  effects?: { packaging?: number; pantry?: number; cv?: number; meet?: string; cure?: true | ('malaria' | 'typhoid' | 'food')[]; net?: boolean };
+  effects?: { packaging?: number; pantry?: number; cv?: number; meet?: string; cure?: true | ('malaria' | 'typhoid' | 'food')[]; net?: boolean; carFix?: number };
   /** Shown instead of running, for content that isn't built yet. */
   locked?: string;
 };

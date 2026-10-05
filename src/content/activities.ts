@@ -2,6 +2,7 @@ import { ride, type Activity, type Interactable, type Place } from './common';
 import { DRIVES, HAILING_JOB } from './cars';
 import { CHOP_ITEMS, RIDES, TREKS } from './phoneapps';
 import { TRAVEL_INTERACTABLES } from './travel';
+import { DISTRICT_INTERACTABLES, NEW_ROUTES } from './districts';
 
 export * from './common';
 
@@ -16,6 +17,11 @@ export const EXIT_SPOT: Record<Place, [number, number]> = {
   secretariat: [4.6, 2.6],
   lounge: [4.6, 2.6],
   hospital: [4.4, 2.6],
+  maitama: [4.4, 2.6],
+  asokoro: [4.4, 2.6],
+  garki: [4.4, 2.6],
+  nyanya: [4.4, 2.6],
+  airport: [4.4, 2.6],
 };
 /** Where you appear when you arrive at a place. */
 export const ENTRY_SPOT: Record<Place, [number, number]> = {
@@ -26,6 +32,11 @@ export const ENTRY_SPOT: Record<Place, [number, number]> = {
   secretariat: [4.0, 2.0],
   lounge: [4.0, 1.8],
   hospital: [3.8, 2.0],
+  maitama: [3.8, 2.0],
+  asokoro: [3.8, 2.0],
+  garki: [3.8, 2.0],
+  nyanya: [3.8, 2.0],
+  airport: [3.8, 2.0],
 };
 
 const HOME_AND_STREET: Interactable[] = [
@@ -201,11 +212,14 @@ const HOME_AND_STREET: Interactable[] = [
       ride('to-sec', 'Bus go Federal Secretariat', '🏛️', 'secretariat', 75, 900, [1.0, 2.6], true),
       ride('to-lounge', 'Taxi go Wuse 2 lounge', '🍾', 'lounge', 50, 4500, [1.0, 2.6], true),
       ride('to-hospital', 'Bus go General Hospital', '🏥', 'hospital', 80, 1000, [1.0, 2.6], true),
+      ride('to-garki', 'Bus go Garki Area 1', '🚌', 'garki', 75, 900, [1.0, 2.6], true),
     ],
   },
 ];
 
-export const INTERACTABLES: Interactable[] = [...HOME_AND_STREET, ...TRAVEL_INTERACTABLES];
+export const INTERACTABLES: Interactable[] = [...HOME_AND_STREET, ...TRAVEL_INTERACTABLES, ...DISTRICT_INTERACTABLES].map((i) =>
+  NEW_ROUTES[i.id] ? { ...i, activities: [...i.activities, ...NEW_ROUTES[i.id]] } : i,
+);
 
 export const JOBS: Activity[] = [
   { id: 'pos', label: 'POS attendant for area market', doing: 'Working POS for market', emoji: '💳', minutes: 360, pay: 9000, gains: { energy: -25, fun: -10, social: 10 }, hours: [8, 15], away: true },

@@ -10,6 +10,11 @@ const AMBIENCE = {
   secretariat: 'murmur',
   hospital: 'murmur',
   lounge: 'lounge',
+  maitama: 'murmur',
+  asokoro: 'murmur',
+  garki: 'market',
+  nyanya: 'street',
+  airport: 'murmur',
 } as const;
 
 function ambienceFor(place: string, minutes: number) {

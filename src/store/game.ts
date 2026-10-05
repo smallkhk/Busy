@@ -126,6 +126,11 @@ const BOUNDS: Record<Place, { minX: number; maxX: number; minZ: number; maxZ: nu
   secretariat: { minX: -7, maxX: 7, minZ: -2.0, maxZ: 3.6 },
   hospital: { minX: -6.5, maxX: 6.5, minZ: -1.8, maxZ: 3.6 },
   lounge: { minX: -6.8, maxX: 6.5, minZ: -2.0, maxZ: 3.4 },
+  maitama: { minX: -6.5, maxX: 6.5, minZ: -1.8, maxZ: 3.6 },
+  asokoro: { minX: -6.5, maxX: 6.5, minZ: -1.8, maxZ: 3.6 },
+  garki: { minX: -6.5, maxX: 6.5, minZ: -1.8, maxZ: 3.6 },
+  nyanya: { minX: -6.5, maxX: 6.5, minZ: -1.8, maxZ: 3.6 },
+  airport: { minX: -6.5, maxX: 6.5, minZ: -1.8, maxZ: 3.6 },
 };
 
 /** Chance per idle game hour that something happens. */
@@ -195,7 +200,7 @@ const initial = () => ({
 });
 
 /** Why an activity can't start right now, or null if it can. */
-export type BlockState = Pick<GameState, 'time' | 'money' | 'power' | 'active' | 'packaging' | 'pantry' | 'cv' | 'area' | 'rentLocked'> & { unlocks?: string[]; grade?: number; hasCar?: boolean; car?: unknown; sick?: Sickness | null };
+export type BlockState = Pick<GameState, 'time' | 'money' | 'power' | 'active' | 'packaging' | 'pantry' | 'cv' | 'area' | 'rentLocked'> & { unlocks?: string[]; grade?: number; hasCar?: boolean; car?: unknown; sick?: Sickness | null; contacts?: Record<string, ContactState> };
 
 export function blockReason(a: Activity, s: BlockState): string | null {
   if (a.locked) return a.locked;
@@ -203,6 +208,7 @@ export function blockReason(a: Activity, s: BlockState): string | null {
   const waived = s.unlocks?.includes(a.id);
   if (!waived && a.requires?.packaging && s.packaging < a.requires.packaging) return `Need 👔 Packaging ${a.requires.packaging} (you get ${Math.round(s.packaging)})`;
   if (!waived && a.requires?.cv && s.cv < a.requires.cv) return `Dem never call you. Submit CV ${a.requires.cv - s.cv} more time`;
+  if (!waived && a.requires?.longLeg && longLeg(s.contacts ?? {}) < a.requires.longLeg) return `Need 🦵 Long Leg ${a.requires.longLeg} (you get ${longLeg(s.contacts ?? {})}). Know bigger people`;
   if (s.active) return 'You dey do something already';
   if (a.hours && !inHours(s.time, a.hours)) {
     return `Only from ${a.hours[0]}:00 to ${a.hours[1]}:00`;
@@ -285,6 +291,11 @@ export const useGame = create<GameState>()(
           set({ car: { ...s.car, condition: Math.max(0, s.car.condition - wear) } });
         }
         bump(...keys);
+        const car = get().car;
+        if (fx?.carFix && car) {
+          set({ car: { ...car, condition: Math.min(100, car.condition + fx.carFix) } });
+          get().toast(`🔧 Car condition +${fx.carFix}`);
+        }
         if (fx?.meet) meetContact(fx.meet);
         if (fx?.net && !s.hasNet) {
           set({ hasNet: true });
