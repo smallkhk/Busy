@@ -235,7 +235,7 @@ function FestivalDecor({ colors, night }: { colors: string[]; night: boolean }) 
 }
 
 const GREY_SKY = new Color('#7c8a96');
-const NIGHT_SKY = new Color('#0b1626');
+const NIGHT_SKY = new Color('#1f3356');
 const DAY_SKY = new Color('#8fc6e8');
 const DUSK = new Color('#f2a65a');
 
@@ -266,14 +266,14 @@ function Lights({ place }: { place: Place }) {
 
   return (
     <>
-      {/* Sky fill from above, warm bounce from the ground */}
-      <hemisphereLight args={[light > 0.2 ? '#cfe8ff' : '#5a6f9e', '#8a6a45', 0.25 + light * 0.55]} />
-      <ambientLight intensity={0.12 + light * 0.18} color={light > 0.2 ? '#fff6e8' : '#7d8fbf'} />
+      {/* Sky fill from above, warm bounce from the ground. Nights stay moonlit so you fit still see your screen */}
+      <hemisphereLight args={[light > 0.2 ? '#cfe8ff' : '#8fa3d6', '#8a6a45', 0.7 + light * 0.1]} />
+      <ambientLight intensity={0.42 - light * 0.12} color={light > 0.2 ? '#fff6e8' : '#9fb0dc'} />
       {/* The sun: rises in the east, crosses the sky, sets warm in the west */}
       <directionalLight
         position={sun}
-        intensity={0.15 + light * 2.1}
-        color={light < 0.6 && light > 0 ? '#ffb877' : '#fff4e0'}
+        intensity={0.6 + light * 1.65}
+        color={light === 0 ? '#c9d6ff' : light < 0.6 ? '#ffb877' : '#fff4e0'}
         castShadow
         shadow-mapSize={low ? [1024, 1024] : [2048, 2048]}
         shadow-bias={-0.0004}

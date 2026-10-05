@@ -85,6 +85,7 @@ export function applySave(data: Record<string, unknown>) {
   useGame.setState({ ...(data as Partial<GameState>), started: true, phone: null, menu: null, event: null, eventResult: null, minigame: null, target: null, pending: null });
   // Old saves have no lastDay: treat today as already processed
   if (data.lastDay === undefined) useGame.setState({ lastDay: clockParts(useGame.getState().time).day });
+  useGame.getState().syncClock();
   useGame.getState().toast('☁️ Your life don load! Welcome back 🙌🏾');
 }
 

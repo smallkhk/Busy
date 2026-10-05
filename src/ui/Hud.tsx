@@ -7,7 +7,7 @@ import { isMuted, setMuted } from '../audio/sound';
 import { activityById, INTERACTABLES, PLACE_NAMES } from '../content/activities';
 import { SICKNESS } from '../content/health';
 import { placeLabel } from '../content/housing';
-import { clockParts, formatClock, formatNaira } from '../engine/clock';
+import { activityRealSeconds, clockParts, formatClock, formatNaira, formatSeconds } from '../engine/clock';
 import { mood, moodFace, NEED_KEYS, NEED_META } from '../engine/needs';
 import { blockReason, useGame } from '../store/game';
 import { activityDetail } from './detail';
@@ -69,11 +69,15 @@ export function NeedsPanel() {
 export function ActiveBanner() {
   const active = useGame((s) => s.active);
   const cancel = useGame((s) => s.cancel);
+  const realClock = useGame((s) => s.epoch !== undefined);
   if (!active) return null;
   const a = activityById(active.id);
   if (!a) return null;
-  const pct = 100 - (active.remaining / (active.total ?? a.minutes)) * 100;
+  const total = active.total ?? a.minutes;
+  const pct = 100 - (active.remaining / total) * 100;
   const mins = Math.ceil(active.remaining);
+  // On the real clock, show how long you go really wait
+  const realLeft = realClock ? (active.remaining / total) * activityRealSeconds(total) : null;
   return (
     <div className="banner card">
       <span className="banner-emoji">{a.emoji}</span>
@@ -82,7 +86,7 @@ export function ActiveBanner() {
         <div className="bar thin">
           <div className="fill good" style={{ width: `${pct}%` }} />
         </div>
-        <div className="muted small">{mins >= 60 ? `${Math.floor(mins / 60)}h ${mins % 60}m` : `${mins}m`} remain</div>
+        <div className="muted small">{realLeft !== null ? `⏱ ${formatSeconds(realLeft)} remain` : `${mins >= 60 ? `${Math.floor(mins / 60)}h ${mins % 60}m` : `${mins}m`} remain`}</div>
       </div>
       <button className="ghost" onClick={cancel}>Stop</button>
     </div>

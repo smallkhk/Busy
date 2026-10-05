@@ -12,7 +12,7 @@ import { QuestPill } from './ui/Goals';
 import { Labels } from './ui/Labels';
 import { Phone } from './ui/Phone';
 import { Start } from './ui/Start';
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import { useGame } from './store/game';
 import { Scene } from './world/Scene';
 
@@ -43,6 +43,14 @@ function BottomNav() {
 
 export default function App() {
   const started = useGame((s) => s.started);
+  // The clock follows real Abuja time: catch up when you open the game or come back to it
+  useEffect(() => {
+    if (!started) return;
+    useGame.getState().syncClock();
+    const back = () => document.visibilityState === 'visible' && useGame.getState().syncClock();
+    document.addEventListener('visibilitychange', back);
+    return () => document.removeEventListener('visibilitychange', back);
+  }, [started]);
   // The 3D map replaces the scene while open (one WebGL canvas at a time on phones).
   const mapOpen = useGame((s) => s.phone === 'map');
   const showroomOpen = useGame((s) => s.phone === 'cars');

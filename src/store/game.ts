@@ -10,7 +10,7 @@ import { DEFAULT_LOOK, HAIR_COST, OUTFITS, type Hair, type Look, type Outfit } f
 import { driveWear } from '../content/minigames';
 import { areaAllows, genCostFor, homeItemById, TV_ACTIVITIES, WIFI_FREE } from '../content/homeup';
 import { AREAS, moveCost, placeLabel, PROPERTY_SELL_FEE, propertyValue, RENT_CYCLE_DAYS, RENT_GRACE_DAYS, rentOwed, type AreaId, type Property } from '../content/housing';
-import { clockParts, formatNaira, inHours } from '../engine/clock';
+import { activityRealSeconds, clockParts, formatNaira, inHours, realMinutes, watMidnight } from '../engine/clock';
 import { CALL_COST, contactById, FIRST_MEET_REL, GIFT_COST, longLeg, type ContactState } from '../content/contacts';
 import { badDayChance, businessById, dailyNet, MAX_BIZ_LEVEL, MAX_STAFF, upgradeCost, wageOf, type OwnedBusiness } from '../content/business';
 import { GRADES, OFFICE_SHIFT_ID, payFor, promotionBlock } from '../content/career';
@@ -25,6 +25,10 @@ import { LOVE_GIFT_COST, ASK_OUT_AT, DAILY_COOL, DATE_TIERS, dateInterest, match
 import { combinedMods, nextWeather, priceOf, tripFactor, weatherSpell, WORLD_NEWS, type ActiveNews, type Weather } from '../content/world';
 import { effectChips, pickEvent, resolveChoice, type EventContext } from '../engine/events';
 import { clamp, fullNeeds, LOW_NEED, NEED_KEYS, NEED_META, tickNeeds, type NeedKey, type Needs } from '../engine/needs';
+
+/** Where the real time comes from (tests swap in a fake clock). */
+let clock: () => number = () => Date.now();
+export const setClockSource = (fn: () => number) => (clock = fn);
 
 export type Txn = { at: number; label: string; amount: number };
 export type Toast = { id: number; text: string };
@@ -87,6 +91,8 @@ export type GameState = {
   wardrobe: Outfit[];
   /** The life you born into (old saves: undefined). */
   birth?: Birth;
+  /** Real timestamp of day 1, 00:00 Abuja time. When set, the clock follows real life. */
+  epoch?: number;
   /** Things you don buy for your house. */
   homeUps: string[];
   /** Abuja Love: people you matched with. */
@@ -144,6 +150,8 @@ export type GameState = {
   setHair: (id: Hair) => void;
   setShirt: (color: string) => void;
   tick: (realSeconds: number) => void;
+  /** Real-time clock: move old saves over, and catch up on time spent away. */
+  syncClock: () => void;
   walkTo: (x: number, z: number) => void;
   choose: (activityId: string) => void;
   arrive: (pos: [number, number]) => void;
@@ -281,6 +289,7 @@ const initial = () => ({
   courses: {} as Partial<Record<CourseId, number>>,
   politics: NO_POLITICS as Politics,
   lastDay: 1,
+  epoch: undefined as number | undefined,
   skills: [] as CourseId[],
   fitness: 10,
   gymUntil: 0,
@@ -641,7 +650,6 @@ export const useGame = create<GameState>()(
             flags: effect.flag ? { ...(s.flags ?? {}), ...Object.fromEntries([effect.flag].flat().map((f) => [f, clockParts(s.time).day])) } : s.flags,
             money: s.money + moneyDelta,
             needs,
-            time: s.time + lost,
             packaging: clamp(s.packaging + (effect.packaging ?? 0)),
             pantry: s.pantry + (effect.pantry ?? 0),
             cv: s.cv + (effect.cv ?? 0),
@@ -1006,7 +1014,6 @@ export const useGame = create<GameState>()(
           const fake = (tier.id === 'fakelife' || tier.id === 'bigboy') && packagingGap(s.packaging, s.money - tier.cost, s.area) > 30;
           set({
             money: s.money - tier.cost,
-            time: s.time + tier.minutes,
             needs: { ...tickNeeds(s.needs, tier.minutes), fun: clamp(s.needs.fun + 25), social: clamp(s.needs.social + 25), food: clamp(s.needs.food + 30) },
             packaging: clamp(s.packaging + (tier.id === 'bigboy' || tier.id === 'fakelife' ? 1 : 0)),
             loves: { ...s.loves, [id]: { ...l, interest: clamp(l.interest + gain), lastDateDay: day, fakeLife: l.fakeLife || fake } },
@@ -1086,7 +1093,6 @@ export const useGame = create<GameState>()(
           const { day } = clockParts(s.time);
           if (cs.lastTalkDay === day) return get().toast(`🗣️ You and ${c.name} don gist today already`);
           set({
-            time: s.time + TALK_MINUTES,
             needs: { ...tickNeeds(s.needs, TALK_MINUTES), social: clamp(s.needs.social + 12) },
             contacts: { ...s.contacts, [id]: { ...cs, rel: clamp(cs.rel + TALK_REL), lastTalkDay: day } },
           });
@@ -1249,7 +1255,9 @@ export const useGame = create<GameState>()(
         },
 
         start: (name, shirt, look, birth) => {
-          const base = { ...initial(), started: true, name: name.trim() || 'Abuja Hustler', shirt, look: look ?? DEFAULT_LOOK };
+          const epoch = watMidnight(clock());
+          const base = { ...initial(), started: true, name: name.trim() || 'Abuja Hustler', shirt, look: look ?? DEFAULT_LOOK, epoch, time: realMinutes(epoch, clock()) };
+          base.nextWeatherChange = base.time + 240;
           if (!birth) return set(base);
           const fam = familyById(birth.family);
           const edu = EDUCATIONS.find((e) => e.id === birth.education);
@@ -1305,7 +1313,6 @@ export const useGame = create<GameState>()(
           const gain = moveSupport(move, { packaging: s.packaging, longLeg: longLeg(s.contacts) });
           set({
             money: s.money - cost,
-            time: s.time + m.minutes,
             needs: { ...tickNeeds(s.needs, m.minutes), energy: clamp(s.needs.energy - 20), social: clamp(s.needs.social + 15) },
             heat: clamp((s.heat ?? 0) + (move === 'rice' ? 10 : 0)),
             politics: { ...p, votesBought: p.votesBought || move === 'rice', campaign: { ...c, support: Math.min(95, c.support + gain), done: { ...c.done, [move]: day } } },
@@ -1367,6 +1374,43 @@ export const useGame = create<GameState>()(
 
         setShirt: (color) => set({ shirt: color }),
 
+        syncClock: () => {
+          const s = get();
+          if (!s.started) return;
+          const nowMs = clock();
+          if (s.epoch === undefined) {
+            // Old save: keep the same day number, but from today the clock na real Abuja time
+            const day = clockParts(s.time).day;
+            const epoch = watMidnight(nowMs) - (day - 1) * 24 * 60 * 60 * 1000;
+            const time = realMinutes(epoch, nowMs);
+            set({ epoch, time, nextEventCheck: time + 10, nextWeatherChange: time + 120, nextPowerChange: Math.min(s.nextPowerChange, time + 240) });
+            return;
+          }
+          const real = realMinutes(s.epoch, nowMs);
+          const gap = real - s.time;
+          if (gap <= 0) return;
+          let needs = s.needs;
+          let awayMin = gap;
+          let done: Activity | undefined;
+          const a = s.active ? activityById(s.active.id) : undefined;
+          if (s.active && a) {
+            // Whatever you were doing kept going while you were away
+            const total = s.active.total ?? a.minutes;
+            const speed = total / activityRealSeconds(total);
+            const step = Math.min(gap * 60 * speed, s.active.remaining);
+            needs = tickNeeds(needs, step, { gains: a.gains, activityMinutes: total, sleeping: a.sleep });
+            awayMin = Math.max(0, gap - step / speed / 60);
+            const remaining = s.active.remaining - step;
+            set({ active: { ...s.active, remaining, eventAt: undefined } });
+            if (remaining <= 0) done = a;
+          }
+          // Life off-screen: needs drop while you dey away, but no lower than 25
+          const drained = tickNeeds(needs, Math.min(awayMin, 24 * 60));
+          needs = Object.fromEntries(NEED_KEYS.map((k) => [k, Math.max(Math.min(needs[k], 25), drained[k])])) as Needs;
+          set({ needs, time: real, nextEventCheck: Math.max(s.nextEventCheck, real + 5) });
+          if (done) finish(done);
+        },
+
         tick: (realSeconds) => {
           const s = get();
           if (!s.started || s.event || s.eventResult || s.minigame) return;
@@ -1375,16 +1419,20 @@ export const useGame = create<GameState>()(
 
           let needs = s.needs;
           let time = s.time;
+          const real = s.epoch !== undefined ? realMinutes(s.epoch, clock()) : null;
+          // Back from somewhere (phone locked, app closed): catch up first
+          if (real !== null && real - s.time > 2) return get().syncClock();
 
           if (s.active && a) {
-            // Fast-forward while busy: every activity takes ~4 real seconds.
+            // Busy: legacy clock fast-forwards (~4 real seconds per activity);
+            // real clock: short things quick, sleep and work take real minutes.
             const total = s.active.total ?? a.minutes;
-            const speed = Math.max(10, total / 4);
+            const speed = real !== null ? total / activityRealSeconds(total) : Math.max(10, total / 4);
             const step = Math.min(dtReal * speed, s.active.remaining);
             // Fit people get tired slower at work
             const gains = a.pay && (a.gains.energy ?? 0) < 0 ? { ...a.gains, energy: (a.gains.energy ?? 0) * workEnergyFactor(s.fitness ?? 0) } : a.gains;
             needs = tickNeeds(needs, step, { gains, activityMinutes: total, sleeping: a.sleep });
-            time += step;
+            time = real ?? time + step;
             const remaining = s.active.remaining - step;
             set({ needs, time, active: { ...s.active, remaining } });
             if (s.active.eventAt !== undefined && remaining <= s.active.eventAt && remaining > 0) {
@@ -1392,13 +1440,14 @@ export const useGame = create<GameState>()(
               fireEvent('commute', a.id);
             } else if (remaining <= 0) finish(a);
           } else {
-            const step = dtReal; // 1 real second = 1 game minute
+            // Legacy clock: 1 real second = 1 game minute. Real clock: a minute na a minute.
+            const step = real !== null ? Math.max(0, real - s.time) : dtReal;
             needs = tickNeeds(needs, step);
             if (s.sick) needs = { ...needs, energy: clamp(needs.energy - (SICK_DRAIN.energy! * step) / 60), fun: clamp(needs.fun - (SICK_DRAIN.fun! * step) / 60) };
-            time += step;
+            time = real ?? time + step;
             set({ needs, time });
             if (!s.target && !s.menu && !s.phone && time >= s.nextEventCheck) {
-              set({ nextEventCheck: time + 60 });
+              set({ nextEventCheck: time + (real !== null ? 10 : 60) });
               if (Math.random() < IDLE_EVENT_CHANCE) fireEvent('idle');
             }
           }
@@ -1697,6 +1746,7 @@ export const useGame = create<GameState>()(
         gymUntil: s.gymUntil,
         wardrobe: s.wardrobe,
         birth: s.birth,
+        epoch: s.epoch,
         properties: s.properties,
         adBoostUntil: s.adBoostUntil,
         swiped: s.swiped,

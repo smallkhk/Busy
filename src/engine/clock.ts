@@ -44,3 +44,27 @@ export function formatMinutes(m: number): string {
   const h = Math.floor(m / 60);
   return m % 60 ? `${h}h ${m % 60}m` : `${h}h`;
 }
+
+// ---------------- Real Abuja time ----------------
+const DAY_MS = 24 * 60 * 60 * 1000;
+/** Abuja is on West Africa Time, UTC+1 all year. */
+const WAT_OFFSET_MS = 60 * 60 * 1000;
+
+/** Real timestamp of the last midnight in Abuja. */
+export const watMidnight = (ms: number) => Math.floor((ms + WAT_OFFSET_MS) / DAY_MS) * DAY_MS - WAT_OFFSET_MS;
+
+/** Game minutes since day 1 started, on the real clock. */
+export const realMinutes = (epoch: number, now: number) => (now - epoch) / 60000;
+
+/**
+ * How many real seconds an activity takes when the game runs on real time.
+ * Quick things stay quick (tea ~15s, an hour ~50s); sleep or a work shift take ~15 minutes.
+ */
+export const activityRealSeconds = (gameMinutes: number) => Math.round(Math.max(5, Math.pow(Math.max(1, gameMinutes), 1.4) / 6));
+
+export function formatSeconds(sec: number): string {
+  const s = Math.max(0, Math.ceil(sec));
+  if (s < 60) return `${s}s`;
+  const m = Math.floor(s / 60);
+  return s % 60 ? `${m}m ${s % 60}s` : `${m}m`;
+}
