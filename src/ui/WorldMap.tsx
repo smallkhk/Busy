@@ -22,6 +22,8 @@ function rng(seed: number) {
 }
 
 const labelEls = new Map<string, HTMLElement>();
+/** How high each chip floats: tall landmarks get higher labels. */
+const LABEL_Y: Record<string, number> = { secretariat: 1.9, maitama: 1.9, mosque: 2.0, church: 2.3, cbn: 2.4, 'nnpc-towers': 2.0, tower: 3.6, hilton: 2.3, zuma: 3.0 };
 const tmp = new Vector3();
 
 function LabelSync({ anchors }: { anchors: Map<string, Vector3> }) {
@@ -131,29 +133,46 @@ function CityBlocks({ avoid }: { avoid: [number, number][] }) {
   const blocks = useMemo(() => {
     const r = rng(99);
     const segs = ROADS.flatMap((road) => road.points.slice(1).map((p, i) => [...W(...road.points[i]), ...W(...p)] as [number, number, number, number]));
-    const out: { x: number; z: number; h: number; w: number; c: string }[] = [];
-    for (let gx = -6; gx <= 13; gx += 0.9) {
-      for (let gz = -6; gz <= 12; gz += 0.9) {
-        const x = gx + (r() - 0.5) * 0.3, z = gz + (r() - 0.5) * 0.3;
+    const out: { x: number; z: number; h: number; w: number; d: number; c: string }[] = [];
+    for (let gx = -8; gx <= 15; gx += 0.72) {
+      for (let gz = -8; gz <= 14; gz += 0.72) {
+        const x = gx + (r() - 0.5) * 0.25, z = gz + (r() - 0.5) * 0.25;
         const centre = Math.hypot(x - 4, z - 2);
-        if (centre > 8.5 || r() < 0.25) continue;
-        if (segs.some((sg) => segDist(x, z, ...sg) < 0.75)) continue;
-        if (avoid.some(([ax, az]) => Math.hypot(x - ax, z - az) < 1.4)) continue;
+        if (centre > 10.5 || r() < (centre < 6 ? 0.15 : 0.35)) continue;
+        if (segs.some((sg) => segDist(x, z, ...sg) < 0.62)) continue;
+        if (avoid.some(([ax, az]) => Math.hypot(x - ax, z - az) < 1.1)) continue;
         if (Math.hypot(x + 5.8, (z - 1.1) * 1.6) < 2.6) continue; // Jabi Lake
-        const tall = centre < 4 ? 1.6 : 0.6;
-        out.push({ x, z, h: 0.2 + r() * tall, w: 0.35 + r() * 0.3, c: BLOCK_COLORS[Math.floor(r() * BLOCK_COLORS.length)] });
+        const tall = centre < 3.5 ? 1.9 : centre < 6 ? 0.9 : 0.35;
+        out.push({ x, z, h: 0.18 + r() * tall, w: 0.3 + r() * 0.28, d: 0.3 + r() * 0.28, c: BLOCK_COLORS[Math.floor(r() * BLOCK_COLORS.length)] });
       }
     }
     return out;
   }, [avoid]);
+  const tall = blocks.filter((b) => b.h > 0.7);
   return (
     <>
-      {blocks.map((b, i) => (
-        <mesh key={i} position={[b.x, b.h / 2, b.z]} castShadow>
-          <boxGeometry args={[b.w, b.h, b.w]} />
-          <meshStandardMaterial color={b.c} />
-        </mesh>
-      ))}
+      <Instances limit={blocks.length} castShadow receiveShadow>
+        <boxGeometry args={[1, 1, 1]} />
+        <meshStandardMaterial roughness={0.75} />
+        {blocks.map((b, i) => (
+          <Instance key={i} position={[b.x, b.h / 2, b.z]} scale={[b.w, b.h, b.d]} color={b.c} />
+        ))}
+      </Instances>
+      {/* Roof caps and glass bands so the blocks no look like plain boxes */}
+      <Instances limit={blocks.length}>
+        <boxGeometry args={[1, 1, 1]} />
+        <meshStandardMaterial color="#8d8a84" roughness={0.6} />
+        {blocks.map((b, i) => (
+          <Instance key={i} position={[b.x, b.h + 0.025, b.z]} scale={[b.w * 0.86, 0.05, b.d * 0.86]} />
+        ))}
+      </Instances>
+      <Instances limit={tall.length * 3}>
+        <boxGeometry args={[1, 1, 1]} />
+        <meshStandardMaterial color="#4f7fa3" metalness={0.5} roughness={0.25} />
+        {tall.flatMap((b, i) =>
+          [0.3, 0.55, 0.8].map((t, k) => <Instance key={`${i}-${k}`} position={[b.x, b.h * t, b.z]} scale={[b.w + 0.01, b.h * 0.08, b.d + 0.01]} />),
+        )}
+      </Instances>
     </>
   );
 }
@@ -248,6 +267,192 @@ function Landmark({ s }: { s: MapSpot }) {
         </>
       );
       break;
+    case 'mosque':
+      body = (
+        <>
+          <Block p={[0, 0.25, 0]} s={[1.1, 0.5, 1.1]} c="#efe6d2" />
+          <mesh position={[0, 0.72, 0]} castShadow>
+            <sphereGeometry args={[0.42, 24, 16, 0, Math.PI * 2, 0, Math.PI / 2]} />
+            <meshStandardMaterial color="#d4a017" metalness={0.8} roughness={0.25} />
+          </mesh>
+          {[[-0.6, -0.6], [0.6, -0.6], [-0.6, 0.6], [0.6, 0.6]].map(([x, z]) => (
+            <group key={`${x}${z}`} position={[x, 0, z]}>
+              <mesh position={[0, 0.8, 0]} castShadow>
+                <cylinderGeometry args={[0.06, 0.08, 1.6, 10]} />
+                <meshStandardMaterial color="#f4efe2" />
+              </mesh>
+              <mesh position={[0, 1.7, 0]}>
+                <coneGeometry args={[0.08, 0.22, 10]} />
+                <meshStandardMaterial color="#d4a017" metalness={0.8} roughness={0.25} />
+              </mesh>
+            </group>
+          ))}
+        </>
+      );
+      break;
+    case 'church':
+      body = (
+        <>
+          <Block p={[0, 0.2, 0]} s={[1.0, 0.4, 0.9]} c="#e9e4dc" />
+          <mesh position={[0, 1.1, 0]} castShadow>
+            <coneGeometry args={[0.55, 1.6, 3]} />
+            <meshStandardMaterial color="#f4f1ec" />
+          </mesh>
+          <Block p={[0, 2.05, 0]} s={[0.04, 0.4, 0.04]} c="#c9a24a" />
+          <Block p={[0, 2.12, 0]} s={[0.2, 0.04, 0.04]} c="#c9a24a" />
+        </>
+      );
+      break;
+    case 'eagle':
+      body = (
+        <>
+          <Block p={[0, 0.02, 0]} s={[1.6, 0.04, 1.0]} c="#e7e1d3" />
+          <Block p={[0, 0.2, -0.45]} s={[1.2, 0.36, 0.2]} c="#118a4c" />
+          <Block p={[0, 0.42, -0.45]} s={[1.3, 0.04, 0.3]} c="#f4f4f4" />
+          {[-0.6, -0.3, 0, 0.3, 0.6].map((x) => (
+            <Block key={x} p={[x, 0.45, 0.45]} s={[0.03, 0.9, 0.03]} c="#ddd" />
+          ))}
+        </>
+      );
+      break;
+    case 'cbn':
+      body = (
+        <>
+          <Block p={[0, 1.0, 0]} s={[0.6, 2.0, 0.6]} c="#3f5566" />
+          <Block p={[0, 2.08, 0]} s={[0.72, 0.16, 0.72]} c="#c9a24a" />
+          <Block p={[0, 0.15, 0]} s={[1.0, 0.3, 1.0]} c="#d8d1c2" />
+        </>
+      );
+      break;
+    case 'nnpc-towers':
+      body = (
+        <>
+          {[[-0.25, -0.25], [0.25, -0.25], [-0.25, 0.25], [0.25, 0.25]].map(([x, z]) => (
+            <Block key={`${x}${z}`} p={[x, 0.85, z]} s={[0.36, 1.7, 0.36]} c="#5d7f99" />
+          ))}
+          <Block p={[0, 1.75, 0]} s={[0.9, 0.1, 0.9]} c="#118a4c" />
+        </>
+      );
+      break;
+    case 'silverbird':
+      body = (
+        <>
+          <Block p={[0, 0.35, 0]} s={[1.0, 0.7, 0.7]} c="#9fc8e0" />
+          <Block p={[0, 0.6, 0.36]} s={[0.9, 0.12, 0.02]} c="#c0392b" emissive />
+        </>
+      );
+      break;
+    case 'tower':
+      body = (
+        <>
+          <mesh position={[0, 1.5, 0]} castShadow>
+            <cylinderGeometry args={[0.06, 0.12, 3.0, 12]} />
+            <meshStandardMaterial color="#e9e9e9" metalness={0.4} roughness={0.3} />
+          </mesh>
+          <mesh position={[0, 2.5, 0]} castShadow>
+            <cylinderGeometry args={[0.35, 0.3, 0.18, 24]} />
+            <meshStandardMaterial color="#5d7f99" metalness={0.5} roughness={0.3} />
+          </mesh>
+          <Block p={[0, 3.2, 0]} s={[0.02, 0.5, 0.02]} c="#d63c3c" emissive />
+        </>
+      );
+      break;
+    case 'hilton':
+      body = (
+        <>
+          <Block p={[0, 1.0, 0]} s={[1.2, 2.0, 0.42]} c="#f4f1ec" />
+          {[0.4, 0.8, 1.2, 1.6].map((y) => (
+            <Block key={y} p={[0, y, 0.215]} s={[1.1, 0.08, 0.01]} c="#7fa7c0" />
+          ))}
+          <Block p={[0, 0.15, 0.6]} s={[0.8, 0.3, 0.4]} c="#d8d1c2" />
+        </>
+      );
+      break;
+    case 'fountain':
+      body = (
+        <>
+          <mesh position={[0, 0.06, 0]}>
+            <cylinderGeometry args={[0.6, 0.6, 0.12, 28]} />
+            <meshStandardMaterial color="#d8d1c2" />
+          </mesh>
+          <mesh position={[0, 0.13, 0]}>
+            <cylinderGeometry args={[0.52, 0.52, 0.02, 28]} />
+            <meshStandardMaterial color="#4aa3df" />
+          </mesh>
+          <mesh position={[0, 0.5, 0]}>
+            <cylinderGeometry args={[0.07, 0.1, 0.8, 12]} />
+            <meshStandardMaterial color="#c9a24a" metalness={0.6} roughness={0.3} />
+          </mesh>
+        </>
+      );
+      break;
+    case 'banex':
+      body = (
+        <>
+          <Block p={[0, 0.3, 0]} s={[0.9, 0.6, 0.6]} c="#d8d1c2" />
+          <Block p={[0, 0.5, 0.31]} s={[0.8, 0.14, 0.02]} c="#2980b9" emissive />
+        </>
+      );
+      break;
+    case 'citygate':
+      body = (
+        <>
+          <Block p={[-0.5, 0.55, 0]} s={[0.22, 1.1, 0.3]} c="#efe6d2" />
+          <Block p={[0.5, 0.55, 0]} s={[0.22, 1.1, 0.3]} c="#efe6d2" />
+          <Block p={[0, 1.18, 0]} s={[1.3, 0.22, 0.32]} c="#118a4c" />
+          <Block p={[0, 1.18, 0.17]} s={[1.0, 0.08, 0.01]} c="#f4f4f4" />
+        </>
+      );
+      break;
+    case 'zuma':
+      body = (
+        <>
+          <mesh position={[0, 1.1, 0]} scale={[1.8, 1.6, 1.4]} castShadow>
+            <dodecahedronGeometry args={[1, 1]} />
+            <meshStandardMaterial color="#8f8678" flatShading roughness={0.95} />
+          </mesh>
+          <Block p={[0.6, 1.4, 0.95]} s={[0.15, 1.2, 0.05]} c="#5b544a" />
+        </>
+      );
+      break;
+    case 'park':
+      body = (
+        <>
+          <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0]}>
+            <circleGeometry args={[1.3, 28]} />
+            <meshStandardMaterial color="#58a046" />
+          </mesh>
+          <mesh position={[0, 0.08, 0]}>
+            <cylinderGeometry args={[0.3, 0.3, 0.1, 20]} />
+            <meshStandardMaterial color="#4aa3df" />
+          </mesh>
+          {[[-0.7, -0.5], [0.7, -0.4], [-0.5, 0.7], [0.6, 0.7]].map(([x, z]) => (
+            <mesh key={`${x}${z}`} position={[x, 0.35, z]} castShadow>
+              <sphereGeometry args={[0.25, 10, 8]} />
+              <meshStandardMaterial color="#2f7d32" />
+            </mesh>
+          ))}
+        </>
+      );
+      break;
+    case 'stadium':
+      body = (
+        <>
+          <mesh position={[0, 0.3, 0]} castShadow>
+            <cylinderGeometry args={[1.0, 0.9, 0.6, 32, 1, true]} />
+            <meshStandardMaterial color="#e9e4dc" side={2} />
+          </mesh>
+          <mesh position={[0, 0.62, 0]}>
+            <torusGeometry args={[1.0, 0.05, 6, 32]} />
+            <meshStandardMaterial color="#118a4c" />
+          </mesh>
+          <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.03, 0]}>
+            <circleGeometry args={[0.85, 28]} />
+            <meshStandardMaterial color="#3f9a3c" />
+          </mesh>
+        </>
+      );
+      break;
     case 'garki':
       body = (
         <>
@@ -291,7 +496,7 @@ export function WorldMap() {
   const hereW = W(herePos.x, herePos.y);
   const anchors = useMemo(() => new Map(spots.map((s) => {
     const [x, z] = W(s.x, s.y);
-    return [s.id, new Vector3(x, s.id === 'secretariat' || s.id === 'maitama' ? 1.9 : 1.1, z)] as const;
+    return [s.id, new Vector3(x, LABEL_Y[s.id] ?? 1.1, z)] as const;
   })), [spots]);
   const sel = spots.find((s) => s.id === selected);
   const avoid = useMemo(() => spots.map((s) => W(s.x, s.y)), [spots]);
@@ -336,6 +541,13 @@ export function WorldMap() {
         <Estate cx={W(...HOME_XY.gwarinpa)[0] - 2.4} cz={W(...HOME_XY.gwarinpa)[1] + 0.6} cols={9} rows={6} roof="#2f6b4a" seed={2} />
         <Estate cx={W(92, 290)[0]} cz={W(92, 290)[1] - 1.6} cols={8} rows={4} roof="#8a5a2b" seed={3} />
         <Estate cx={W(286, 286)[0] - 1.2} cz={W(286, 286)[1] + 1.4} cols={6} rows={3} roof="#a33b2b" seed={4} />
+        {/* More estates: Life Camp, Katampe, Lokogoma, Karu, Lugbe extension, Dutse */}
+        <Estate cx={W(96, 150)[0]} cz={W(96, 150)[1]} cols={6} rows={4} roof="#7a3b2b" seed={5} />
+        <Estate cx={W(176, 86)[0]} cz={W(176, 86)[1]} cols={7} rows={4} roof="#2f4f6b" seed={6} />
+        <Estate cx={W(200, 300)[0]} cz={W(200, 300)[1]} cols={8} rows={4} roof="#a35a2b" seed={7} />
+        <Estate cx={W(262, 312)[0]} cz={W(262, 312)[1]} cols={6} rows={4} roof="#8a2f2f" seed={8} />
+        <Estate cx={W(60, 268)[0]} cz={W(60, 268)[1]} cols={6} rows={3} roof="#5a4a2b" seed={9} />
+        <Estate cx={W(110, 70)[0]} cz={W(110, 70)[1]} cols={5} rows={4} roof="#a33b2b" seed={10} />
 
         {spots.map((s) => (
           <group key={s.id} onPointerDown={(e) => { e.stopPropagation(); setSelected(s.id); setBoard(null); }}>
@@ -350,10 +562,10 @@ export function WorldMap() {
           <button
             key={s.id}
             ref={(el) => { if (el) labelEls.set(s.id, el); else labelEls.delete(s.id); }}
-            className={`world-chip ${s.place ? '' : 'soon'} ${selected === s.id ? 'on' : ''} ${s.id === herePos.id ? 'here' : ''}`}
+            className={`world-chip ${s.landmark ? 'landmark' : s.place ? '' : 'soon'} ${selected === s.id ? 'on' : ''} ${s.id === herePos.id ? 'here' : ''}`}
             onPointerDown={(e) => { e.stopPropagation(); setSelected(s.id); setBoard(null); }}
           >
-            {s.id === herePos.id ? '📍 ' : ''}{s.emoji} {s.short ?? s.name}{s.place ? '' : ' · Soon'}
+            {s.id === herePos.id ? '📍 ' : ''}{s.emoji}{s.landmark && selected !== s.id ? '' : ` ${s.short ?? s.name}`}{s.place || s.landmark ? '' : ' · Soon'}
           </button>
         ))}
       </div>

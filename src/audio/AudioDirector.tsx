@@ -18,6 +18,8 @@ const AMBIENCE = {
   airport: 'murmur',
   utako: 'street',
   mararaba: 'market',
+  park: 'lake',
+  stadium: 'murmur',
 } as const;
 
 function ambienceFor(place: string, minutes: number) {

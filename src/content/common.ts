@@ -1,6 +1,6 @@
 import type { Needs } from '../engine/needs';
 
-export type Place = 'home' | 'street' | 'wuse' | 'jabi' | 'secretariat' | 'lounge' | 'hospital' | 'maitama' | 'asokoro' | 'garki' | 'nyanya' | 'airport' | 'utako' | 'mararaba';
+export type Place = 'home' | 'street' | 'wuse' | 'jabi' | 'secretariat' | 'lounge' | 'hospital' | 'maitama' | 'asokoro' | 'garki' | 'nyanya' | 'airport' | 'utako' | 'mararaba' | 'park' | 'stadium';
 
 export const PLACE_NAMES: Record<Place, string> = {
   home: 'Your compound',
@@ -17,6 +17,8 @@ export const PLACE_NAMES: Record<Place, string> = {
   airport: 'Nnamdi Azikiwe Airport',
   utako: 'Utako',
   mararaba: 'Mararaba',
+  park: 'Millennium Park',
+  stadium: 'National Stadium',
 };
 
 export type Activity = {

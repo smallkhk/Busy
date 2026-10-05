@@ -13,6 +13,7 @@ import { Lounge } from './places/Lounge';
 import { Secretariat } from './places/Secretariat';
 import { WuseMarket } from './places/WuseMarket';
 import { Airport, Asokoro, Garki, Maitama, Mararaba, Nyanya, Utako } from './places/Districts';
+import { Park, Stadium } from './places/Landmarks';
 import { INTERACTABLES, type Place } from '../content/activities';
 import { avatarLabelPos, labelEls } from './labels';
 import { RemotePlayers, remoteLabelPos } from '../net/RemotePlayers';
@@ -33,6 +34,8 @@ const CENTERS: Record<Place, [number, number, number]> = {
   airport: [-0.4, 0, -0.6],
   utako: [-0.4, 0, -0.6],
   mararaba: [-0.4, 0, -0.6],
+  park: [-0.4, 0, -0.6],
+  stadium: [-0.4, 0, -0.6],
 };
 
 const SCENES: Record<Place, () => ReactElement> = {
@@ -50,6 +53,8 @@ const SCENES: Record<Place, () => ReactElement> = {
   airport: Airport,
   utako: Utako,
   mararaba: Mararaba,
+  park: Park,
+  stadium: Stadium,
 };
 
 function GameLoop() {

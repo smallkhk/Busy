@@ -471,3 +471,5 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
 .showroom-dots { display: flex; justify-content: center; gap: 6px; }
 .showroom-dots span { width: 7px; height: 7px; border-radius: 50%; background: rgba(255, 255, 255, 0.25); }
 .showroom-dots span.on { background: #e8b04b; }
+.world-chip.landmark { background: rgba(255, 255, 255, 0.92); color: #1b1a22; border-color: rgba(0, 0, 0, 0.15); padding: 2px 6px; font-size: 13px; }
+.world-chip.landmark.on { padding: 3px 10px; }

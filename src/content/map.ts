@@ -2,7 +2,7 @@ import type { Place } from './common';
 import type { AreaId } from './housing';
 
 /** Stylised Abuja map (north up) in a 300×360 SVG space. Not to scale. */
-export type MapSpot = { id: string; name: string; short?: string; emoji: string; x: number; y: number; place?: Place; note?: string; label?: 'above' | 'below' | 'left' | 'right' };
+export type MapSpot = { id: string; name: string; short?: string; emoji: string; x: number; y: number; place?: Place; note?: string; label?: 'above' | 'below' | 'left' | 'right'; /** Landmark you see on the map (not a place to visit). */ landmark?: boolean };
 
 /** Where your home node sits depends on the area you live in. */
 export const HOME_XY: Record<AreaId, [number, number]> = {
@@ -26,6 +26,21 @@ export const MAP_SPOTS: MapSpot[] = [
   { id: 'nyanya', name: 'Nyanya', emoji: '🚌', x: 280, y: 290, label: 'left', place: 'nyanya', note: 'Where Abuja workers sleep' },
   { id: 'utako', name: 'Utako', emoji: '🚍', x: 136, y: 150, place: 'utako', label: 'above', note: 'Interstate motor park, electronics, tech hub' },
   { id: 'mararaba', name: 'Mararaba', emoji: '🌶️', x: 290, y: 322, place: 'mararaba', label: 'left', note: 'Nasarawa side. Cheapest market for town' },
+  { id: 'park', name: 'Millennium Park', short: 'Millennium Park', emoji: '🌳', x: 254, y: 108, place: 'park', label: 'right', note: 'Biggest park for Abuja. Picnic, jogging, photoshoot.' },
+  { id: 'stadium', name: 'Moshood Abiola National Stadium', short: 'National Stadium', emoji: '🏟️', x: 124, y: 230, place: 'stadium', label: 'left', note: 'Super Eagles home ground.' },
+  // Landmarks: things you go see as you dey pass
+  { id: 'mosque', name: 'National Mosque', emoji: '🕌', x: 194, y: 196, landmark: true, note: 'Golden dome and four minarets. Jumat for Friday full everywhere.' },
+  { id: 'church', name: 'National Christian Centre', emoji: '⛪', x: 236, y: 204, landmark: true, note: 'The tall triangle you go see from far. Big services and weddings.' },
+  { id: 'eagle', name: 'Eagle Square', emoji: '🦅', x: 240, y: 226, landmark: true, note: 'Where presidents take oath and Independence parade dey happen.' },
+  { id: 'cbn', name: 'Central Bank of Nigeria', emoji: '🏦', x: 204, y: 234, landmark: true, note: 'Where Naira policy dey come from 💸' },
+  { id: 'nnpc-towers', name: 'NNPC Towers', emoji: '🛢️', x: 186, y: 218, landmark: true, note: 'Four towers for Central Business District.' },
+  { id: 'silverbird', name: 'Silverbird Galleria', emoji: '🎞️', x: 198, y: 248, landmark: true, note: 'Cinema and shops for Central Area.' },
+  { id: 'tower', name: 'Abuja Millennium Tower', emoji: '🗼', x: 208, y: 184, landmark: true, note: 'The tallest thing for Abuja sky (when dem finish am 😅).' },
+  { id: 'hilton', name: 'Transcorp Hilton', emoji: '🏨', x: 218, y: 112, landmark: true, note: 'Big men hotel for Maitama. Owambe and conference central.' },
+  { id: 'fountain', name: 'Unity Fountain', emoji: '⛲', x: 234, y: 126, landmark: true, note: 'Fountain with names of all 36 states. Protests dey start here.' },
+  { id: 'banex', name: 'Banex Plaza', emoji: '📱', x: 192, y: 146, landmark: true, note: 'Phones, laptops and "original" chargers for Wuse 2.' },
+  { id: 'citygate', name: 'Abuja City Gate', emoji: '🚪', x: 140, y: 276, landmark: true, note: '"Welcome to Abuja" arch on Airport Road.' },
+  { id: 'zuma', name: 'Zuma Rock', emoji: '🪨', x: 22, y: 26, landmark: true, note: 'The giant rock with face for Madalla. Na the gate to Abuja from the north.' },
   { id: 'lugbe', name: 'Lugbe', emoji: '🏘️', x: 92, y: 290, note: 'Coming soon' },
   { id: 'airport', name: 'Nnamdi Azikiwe Airport', short: 'Airport', emoji: '✈️', x: 40, y: 336, label: 'right', place: 'airport', note: 'Japa route ✈️' },
 ];
