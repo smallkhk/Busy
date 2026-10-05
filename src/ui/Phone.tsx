@@ -22,26 +22,31 @@ import { totalUnread, useSocial } from '../net/social';
 import { MapView } from './MapView';
 
 const APPS: { id: PhoneApp; name: string; emoji: string; color: string }[] = [
+  // Everyday
   { id: 'bank', name: 'Ego Bank', emoji: '💜', color: '#4b1f86' },
-  { id: 'chop', name: 'ChopNow', emoji: '🛵', color: '#e8692c' },
+  { id: 'gist', name: 'GistApp', emoji: '💬', color: '#1fa855' },
+  { id: 'map', name: 'Map', emoji: '🗺️', color: '#6a4bc4' },
   { id: 'ride', name: 'Ride', emoji: '🚘', color: '#1f8a4c' },
+  // Money and growth
   { id: 'jobs', name: 'Jobs', emoji: '💼', color: '#c27c1a' },
   { id: 'biz', name: 'Business', emoji: '🏪', color: '#0e7c86' },
-  { id: 'cars', name: 'Cars', emoji: '🚗', color: '#a8322d' },
-  { id: 'gist', name: 'GistApp', emoji: '💬', color: '#1fa855' },
-  { id: 'chat', name: 'Calls', emoji: '📞', color: '#2f7fd6' },
-  { id: 'love', name: 'Abuja Love', emoji: '💕', color: '#e8336d' },
-  { id: 'style', name: 'Drip', emoji: '👗', color: '#b0408f' },
   { id: 'learn', name: 'Learn & Gym', emoji: '📚', color: '#2f6b4a' },
   { id: 'politics', name: 'Politics', emoji: '🗳️', color: '#118a4c' },
+  // Living
+  { id: 'chop', name: 'ChopNow', emoji: '🛵', color: '#e8692c' },
+  { id: 'house', name: 'Home & Rent', emoji: '🏠', color: '#8c5a2b' },
+  { id: 'cars', name: 'Cars', emoji: '🚗', color: '#a8322d' },
+  { id: 'style', name: 'Drip', emoji: '👗', color: '#b0408f' },
+  // People
+  { id: 'love', name: 'Abuja Love', emoji: '💕', color: '#e8336d' },
+  { id: 'gram', name: 'AbujaGram', emoji: '📸', color: '#d6406f' },
+  { id: 'contacts', name: 'Long Leg', emoji: '🦵', color: '#b8860b' },
+  { id: 'chat', name: 'Calls', emoji: '📞', color: '#2f7fd6' },
+  // Info
+  { id: 'news', name: 'News', emoji: '📰', color: '#34495e' },
+  { id: 'goals', name: 'Goals', emoji: '🎯', color: '#9a7b1c' },
   { id: 'rankings', name: 'Rankings', emoji: '🏆', color: '#c9a24a' },
   { id: 'account', name: 'Account', emoji: '⚙️', color: '#5f6670' },
-  { id: 'map', name: 'Map', emoji: '🗺️', color: '#6a4bc4' },
-  { id: 'gram', name: 'AbujaGram', emoji: '📸', color: '#d6406f' },
-  { id: 'house', name: 'Rent', emoji: '🏠', color: '#8c5a2b' },
-  { id: 'contacts', name: 'Long Leg', emoji: '🦵', color: '#b8860b' },
-  { id: 'news', name: 'News', emoji: '📰', color: '#34495e' },
-  { id: 'goals', name: 'Goals', emoji: '🏆', color: '#9a7b1c' },
 ];
 
 
