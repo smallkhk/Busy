@@ -193,20 +193,22 @@ export function Street() {
   const walkTo = useGame((s) => s.walkTo);
   const night = useGame((s) => daylight(clockParts(Math.floor(s.time / 10) * 10).minuteOfDay) < 0.3);
 
-  const onGround = (e: ThreeEvent<PointerEvent>) => {
+  const onGround = (e: ThreeEvent<MouseEvent>) => {
     e.stopPropagation();
+    // A drag moves the camera; only a tap counts
+    if (e.delta > 8) return;
     walkTo(e.point.x, e.point.z);
   };
 
   return (
     <group>
       {/* Red Abuja laterite ground */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.02, 0]} receiveShadow onPointerDown={onGround}>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.02, 0]} receiveShadow onClick={onGround}>
         <planeGeometry args={[80, 80]} />
         <meshStandardMaterial color="#b0703f" />
       </mesh>
       {/* Road */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0.4]} receiveShadow onPointerDown={onGround}>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0.4]} receiveShadow onClick={onGround}>
         <planeGeometry args={[60, 2.6]} />
         <meshStandardMaterial color="#3a3d42" />
       </mesh>
@@ -217,11 +219,11 @@ export function Street() {
         </mesh>
       ))}
       {/* Sidewalks */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.03, -1.9]} receiveShadow onPointerDown={onGround}>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.03, -1.9]} receiveShadow onClick={onGround}>
         <planeGeometry args={[60, 2.0]} />
         <meshStandardMaterial color="#bdb6a8" />
       </mesh>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.03, 2.6]} receiveShadow onPointerDown={onGround}>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.03, 2.6]} receiveShadow onClick={onGround}>
         <planeGeometry args={[60, 1.8]} />
         <meshStandardMaterial color="#bdb6a8" />
       </mesh>

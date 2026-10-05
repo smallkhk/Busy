@@ -23,8 +23,9 @@ export function Npcs() {
           key={id}
           position={[spot.pos[0], 0, spot.pos[1]]}
           rotation={[0, Math.PI / 4, 0]}
-          onPointerDown={(e) => {
+          onClick={(e) => {
             e.stopPropagation();
+            if (e.delta > 8) return;
             openNpc(id);
           }}
         >

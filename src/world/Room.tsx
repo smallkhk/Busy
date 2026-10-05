@@ -43,13 +43,15 @@ export function Cyl({ p, r, h, c }: { p: V3; r: number; h: number; c: string }) 
 export function Tappable({ id, children }: { id: string; children: ReactNode }) {
   const [hover, setHover] = useState(false);
   const openMenu = useGame((s) => s.openMenu);
-  const onDown = (e: ThreeEvent<PointerEvent>) => {
+  const onDown = (e: ThreeEvent<MouseEvent>) => {
     e.stopPropagation();
+    // A drag moves the camera; only a tap counts
+    if (e.delta > 8) return;
     openMenu(id);
   };
   return (
     <group
-      onPointerDown={onDown}
+      onClick={onDown}
       onPointerOver={(e) => {
         e.stopPropagation();
         setHover(true);
@@ -75,29 +77,31 @@ export function Room() {
   const ups = useGame((s) => s.homeUps ?? []);
   const has = (id: string) => ups.includes(id);
 
-  const onFloor = (e: ThreeEvent<PointerEvent>) => {
+  const onFloor = (e: ThreeEvent<MouseEvent>) => {
     e.stopPropagation();
+    // A drag moves the camera; only a tap counts
+    if (e.delta > 8) return;
     walkTo(e.point.x, e.point.z);
   };
 
   return (
     <group>
       {/* Ground: compound sand + tiled room floor */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[2, -0.02, 0.5]} receiveShadow onPointerDown={onFloor}>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[2, -0.02, 0.5]} receiveShadow onClick={onFloor}>
         <planeGeometry args={[60, 60]} />
         <meshStandardMaterial color="#b98f5e" />
       </mesh>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow onPointerDown={onFloor}>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow onClick={onFloor}>
         <planeGeometry args={[8, 6]} />
         <meshStandardMaterial color={theme.floor} />
       </mesh>
       {/* Bathroom tiles */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[3, 0.005, -2.2]} receiveShadow onPointerDown={onFloor}>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[3, 0.005, -2.2]} receiveShadow onClick={onFloor}>
         <planeGeometry args={[2, 1.6]} />
         <meshStandardMaterial color="#9ec3cf" />
       </mesh>
       {/* Concrete compound slab outside the door */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[5.2, 0.004, 1.2]} receiveShadow onPointerDown={onFloor}>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[5.2, 0.004, 1.2]} receiveShadow onClick={onFloor}>
         <planeGeometry args={[2.4, 5]} />
         <meshStandardMaterial color="#a7a39a" />
       </mesh>
@@ -126,7 +130,7 @@ export function Room() {
       </mesh>
 
       {/* Rug */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[-1.8, 0.01, 1]} receiveShadow onPointerDown={onFloor}>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[-1.8, 0.01, 1]} receiveShadow onClick={onFloor}>
         <planeGeometry args={[2.2, 1.6]} />
         <meshStandardMaterial color={theme.rug} />
       </mesh>
