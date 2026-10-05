@@ -516,6 +516,63 @@ const BASE_EVENTS: GameEvent[] = [
     ],
   },
 
+  {
+    id: 'biz-inspector',
+    emoji: '🧑🏾‍⚕️',
+    title: 'Health inspector don come',
+    text: '"We dey check food businesses. Where your certificate? Your kitchen no clean o."',
+    trigger: 'idle',
+    weight: 3,
+    cooldownHours: 168,
+    when: (c) => !!c.owned?.some((id) => ['foodstall', 'shawarma', 'restaurant', 'pharmacy', 'catering'].includes(id)),
+    choices: [
+      { label: 'Pay for proper certificate', cost: 25000, outcomes: [{ text: 'Certificate don hang for wall. Customers trust you more 📜', effect: { needs: { fun: 5 } } }] },
+      { label: 'Argue with am', outcomes: [{ weight: 1, text: 'E collect small "consideration" and go.', effect: { money: -10000 } }, { weight: 1, text: 'E seal your shop for 2 days 🔒', effect: { closeBusiness: { id: 'restaurant', days: 2 }, needs: { fun: -15 } } }] },
+    ],
+  },
+  {
+    id: 'biz-staff-wahala',
+    emoji: '😤',
+    title: 'Staff wahala',
+    text: 'Your workers dey vex: "Oga, salary small. Everything don cost for market. Add us something or we go strike."',
+    trigger: 'idle',
+    weight: 2,
+    cooldownHours: 240,
+    when: (c) => (c.owned?.length ?? 0) >= 2,
+    choices: [
+      { label: 'Give them bonus', cost: 30000, outcomes: [{ text: 'Dem happy. "Oga na correct person!" Work go better 💪🏾', effect: { needs: { social: 10 } } }] },
+      { label: '"Who no like am fit go"', outcomes: [{ weight: 1, text: 'Dem grumble but dem stay.', effect: { needs: { social: -5 } } }, { weight: 1, text: 'Two of dem resign same day. Business slow for one week 😩', effect: { money: -40000, needs: { fun: -15 } } }] },
+    ],
+  },
+  {
+    id: 'biz-investor',
+    emoji: '🦄',
+    title: 'Investor dey interested',
+    text: 'One investor from Lagos see your tech startup: "I fit put ₦5M for 20% equity. Today only."',
+    trigger: 'idle',
+    weight: 4,
+    cooldownHours: 336,
+    when: (c) => !!c.owned?.includes('tech'),
+    choices: [
+      { label: 'Take the money', outcomes: [{ text: '₦5,000,000 don land your account. You go post am for LinkedIn 🚀', effect: { money: 5000000, packaging: 5 } }] },
+      { label: '"My startup worth pass that"', outcomes: [{ weight: 1, text: 'E double the offer! ₦10M 😱🚀', effect: { money: 10000000, packaging: 8 } }, { weight: 2, text: 'E waka. Your startup still dey burn money 🔥', effect: { needs: { fun: -10 } } }] },
+    ],
+  },
+  {
+    id: 'biz-land-dispute',
+    emoji: '🏚️',
+    title: 'Omo onile / land wahala',
+    text: 'Some people show for your estate project: "This land na our papa own. Pay us or no building go stand."',
+    trigger: 'idle',
+    weight: 4,
+    cooldownHours: 336,
+    when: (c) => !!c.owned?.some((id) => id === 'realestate' || id === 'construction'),
+    choices: [
+      { label: 'Settle them', cost: 500000, outcomes: [{ text: 'Dem collect and disappear. Work continue 🏗️' }] },
+      { label: 'Call your Long Leg', when: (c) => (c.longLeg ?? 0) >= 40, outcomes: [{ text: 'One call to the right office. Police clear the site. 🫡', effect: { heat: 3 } }] },
+      { label: 'Go court', outcomes: [{ text: 'Case go take months. Site don close small 😩', effect: { money: -200000, needs: { fun: -20 } } }] },
+    ],
+  },
   // ---------------- Hospital ----------------
   {
     id: 'doctors-strike',
