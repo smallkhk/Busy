@@ -49,6 +49,8 @@ export async function saveNow(): Promise<string | null> {
   const g = useGame.getState();
   if (!c || !uid) return 'You need internet for cloud save';
   if (!g.started || saving) return null;
+  // Never overwrite a newer cloud life while you never decide which one to keep
+  if (useCloud.getState().offer) return null;
   saving = true;
   try {
     const code = useCloud.getState().code ?? newCode();
@@ -78,7 +80,11 @@ export async function saveNow(): Promise<string | null> {
 
 /** Replaces this phone's life with a saved one. */
 export function applySave(data: Record<string, unknown>) {
+  // Start from a clean life so nothing from this phone leaks into the loaded one
+  useGame.getState().reset();
   useGame.setState({ ...(data as Partial<GameState>), started: true, phone: null, menu: null, event: null, eventResult: null, minigame: null, target: null, pending: null });
+  // Old saves have no lastDay: treat today as already processed
+  if (data.lastDay === undefined) useGame.setState({ lastDay: clockParts(useGame.getState().time).day });
   useGame.getState().toast('☁️ Your life don load! Welcome back 🙌🏾');
 }
 

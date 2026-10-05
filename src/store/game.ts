@@ -68,6 +68,8 @@ export type GameState = {
   adBoostUntil: number;
   /** Land and houses you own. */
   properties: Partial<Record<AreaId, Property>>;
+  /** Last day whose morning rollover ran. */
+  lastDay: number;
   /** Your political career. */
   politics: Politics;
   /** Courses you don enroll for, with classes done. */
@@ -275,6 +277,7 @@ const initial = () => ({
   look: DEFAULT_LOOK,
   courses: {} as Partial<Record<CourseId, number>>,
   politics: NO_POLITICS as Politics,
+  lastDay: 1,
   skills: [] as CourseId[],
   fitness: 10,
   gymUntil: 0,
@@ -656,7 +659,8 @@ export const useGame = create<GameState>()(
           const myCar = get().car;
           if (effect.carRepair && myCar) set({ car: { ...myCar, condition: 100 } });
           if (effect.fuel && get().car) set({ car: { ...get().car!, fuel: Math.min(TANK, (get().car!.fuel ?? START_FUEL) + effect.fuel) } });
-          if (effect.carWear && myCar) set({ car: { ...myCar, condition: Math.max(0, myCar.condition - effect.carWear) } });
+          const carNow = get().car;
+          if (effect.carWear && carNow) set({ car: { ...carNow, condition: Math.max(0, carNow.condition - effect.carWear) } });
           const cb = effect.closeBusiness;
           if (cb && get().businesses[cb.id]) {
             const biz = get().businesses;
@@ -791,7 +795,7 @@ export const useGame = create<GameState>()(
             money: s.money - cost,
             adBoostUntil: Math.max(s.adBoostUntil ?? 0, until),
             packaging: clamp(s.packaging + 2),
-            txns: [{ at: s.time, label, amount: -cost }, ...s.txns].slice(0, 40),
+            txns: cost ? [{ at: s.time, label, amount: -cost }, ...s.txns].slice(0, 40) : s.txns,
           });
           get().toast(`📢 Your ad don go up! Everybody for Abuja go see am${Object.keys(s.businesses).length ? '. Business +10% while e dey' : ''}`);
         },
@@ -1032,7 +1036,7 @@ export const useGame = create<GameState>()(
           if (day - (l.sinceDay ?? day) < PROPOSE_AFTER_DAYS) return get().toast(`⏳ Una never date reach ${PROPOSE_AFTER_DAYS} days. Calm down 😅`);
           if (s.money < RING_COST) return get().toast(`💍 Ring na ${formatNaira(RING_COST)}`);
           if (l.interest < 85) {
-            set({ money: s.money - RING_COST, loves: { ...s.loves, [id]: { ...l, interest: clamp(l.interest - 15) } } });
+            set({ money: s.money - RING_COST, loves: { ...s.loves, [id]: { ...l, interest: clamp(l.interest - 15) } }, txns: [{ at: s.time, label: 'Engagement ring (refused 💔)', amount: -RING_COST }, ...s.txns].slice(0, 40) });
             return get().toast(`💔 ${m.name}: "I no ready…" Ring don waste 😭`);
           }
           set({ money: s.money - RING_COST, loves: { ...s.loves, [id]: { ...l, engaged: true } }, txns: [{ at: s.time, label: 'Engagement ring 💍', amount: -RING_COST }, ...s.txns].slice(0, 40) });
@@ -1443,7 +1447,10 @@ export const useGame = create<GameState>()(
           // New day greeting
           const prev = clockParts(s.time);
           const cur = clockParts(time);
-          if (cur.day !== prev.day) {
+          // Track the last day processed, so actions that jump the clock (dates, campaigns, events) no skip a rollover
+          const lastDay = s.lastDay ?? prev.day;
+          if (cur.day > lastDay) {
+            set({ lastDay: cur.day });
             const fest = festivalOn(cur.day);
             now.toast(fest ? `${fest.emoji} ${fest.greeting}` : `🌅 Day ${cur.day} for Abuja. Make today count!`);
             const fl = get().flags ?? {};
@@ -1461,7 +1468,7 @@ export const useGame = create<GameState>()(
             set({ contacts, heat: Math.max(0, (get().heat ?? 0) - 4), fitness: Math.max(0, (get().fitness ?? 0) - 1) });
             // Politics: allowance, billboard support, election day, end of term
             const pol = get().politics ?? NO_POLITICS;
-            if (pol.office >= 0) {
+            if (pol.office >= 0 && (pol.termEnds === undefined || cur.day <= pol.termEnds)) {
               const pay = OFFICES[pol.office].allowance;
               set({ money: get().money + pay, txns: [{ at: time, label: `${OFFICES[pol.office].name} allowance`, amount: pay }, ...get().txns].slice(0, 40) });
             }
@@ -1482,7 +1489,7 @@ export const useGame = create<GameState>()(
                   : { emoji: '😞', title: 'Election lost', text: `You get ${pc.support}% but the other candidate win. Some people say na rigging 🤷🏾. Build more support and try again.`, chips: ['-30 🎉'] },
               });
             } else if (pol.office >= 0 && pol.termEnds !== undefined && cur.day > pol.termEnds && !pol.campaign) {
-              set({ politics: { ...pol, office: -1, termEnds: undefined } });
+              set({ politics: { ...pol, office: -1, termEnds: undefined, votesBought: false } });
               now.toast(`🗳️ Your term as ${OFFICES[pol.office].name} don end. Run again for 🗳️ Politics app`);
             }
             // World news: old stories end, sometimes a new one breaks
@@ -1663,6 +1670,7 @@ export const useGame = create<GameState>()(
         look: s.look,
         courses: s.courses,
         politics: s.politics,
+        lastDay: s.lastDay,
         skills: s.skills,
         fitness: s.fitness,
         gymUntil: s.gymUntil,
