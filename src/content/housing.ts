@@ -16,6 +16,8 @@ export type Area = {
   blurb: string;
   /** Big-money area: fine furniture, gatemen, Alhajis for road. */
   lux?: boolean;
+  /** Full multi-room mansion instead of a flat. */
+  mansion?: boolean;
   /** Houses you buy instead of rent: no rent once you own am. */
   own?: { land?: number; build?: number; buildDays?: number; price?: number; rentOut: number };
   theme: { wall: string; wall2: string; floor: string; rug: string; bed: string };
@@ -99,6 +101,7 @@ export const AREAS: Record<AreaId, Area> = {
     commute: 0.3,
     blurb: 'Embassies, senators and Alhajis with three Land Cruisers. ₦40m+ a year. Gateman go salute you.',
     lux: true,
+    mansion: true,
     theme: { wall: '#fbf9f4', wall2: '#f1ede4', floor: '#4a3828', rug: '#8b1e3f', bed: '#0f1a24' },
   },
   asokoro: {
@@ -111,6 +114,7 @@ export const AREAS: Record<AreaId, Area> = {
     commute: 0.3,
     blurb: 'Presidential neighbourhood. ₦90m a year, soldiers for road, and your neighbour na Minister.',
     lux: true,
+    mansion: true,
     theme: { wall: '#fdfbf6', wall2: '#f3efe6', floor: '#3a2a1e', rug: '#c9a24a', bed: '#14202c' },
   },
   kuje: {
@@ -136,6 +140,7 @@ export const AREAS: Record<AreaId, Area> = {
     blurb: 'Hills, views, big gates. When you say "I dey Guzape", conversation don end.',
     own: { price: 85000000, rentOut: 90000 },
     lux: true,
+    mansion: true,
     theme: { wall: '#fbf8f2', wall2: '#f0ebe2', floor: '#5c4433', rug: '#c9a24a', bed: '#14202c' },
   },
 };
