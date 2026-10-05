@@ -3,6 +3,7 @@ import { DRIVES, HAILING_JOB } from './cars';
 import { CHOP_ITEMS, RIDES, TREKS } from './phoneapps';
 import { TRAVEL_INTERACTABLES } from './travel';
 import { DISTRICT_INTERACTABLES, NEW_ROUTES } from './districts';
+import { CLASS_ACTIVITIES, GYM_WORKOUT, SKILL_JOBS } from './learning';
 
 export * from './common';
 
@@ -235,6 +236,7 @@ export const JOBS: Activity[] = [
   { id: 'delivery', label: 'Dispatch rider (borrowed bike)', doing: 'Delivering packages for Gwarinpa', emoji: '🛵', minutes: 240, pay: 7000, gains: { energy: -30, hygiene: -20 }, hours: [7, 19], away: true },
   { id: 'cyber', label: 'Typing & printing at cyber café', doing: 'Typing CVs for corpers', emoji: '🖨️', minutes: 180, pay: 4500, gains: { energy: -12, fun: -8 }, hours: [8, 18], away: true },
   HAILING_JOB,
+  ...SKILL_JOBS,
 ];
 
 export const PHONE_ACTIVITIES: Activity[] = [
@@ -251,6 +253,8 @@ export const ALL_ACTIVITIES: Activity[] = [
   ...RIDES,
   ...TREKS,
   ...DRIVES,
+  ...CLASS_ACTIVITIES,
+  GYM_WORKOUT,
 ];
 
 export const activityById = (id: string) => ALL_ACTIVITIES.find((a) => a.id === id);
