@@ -67,7 +67,7 @@ export function Park() {
         <Box p={[-4.2, 0.02, -2.0]} s={[1.6, 0.03, 1.1]} c="#c0392b" />
         {[-4.6, -3.8].map((x, i) => (
           <group key={x} position={[x, 0, -2.6]} rotation={[0, i ? -0.4 : 0.4, 0]} scale={0.9}>
-            <Person shirt={i ? '#f1c40f' : '#16a085'} trousers="#2d2d2d" />
+            <Person shirt={i ? '#f1c40f' : '#16a085'} trousers={i ? undefined : '#2d2d2d'} woman={i === 1} />
           </group>
         ))}
         <Box p={[-3.6, 0.15, -1.7]} s={[0.4, 0.3, 0.3]} c="#8a6a45" />

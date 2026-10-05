@@ -27,8 +27,8 @@ export function Wardrobe() {
   return (
     <div className="showroom">
       <Canvas shadows dpr={[1, 2]} className="showroom-canvas">
-        <PerspectiveCamera makeDefault position={[0, 0.9, 5.4]} fov={34} />
-        <OrbitControls target={[0, -0.22, 0]} enablePan={false} minDistance={2.5} maxDistance={7} maxPolarAngle={Math.PI / 2.05} autoRotate autoRotateSpeed={1.8} />
+        <PerspectiveCamera makeDefault position={[0, 0.5, 6.2]} fov={34} />
+        <OrbitControls target={[0, -0.5, 0]} enablePan={false} minDistance={2.5} maxDistance={7} maxPolarAngle={Math.PI / 2.05} autoRotate autoRotateSpeed={1.8} />
         <color attach="background" args={['#1b1620']} />
         <ambientLight intensity={0.6} />
         <spotLight position={[2, 5, 3]} angle={0.5} penumbra={0.6} intensity={60} castShadow />

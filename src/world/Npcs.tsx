@@ -29,7 +29,7 @@ export function Npcs() {
             openNpc(id);
           }}
         >
-          <Person shirt={NPCS[id].shirt} trousers={NPCS[id].trousers} />
+          <Person shirt={NPCS[id].shirt} trousers={NPCS[id].trousers} {...NPCS[id].look} />
         </group>
       ))}
     </>

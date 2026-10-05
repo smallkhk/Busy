@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { activityById } from './activities';
 import { sickDodge, workEnergyFactor } from './learning';
 import { blockReason, useGame } from '../store/game';
@@ -8,8 +8,11 @@ const day = (d: number, h = 10) => (d - 1) * 1440 + h * 60;
 describe('school and gym', () => {
   beforeEach(() => {
     useGame.getState().reset();
-    useGame.setState({ started: true, money: 1000000, time: day(3) });
+    useGame.setState({ started: true, money: 1000000, time: day(3), nextEventCheck: Infinity });
+    // No surprise storm, sickness or event to cancel class halfway
+    vi.spyOn(Math, 'random').mockReturnValue(0.99);
   });
+  afterEach(() => vi.restoreAllMocks());
 
   it('enroll, attend every class, graduate, unlock the job', () => {
     const g = useGame.getState;
