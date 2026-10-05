@@ -3,12 +3,44 @@ import { formatNaira } from '../engine/clock';
 import { acceptOffer, fetchBoard, formatCode, loadFromCode, netWorth, saveNow, useCloud, type Metric, type Row } from '../net/cloud';
 import { useSocial } from '../net/social';
 import { useGame } from '../store/game';
+import { isIOS, promptInstall, useInstall, useSettings } from '../settings';
 
 const ago = (t: number | null) => {
   if (!t) return 'never';
   const s = Math.round((Date.now() - t) / 1000);
   return s < 60 ? 'just now' : s < 3600 ? `${Math.round(s / 60)} min ago` : `${Math.round(s / 3600)} hr ago`;
 };
+
+function InstallCard() {
+  const { canInstall, installed } = useInstall();
+  if (installed) return <p className="small">✅ Abuja Life don install for this phone.</p>;
+  return (
+    <div className="balance">
+      <div className="muted small">📲 Install as app</div>
+      <div className="small">Open am from your home screen like real app, full screen and faster.</div>
+      {canInstall ? (
+        <button className="primary" style={{ marginTop: 8, width: '100%' }} onClick={() => void promptInstall()}>📲 Install Abuja Life</button>
+      ) : isIOS() ? (
+        <div className="small" style={{ marginTop: 6 }}>On iPhone: tap <b>Share</b> ⬆️ for Safari, then <b>Add to Home Screen</b>.</div>
+      ) : (
+        <div className="small" style={{ marginTop: 6 }}>Open your browser menu ⋮ and tap <b>Install app</b> or <b>Add to Home screen</b>.</div>
+      )}
+    </div>
+  );
+}
+
+function QualityToggle() {
+  const { quality, setQuality } = useSettings();
+  return (
+    <>
+      <div className="love-tabs">
+        <button className={quality === 'high' ? 'on' : ''} onClick={() => setQuality('high')}>✨ High</button>
+        <button className={quality === 'low' ? 'on' : ''} onClick={() => setQuality('low')}>⚡ Low (faster)</button>
+      </div>
+      <p className="muted small">Low graphics: fewer houses, simpler shadows and lighter screen. Use am if your phone dey hot or slow.</p>
+    </>
+  );
+}
 
 /** ⚙️ Account: cloud save and moving your life to another phone. */
 export function AccountApp() {
@@ -48,6 +80,9 @@ export function AccountApp() {
           <button className="ghost" style={{ marginTop: 8, width: '100%' }} onClick={() => void navigator.clipboard?.writeText(formatCode(code)).then(() => setMsg('📋 Code don copy'))}>📋 Copy code</button>
         </div>
       )}
+      <InstallCard />
+      <div className="love-section">🎮 Graphics</div>
+      <QualityToggle />
       <div className="love-section">📲 Continue on this phone</div>
       <input className="ad-input" value={input} maxLength={9} placeholder="ABCD-2345" onChange={(e) => setInput(e.target.value)} />
       <button className="ghost" style={{ width: '100%', marginTop: 8 }} disabled={busy || input.length < 8} onClick={() => confirm('This go replace the life for this phone. Continue?') && void run(() => loadFromCode(input), '✅ Life don load!')}>

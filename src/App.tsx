@@ -11,10 +11,13 @@ import { QuestPill } from './ui/Goals';
 import { Labels } from './ui/Labels';
 import { Phone } from './ui/Phone';
 import { Start } from './ui/Start';
-import { WorldMap } from './ui/WorldMap';
-import { Showroom } from './ui/Showroom';
+import { lazy, Suspense } from 'react';
 import { useGame } from './store/game';
 import { Scene } from './world/Scene';
+
+// Only download the big map and the car showroom when you open them
+const WorldMap = lazy(() => import('./ui/WorldMap').then((m) => ({ default: m.WorldMap })));
+const Showroom = lazy(() => import('./ui/Showroom').then((m) => ({ default: m.Showroom })));
 
 function BottomNav() {
   const openPhone = useGame((s) => s.openPhone);
@@ -62,8 +65,10 @@ export default function App() {
           </div>
           <ActionMenu />
           <Phone />
-          {mapOpen && <WorldMap />}
-          {showroomOpen && <Showroom />}
+          <Suspense fallback={<div className="loading-screen">Loading…</div>}>
+            {mapOpen && <WorldMap />}
+            {showroomOpen && <Showroom />}
+          </Suspense>
           <NearbyMenu />
           <NpcSheet />
           <EventModal />
