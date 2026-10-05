@@ -365,18 +365,106 @@ export const DISTRICT_INTERACTABLES: Interactable[] = [
       ride('mr-home', 'Bus go your area (home)', '🚌', 'street', 120, 1300, PARK),
     ],
   },
+
+  // ---------------- Millennium Park ----------------
+  {
+    id: 'lawn',
+    place: 'park',
+    name: 'Big lawn',
+    emoji: '🧺',
+    label: [-4.2, 1.6, -2.2],
+    activities: [
+      { id: 'picnic', label: 'Picnic for the lawn', doing: 'Lying on mat, enjoying breeze', emoji: '🧺', minutes: 120, cost: 3500, gains: { fun: 35, social: 15, food: 20, energy: 10 }, hours: [8, 19], spot: A },
+      { id: 'park-nap', label: 'Small nap under tree', doing: 'Sleeping under tree 😴', emoji: '🌳', minutes: 60, gains: { energy: 20, fun: 5 }, hours: [9, 18], spot: A },
+    ],
+  },
+  {
+    id: 'park-fountain',
+    place: 'park',
+    name: 'Fountain',
+    emoji: '⛲',
+    label: [-0.6, 2.4, -2.4],
+    activities: [
+      { id: 'photoshoot', label: 'Photoshoot by the fountain 📸', doing: 'Posing like Instagram baddie', emoji: '📸', minutes: 45, cost: 5000, gains: { fun: 20, social: 10 }, effects: { packaging: 2 }, hours: [8, 19], spot: B },
+      { id: 'photographer', label: 'Snap people for money (4 hrs)', doing: 'Shouting "Snap your picture!"', emoji: '📷', minutes: 240, pay: 7000, gains: { energy: -12, social: 15 }, hours: [9, 18], spot: B },
+    ],
+  },
+  {
+    id: 'jog-track',
+    place: 'park',
+    name: 'Jogging track',
+    emoji: '🏃🏾',
+    label: [2.8, 1.8, -2.2],
+    activities: [
+      { id: 'jog', label: 'Jog round the park', doing: 'Jogging, sweating, feeling fit', emoji: '🏃🏾', minutes: 45, gains: { fun: 15, energy: -15, hygiene: -20, social: 5 }, effects: { packaging: 1 }, hours: [6, 19], spot: C },
+      { id: 'icecream-park', label: 'Ice cream from the bicycle man', doing: 'Licking ice cream', emoji: '🍦', minutes: 10, cost: 1000, gains: { food: 8, fun: 12 }, hours: [9, 19], spot: C },
+    ],
+  },
+  {
+    id: 'park-taxi',
+    place: 'park',
+    name: 'Taxi rank',
+    emoji: '🚕',
+    label: PARK_LABEL,
+    activities: [
+      ride('pk-home', 'Taxi go your area (home)', '🚕', 'street', 45, 5000, PARK),
+      ride('pk-maitama', 'Taxi go Maitama', '🚕', 'maitama', 6, 800, PARK),
+      ride('pk-wuse', 'Taxi go Wuse Market', '🚕', 'wuse', 15, 1500, PARK),
+      ride('pk-sec', 'Taxi go Federal Secretariat', '🏛️', 'secretariat', 12, 1200, PARK),
+    ],
+  },
+
+  // ---------------- National Stadium ----------------
+  {
+    id: 'stands',
+    place: 'stadium',
+    name: 'Stadium gate',
+    emoji: '🏟️',
+    label: [-2.4, 3.6, -2.8],
+    activities: [
+      { id: 'live-match', minigame: 'predict', label: 'Watch Super Eagles live!', doing: 'Shouting "GOAAAL!" with 60,000 people', emoji: '🇳🇬', minutes: 150, cost: 3000, gains: { fun: 60, social: 35, energy: -10 }, hours: [15, 21], spot: [-2.4, -1.2] },
+      { id: 'stadium-vendor', label: 'Sell cold drinks for match crowd (4 hrs)', doing: 'Shouting "Pure water! Malt!"', emoji: '🥤', minutes: 240, pay: 8000, gains: { energy: -18, social: 15 }, hours: [12, 20], spot: [-2.4, -1.2] },
+    ],
+  },
+  {
+    id: 'pitch',
+    place: 'stadium',
+    name: 'Practice pitch',
+    emoji: '⚽',
+    label: [2.8, 1.6, -2.0],
+    activities: [
+      { id: 'fivea', label: 'Play 5-a-side with the boys', doing: 'Dribbling like Okocha', emoji: '⚽', minutes: 90, gains: { fun: 35, social: 20, energy: -25, hygiene: -25 }, hours: [6, 19], spot: C },
+      { id: 'track', label: 'Run for the athletics track', doing: 'Running laps', emoji: '🏃🏾', minutes: 45, gains: { fun: 10, energy: -18, hygiene: -15 }, effects: { packaging: 1 }, hours: [6, 18], spot: C },
+    ],
+  },
+  {
+    id: 'stadium-park',
+    place: 'stadium',
+    name: 'Bus stop',
+    emoji: '🚏',
+    label: PARK_LABEL,
+    activities: [
+      ride('st-home', 'Bus go your area (home)', '🚌', 'street', 50, 700, PARK),
+      ride('st-wuse', 'Bus go Wuse Market', '🚌', 'wuse', 18, 300, PARK),
+      ride('st-jabi', 'Taxi go Jabi Lake Mall', '🚕', 'jabi', 12, 1200, PARK),
+      ride('st-utako', 'Taxi go Utako', '🚕', 'utako', 12, 1000, PARK),
+    ],
+  },
 ];
 
 /** Extra public routes from the older parks to the new districts. */
 export const NEW_ROUTES: Record<string, ReturnType<typeof ride>[]> = {
   'nyanya-park': [ride('nyanya-mr', 'Bus go Mararaba', '🚌', 'mararaba', 15, 200, [4.4, 2.6])],
-  'jabi-park': [ride('jabi-utako', 'Taxi go Utako', '🚕', 'utako', 10, 1000, [4.4, 2.4])],
+  'jabi-park': [ride('jabi-utako', 'Taxi go Utako', '🚕', 'utako', 10, 1000, [4.4, 2.4]), ride('jabi-stadium', 'Taxi go National Stadium', '🏟️', 'stadium', 12, 1200, [4.4, 2.4])],
+  'maitama-park': [ride('mai-pk', 'Taxi go Millennium Park', '🌳', 'park', 6, 800, [4.4, 2.6])],
+  'utako-park': [ride('utako-st', 'Taxi go National Stadium', '🏟️', 'stadium', 12, 1000, [4.4, 2.6])],
   'wuse-park': [
     ride('wuse-utako', 'Taxi go Utako', '🚕', 'utako', 12, 1000, [-5.0, 2.2]),
     ride('wuse-mai', 'Taxi go Maitama', '🚕', 'maitama', 15, 1500, [-5.0, 2.2]),
     ride('wuse-garki', 'Bus go Garki Area 1', '🚌', 'garki', 20, 300, [-5.0, 2.2]),
   ],
   'sec-bus': [
+    ride('sec-pk', 'Taxi go Millennium Park', '🌳', 'park', 12, 1200, [4.6, 2.6]),
     ride('sec-aso', 'Bus go Asokoro', '🚌', 'asokoro', 15, 300, [4.6, 2.6]),
     ride('sec-garki', 'Bus go Garki Area 1', '🚌', 'garki', 12, 200, [4.6, 2.6]),
     ride('sec-nyanya', 'Bus go Nyanya', '🚌', 'nyanya', 45, 500, [4.6, 2.6]),
