@@ -3,7 +3,7 @@ import { Suspense, useRef } from 'react';
 import type { Group } from 'three';
 import { clockParts, daylight } from '../engine/clock';
 import { carById } from '../content/cars';
-import { CarModel } from './CarModel';
+import { CarModel, type CarKind } from './CarModel';
 import { useGame } from '../store/game';
 import { Person } from './Avatar';
 import { Box, Cyl, Tappable, type V3 } from './Room';
@@ -15,7 +15,7 @@ import { KitModel } from './City';
 const LOOP = 30; // vehicles wrap between -15 and +15
 
 /** Street car: the detailed showroom model. Taxis get the green Abuja stripe. */
-export function Car({ body, stripe, kind = 'sedan' }: { body: string; roof?: string; stripe?: string; kind?: 'sedan' | 'suv' | 'gwagon' | 'gls' }) {
+export function Car({ body, stripe, kind = 'sedan' }: { body: string; roof?: string; stripe?: string; kind?: CarKind }) {
   return (
     <group scale={0.95}>
       <CarModel kind={kind} paint={body} />
@@ -94,7 +94,7 @@ function Traffic({ rich }: { rich: boolean }) {
     <>
       {TRAFFIC.map((m, i) => (
         <group key={i} ref={(g) => { refs.current[i] = g; }}>
-          {m.kind === 'danfo' ? <Danfo /> : m.kind === 'keke' ? <Keke /> : m.kind === 'taxi' ? <Car body="#f4f4f4" roof="#f4f4f4" stripe="#1f8a4c" /> : <Car body={m.color!} kind={m.kind === 'suv' ? (rich ? 'gls' : 'suv') : 'sedan'} />}
+          {m.kind === 'danfo' ? <Danfo /> : m.kind === 'keke' ? <Keke /> : m.kind === 'taxi' ? <Car body="#f4f4f4" roof="#f4f4f4" stripe="#1f8a4c" /> : <Car body={rich && m.kind === 'car' ? '#9b1c12' : m.color!} kind={m.kind === 'suv' ? (rich ? 'gls' : 'suv') : rich ? 'challenger' : 'sedan'} />}
         </group>
       ))}
     </>
