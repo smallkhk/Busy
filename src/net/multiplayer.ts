@@ -1,5 +1,6 @@
-import { createClient, type RealtimeChannel, type SupabaseClient } from '@supabase/supabase-js';
-import { multiplayerEnabled, SUPABASE_KEY, SUPABASE_URL } from './config';
+import type { RealtimeChannel, SupabaseClient } from '@supabase/supabase-js';
+import { multiplayerEnabled } from './config';
+import { getClient } from './supabase';
 import { cleanText } from './filter';
 import { useNet, type ChatMsg, type Remote } from './useNet';
 
@@ -99,10 +100,18 @@ function rebuild() {
   makeChannel();
 }
 
-export function startMultiplayer(name: string, shirt: string) {
+/** Use the signed-in account id when we have one, so others can add you as a friend. */
+export function setPlayerId(id: string) {
+  if (me.id === id) return;
+  const old = me.id;
+  me = { ...me, id };
+  if (client && old) rebuild();
+}
+
+export function startMultiplayer(name: string, shirt: string, id?: string) {
   if (!multiplayerEnabled() || client) return;
-  me = { ...me, id: playerId(), name: cleanText(name, 16) || 'Abuja Hustler', shirt };
-  client = createClient(SUPABASE_URL, SUPABASE_KEY, { realtime: { params: { eventsPerSecond: 10 }, heartbeatIntervalMs: 15000 } });
+  me = { ...me, id: id ?? playerId(), name: cleanText(name, 16) || 'Abuja Hustler', shirt };
+  client = getClient();
   makeChannel();
   // Watchdog: phones drop sockets when the screen sleeps; don't wait for slow backoff.
   setInterval(() => {

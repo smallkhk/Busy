@@ -20,8 +20,8 @@ const fakeChannel = {
   track: (m: unknown) => (tracked.push(m), Promise.resolve()),
   send: (m: unknown) => (sent.push(m), Promise.resolve()),
 };
-vi.mock('@supabase/supabase-js', () => ({
-  createClient: () => ({ channel: () => fakeChannel, removeChannel: () => Promise.resolve(), realtime: { isConnected: () => true, connect: () => {} } }),
+vi.mock('./supabase', () => ({
+  getClient: () => ({ channel: () => fakeChannel, removeChannel: () => Promise.resolve(), realtime: { isConnected: () => true, connect: () => {} } }),
 }));
 vi.mock('./config', () => ({ SUPABASE_URL: 'x', SUPABASE_KEY: 'k', multiplayerEnabled: () => true }));
 

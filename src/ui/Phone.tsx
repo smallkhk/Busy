@@ -10,7 +10,9 @@ import { activityDetail } from './detail';
 import { EgoBank } from './EgoBank';
 import { BusinessApp, CareerCard } from './Career';
 import { CarsApp } from './Cars';
+import { GistApp } from './GistApp';
 import { GoalsApp } from './Goals';
+import { totalUnread, useSocial } from '../net/social';
 import { MapView } from './MapView';
 
 const APPS: { id: PhoneApp; name: string; emoji: string; color: string }[] = [
@@ -20,7 +22,8 @@ const APPS: { id: PhoneApp; name: string; emoji: string; color: string }[] = [
   { id: 'jobs', name: 'Jobs', emoji: '💼', color: '#c27c1a' },
   { id: 'biz', name: 'Business', emoji: '🏪', color: '#0e7c86' },
   { id: 'cars', name: 'Cars', emoji: '🚗', color: '#a8322d' },
-  { id: 'chat', name: 'Chat', emoji: '💬', color: '#2f7fd6' },
+  { id: 'gist', name: 'GistApp', emoji: '💬', color: '#1fa855' },
+  { id: 'chat', name: 'Calls', emoji: '📞', color: '#2f7fd6' },
   { id: 'map', name: 'Map', emoji: '🗺️', color: '#6a4bc4' },
   { id: 'gram', name: 'AbujaGram', emoji: '📸', color: '#d6406f' },
   { id: 'house', name: 'Rent', emoji: '🏠', color: '#8c5a2b' },
@@ -294,6 +297,8 @@ function AppBody({ app }: { app: PhoneApp }) {
       return <GoalsApp />;
     case 'biz':
       return <BusinessApp />;
+    case 'gist':
+      return <GistApp />;
     case 'cars':
       return <CarsApp />;
     case 'jobs':
@@ -323,6 +328,7 @@ export function Phone() {
   const phone = useGame((s) => s.phone);
   const openPhone = useGame((s) => s.openPhone);
   const time = useGame((s) => Math.floor(s.time));
+  const unread = useSocial(totalUnread);
   if (!phone || phone === 'map') return null;
   const current = APPS.find((a) => a.id === phone);
   return (
@@ -336,7 +342,10 @@ export function Phone() {
           <div className="app-grid">
             {APPS.map((a) => (
               <button key={a.id} className="app-icon" onClick={() => openPhone(a.id)}>
-                <span className="app-tile" style={{ background: a.color }}>{a.emoji}</span>
+                <span className="app-tile" style={{ background: a.color }}>
+                  {a.emoji}
+                  {a.id === 'gist' && unread > 0 && <span className="app-badge">{unread}</span>}
+                </span>
                 <span className="small">{a.name}</span>
               </button>
             ))}
