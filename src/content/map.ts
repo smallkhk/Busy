@@ -24,6 +24,8 @@ export const MAP_SPOTS: MapSpot[] = [
   { id: 'asokoro', name: 'Asokoro', emoji: '🏰', x: 262, y: 240, place: 'asokoro', label: 'left', note: 'Government and VIPs' },
   { id: 'garki', name: 'Garki / Area 1', short: 'Garki', emoji: '🏪', x: 186, y: 258, place: 'garki', note: 'Area 1 market, POS and mechanics' },
   { id: 'nyanya', name: 'Nyanya', emoji: '🚌', x: 280, y: 290, label: 'left', place: 'nyanya', note: 'Where Abuja workers sleep' },
+  { id: 'utako', name: 'Utako', emoji: '🚍', x: 136, y: 150, place: 'utako', label: 'above', note: 'Interstate motor park, electronics, tech hub' },
+  { id: 'mararaba', name: 'Mararaba', emoji: '🌶️', x: 290, y: 322, place: 'mararaba', label: 'left', note: 'Nasarawa side. Cheapest market for town' },
   { id: 'lugbe', name: 'Lugbe', emoji: '🏘️', x: 92, y: 290, note: 'Coming soon' },
   { id: 'airport', name: 'Nnamdi Azikiwe Airport', short: 'Airport', emoji: '✈️', x: 40, y: 336, label: 'right', place: 'airport', note: 'Japa route ✈️' },
 ];

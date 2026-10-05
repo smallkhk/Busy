@@ -184,6 +184,8 @@ const BOUNDS: Record<Place, { minX: number; maxX: number; minZ: number; maxZ: nu
   garki: { minX: -6.5, maxX: 6.5, minZ: -1.8, maxZ: 3.6 },
   nyanya: { minX: -6.5, maxX: 6.5, minZ: -1.8, maxZ: 3.6 },
   airport: { minX: -6.5, maxX: 6.5, minZ: -1.8, maxZ: 3.6 },
+  utako: { minX: -6.5, maxX: 6.5, minZ: -1.8, maxZ: 3.6 },
+  mararaba: { minX: -6.5, maxX: 6.5, minZ: -1.8, maxZ: 3.6 },
 };
 
 /** Chance per idle game hour that something happens. */

@@ -16,6 +16,8 @@ const AMBIENCE = {
   garki: 'market',
   nyanya: 'street',
   airport: 'murmur',
+  utako: 'street',
+  mararaba: 'market',
 } as const;
 
 function ambienceFor(place: string, minutes: number) {

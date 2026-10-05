@@ -428,3 +428,147 @@ export function Airport() {
     </group>
   );
 }
+
+// ---------------- Utako ----------------
+const UTAKO_WALKERS: Walker[] = [
+  { from: -6, to: 5, z: 0.8, speed: 0.7, shirt: '#2c3e50' },
+  { from: 4, to: -6, z: 1.8, speed: 0.8, shirt: '#e67e22', tray: true },
+  { from: -3, to: 3, z: 2.7, speed: 0.5, shirt: '#16a085' },
+];
+
+export function Utako() {
+  return (
+    <group>
+      <Ground color="#a99a7c" />
+      <Ground color="#9c9483" size={[16, 6]} pos={[0, 0, 0.8]} />
+
+      <Tappable id="utako-market">
+        <Box p={[-4.2, 1.1, -4.4]} s={[3.2, 2.2, 1.8]} c="#d8d1c2" />
+        <Box p={[-4.2, 2.25, -4.4]} s={[3.4, 0.1, 2.0]} c="#2980b9" />
+        <Stall x={-5.0} z={-2.6} c="#2980b9" />
+        <Stall x={-3.6} z={-2.6} c="#8e44ad" />
+        {[-5.2, -4.9, -3.8, -3.4].map((x, i) => (
+          <Box key={x} p={[x, 1.02, -2.6]} s={[0.18, 0.12, 0.28]} c={i % 2 ? '#111' : '#7f8c8d'} />
+        ))}
+      </Tappable>
+
+      <Tappable id="hub">
+        <Box p={[-0.6, 1.6, -4.6]} s={[2.8, 3.2, 2.2]} c="#cfe3ee" />
+        <Windows xs={[-1.4, -0.6, 0.2]} ys={[1.2, 2.2]} z={-3.48} c="#1f6fb2" w={0.6} h={0.55} />
+        <Box p={[-0.6, 3.0, -3.47]} s={[2.2, 0.35, 0.04]} c="#1b1a22" />
+        <Box p={[-0.6, 3.0, -3.45]} s={[1.6, 0.12, 0.02]} c="#3dd6ff" />
+        <Box p={[-0.6, 0.6, -3.48]} s={[0.9, 1.2, 0.04]} c="#5b4636" />
+      </Tappable>
+
+      <Tappable id="utako-food">
+        <Box p={[2.8, 0.45, -2.4]} s={[1.2, 0.9, 0.6]} c="#6b4a2f" />
+        <Box p={[2.8, 0.95, -2.4]} s={[1.0, 0.06, 0.5]} c="#333" />
+        {[2.5, 2.8, 3.1].map((x) => (
+          <mesh key={x} position={[x, 1.05, -2.4]} rotation={[0, 0, Math.PI / 2]}>
+            <cylinderGeometry args={[0.06, 0.06, 0.4, 8]} />
+            <meshStandardMaterial color="#e2a531" />
+          </mesh>
+        ))}
+        <group position={[2.8, 0, -3.0]}>
+          <Person shirt="#c0392b" trousers="#2d2d2d" />
+        </group>
+      </Tappable>
+
+      <Tappable id="utako-park">
+        <Box p={[5.0, 0.02, 3.0]} s={[2.8, 0.04, 1.8]} c="#3a3d42" />
+        <Box p={[5.0, 2.0, 3.6]} s={[2.2, 0.08, 1.0]} c="#c0392b" />
+        <Box p={[4.0, 1.0, 3.9]} s={[0.08, 2.0, 0.08]} c="#555" />
+        <Box p={[6.0, 1.0, 3.9]} s={[0.08, 2.0, 0.08]} c="#555" />
+        <group position={[5.6, 0, 2.4]}>
+          <Bus c="#f4f4f4" />
+        </group>
+      </Tappable>
+      {/* Luxury interstate coaches */}
+      {[-4.6, -1.6].map((x, i) => (
+        <group key={x} position={[x, 0, 3.0]} scale={[1.2, 1.15, 1]}>
+          <Bus c={i ? '#118a4c' : '#1f6fb2'} />
+        </group>
+      ))}
+      <Tree p={[-7.0, 0, -1.4]} />
+      <Walkers walkers={UTAKO_WALKERS} />
+    </group>
+  );
+}
+
+// ---------------- Mararaba ----------------
+const MARARABA_WALKERS: Walker[] = [
+  { from: -6, to: 6, z: 0.6, speed: 0.8, shirt: '#f1c40f', tray: true },
+  { from: 5, to: -5, z: 1.6, speed: 0.9, shirt: '#8e44ad' },
+  { from: -4, to: 4, z: 2.6, speed: 0.7, shirt: '#c0392b' },
+  { from: 2, to: -3, z: 0.1, speed: 0.6, shirt: '#27ae60', tray: true },
+];
+
+function Okada({ x, z, c }: { x: number; z: number; c: string }) {
+  return (
+    <group position={[x, 0, z]} rotation={[0, Math.PI / 2, 0]}>
+      <Box p={[0, 0.45, 0]} s={[0.9, 0.2, 0.2]} c={c} />
+      <Box p={[-0.1, 0.62, 0]} s={[0.4, 0.1, 0.22]} c="#111" />
+      {[-0.38, 0.38].map((dx) => (
+        <mesh key={dx} position={[dx, 0.22, 0]} rotation={[Math.PI / 2, 0, 0]}>
+          <torusGeometry args={[0.18, 0.05, 6, 12]} />
+          <meshStandardMaterial color="#111" />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
+export function Mararaba() {
+  return (
+    <group>
+      <Ground color="#b58d5c" />
+      <Ground color="#a08664" size={[16, 6]} pos={[0, 0, 0.8]} />
+
+      <Tappable id="mararaba-market">
+        <Stall x={-5.4} z={-2.7} c="#e74c3c" />
+        <Stall x={-4.2} z={-2.7} c="#f39c12" />
+        <Stall x={-3.0} z={-2.7} c="#27ae60" />
+        {[-5.4, -4.2, -3.0].map((x, i) => (
+          <mesh key={x} position={[x, 1.05, -2.7]}>
+            <sphereGeometry args={[0.2, 8, 8]} />
+            <meshStandardMaterial color={['#c0392b', '#f1c40f', '#2ecc71'][i]} />
+          </mesh>
+        ))}
+        <Box p={[-4.2, 1.0, -4.3]} s={[3.6, 2.0, 1.4]} c="#cbb994" />
+      </Tappable>
+
+      <Tappable id="peppersoup">
+        <Box p={[-0.6, 0.9, -4.0]} s={[2.2, 1.8, 1.6]} c="#d8c7a4" />
+        <Box p={[-0.6, 1.85, -4.0]} s={[2.4, 0.08, 1.8]} c="#7a7a7a" />
+        <Box p={[-0.6, 1.4, -3.18]} s={[1.8, 0.3, 0.04]} c="#c0392b" />
+        {[-1.2, 0.0].map((x) => (
+          <group key={x}>
+            <Cyl p={[x, 0.4, -2.4]} r={0.3} h={0.05} c="#e0e0e0" />
+            <Cyl p={[x, 0.2, -2.4]} r={0.04} h={0.4} c="#888" />
+            <Cyl p={[x, 0.48, -2.4]} r={0.1} h={0.1} c="#8b2e16" />
+          </group>
+        ))}
+      </Tappable>
+
+      <Tappable id="okada-stand">
+        <Okada x={2.4} z={-2.4} c="#c0392b" />
+        <Okada x={3.2} z={-2.4} c="#1f6fb2" />
+        <group position={[2.8, 0, -3.0]}>
+          <Person shirt="#2c3e50" trousers="#2d2d2d" />
+        </group>
+      </Tappable>
+
+      <Park id="mararaba-park" color="#e67e22" />
+      {/* "Welcome to Nasarawa State" sign */}
+      <group position={[-1.6, 0, 3.4]}>
+        <Box p={[-0.8, 0.8, 0]} s={[0.08, 1.6, 0.08]} c="#555" />
+        <Box p={[0.8, 0.8, 0]} s={[0.08, 1.6, 0.08]} c="#555" />
+        <Box p={[0, 1.65, 0]} s={[2.0, 0.5, 0.06]} c="#118a4c" />
+        <Box p={[0, 1.65, 0.035]} s={[1.7, 0.12, 0.01]} c="#f4f4f4" />
+      </group>
+      <Tree p={[-7.0, 0, -1.4]} s={0.9} />
+      <Tree p={[6.9, 0, -1.2]} />
+      <Walkers walkers={MARARABA_WALKERS} />
+    </group>
+  );
+}

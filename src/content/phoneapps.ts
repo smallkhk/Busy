@@ -10,7 +10,7 @@ export const CHOP_ITEMS: Activity[] = [
 ];
 
 // ---------------- Ride app: door to door ----------------
-export const RIDE_PLACES: Place[] = ['street', 'wuse', 'jabi', 'secretariat', 'lounge', 'hospital', 'maitama', 'asokoro', 'garki', 'nyanya', 'airport'];
+export const RIDE_PLACES: Place[] = ['street', 'wuse', 'jabi', 'secretariat', 'lounge', 'hospital', 'maitama', 'asokoro', 'garki', 'nyanya', 'airport', 'utako', 'mararaba'];
 
 /** Rough road distance in km. 'street' is your area, measured from Kubwa (closer areas scale it down). */
 const KM: Record<string, number> = {
@@ -39,6 +39,10 @@ const KM: Record<string, number> = {
   'asokoro-garki': 4, 'asokoro-nyanya': 12, 'asokoro-airport': 38,
   'garki-nyanya': 15, 'garki-airport': 33,
   'nyanya-airport': 45,
+  'street-utako': 18, 'wuse-utako': 4, 'jabi-utako': 3, 'secretariat-utako': 8, 'lounge-utako': 5, 'hospital-utako': 7,
+  'maitama-utako': 7, 'asokoro-utako': 12, 'garki-utako': 8, 'nyanya-utako': 23, 'airport-utako': 36, 'utako-mararaba': 27,
+  'street-mararaba': 45, 'wuse-mararaba': 24, 'jabi-mararaba': 28, 'secretariat-mararaba': 20, 'lounge-mararaba': 24, 'hospital-mararaba': 21,
+  'maitama-mararaba': 26, 'asokoro-mararaba': 16, 'garki-mararaba': 19, 'nyanya-mararaba': 5, 'airport-mararaba': 48,
 };
 
 export const rideKm = (a: Place, b: Place) => KM[`${a}-${b}`] ?? KM[`${b}-${a}`] ?? 10;

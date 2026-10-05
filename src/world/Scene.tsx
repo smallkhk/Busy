@@ -12,7 +12,7 @@ import { JabiLake } from './places/JabiLake';
 import { Lounge } from './places/Lounge';
 import { Secretariat } from './places/Secretariat';
 import { WuseMarket } from './places/WuseMarket';
-import { Airport, Asokoro, Garki, Maitama, Nyanya } from './places/Districts';
+import { Airport, Asokoro, Garki, Maitama, Mararaba, Nyanya, Utako } from './places/Districts';
 import { INTERACTABLES, type Place } from '../content/activities';
 import { avatarLabelPos, labelEls } from './labels';
 import { RemotePlayers, remoteLabelPos } from '../net/RemotePlayers';
@@ -31,6 +31,8 @@ const CENTERS: Record<Place, [number, number, number]> = {
   garki: [-0.4, 0, -0.6],
   nyanya: [-0.4, 0, -0.6],
   airport: [-0.4, 0, -0.6],
+  utako: [-0.4, 0, -0.6],
+  mararaba: [-0.4, 0, -0.6],
 };
 
 const SCENES: Record<Place, () => ReactElement> = {
@@ -46,6 +48,8 @@ const SCENES: Record<Place, () => ReactElement> = {
   garki: Garki,
   nyanya: Nyanya,
   airport: Airport,
+  utako: Utako,
+  mararaba: Mararaba,
 };
 
 function GameLoop() {
