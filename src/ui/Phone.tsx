@@ -13,6 +13,7 @@ import { EgoBank } from './EgoBank';
 import { BusinessApp, CareerCard } from './Career';
 import { GistApp } from './GistApp';
 import { LoveApp } from './LoveApp';
+import { AccountApp, RankingsApp } from './CloudApps';
 import { GoalsApp } from './Goals';
 import { totalUnread, useSocial } from '../net/social';
 import { MapView } from './MapView';
@@ -27,6 +28,8 @@ const APPS: { id: PhoneApp; name: string; emoji: string; color: string }[] = [
   { id: 'gist', name: 'GistApp', emoji: '💬', color: '#1fa855' },
   { id: 'chat', name: 'Calls', emoji: '📞', color: '#2f7fd6' },
   { id: 'love', name: 'Abuja Love', emoji: '💕', color: '#e8336d' },
+  { id: 'rankings', name: 'Rankings', emoji: '🏆', color: '#c9a24a' },
+  { id: 'account', name: 'Account', emoji: '⚙️', color: '#5f6670' },
   { id: 'map', name: 'Map', emoji: '🗺️', color: '#6a4bc4' },
   { id: 'gram', name: 'AbujaGram', emoji: '📸', color: '#d6406f' },
   { id: 'house', name: 'Rent', emoji: '🏠', color: '#8c5a2b' },
@@ -412,6 +415,10 @@ function AppBody({ app }: { app: PhoneApp }) {
       return <GistApp />;
     case 'love':
       return <LoveApp />;
+    case 'account':
+      return <AccountApp />;
+    case 'rankings':
+      return <RankingsApp />;
     case 'jobs':
       return (
         <>

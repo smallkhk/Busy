@@ -4,6 +4,7 @@ import { useGame } from '../store/game';
 import { avatarLabelPos } from '../world/labels';
 import { joinRoom, refreshPresence, sendMove, startMultiplayer } from './multiplayer';
 import { initSocial, setIncomingHandler } from './social';
+import { startCloud } from './cloud';
 
 /** Room players share: your house is private; streets are per area. */
 function roomFor(place: string, area: string): string | null {
@@ -18,7 +19,7 @@ export function NetDirector() {
     const s = useGame.getState();
     startMultiplayer(s.name, s.shirt);
     setIncomingHandler((from, body) => useGame.getState().toast(`💬 ${from?.name ?? 'Somebody'}: ${body.slice(0, 40)}`));
-    void initSocial(s.name, s.shirt);
+    void initSocial(s.name, s.shirt).then(() => startCloud());
     joinRoom(roomFor(s.place, s.area));
     const unsub = useGame.subscribe((n, p) => {
       if (n.place !== p.place || n.area !== p.area) joinRoom(roomFor(n.place, n.area));
