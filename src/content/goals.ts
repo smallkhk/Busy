@@ -64,7 +64,7 @@ export const ACHIEVEMENTS: Goal[] = [
   { id: 'a-biz', emoji: '🏪', title: 'Business owner', hint: 'Start your first business', reward: 10000, done: (s) => Object.keys(s.businesses ?? {}).length >= 1 },
   { id: 'a-mogul', emoji: '🤑', title: 'Mogul', hint: 'Own 5 businesses', reward: 200000, done: (s) => Object.keys(s.businesses ?? {}).length >= 5 },
   { id: 'a-car', emoji: '🚗', title: 'I don buy motor', hint: 'Buy your first car', reward: 20000, done: (s) => !!s.car },
-  { id: 'a-benz', emoji: '🚘', title: 'Benz owner (real one)', hint: 'Own the Benz SUV', reward: 100000, done: (s) => s.car?.id === 'benz' },
+  { id: 'a-benz', emoji: '🚘', title: 'Benz owner (real one)', hint: 'Own a Benz (G-Wagon or GLS)', reward: 100000, done: (s) => s.car?.id === 'benz' || s.car?.id === 'gls' },
   { id: 'a-cured', emoji: '💪', title: 'Malaria no fit me', hint: 'Recover from sickness', reward: 5000, done: (s) => (s.stats.cured ?? 0) >= 1 },
   { id: 'a-drip', emoji: '👗', title: 'Drip don land', hint: 'Buy new outfit for 👗 Drip', reward: 5000, done: (s) => (s.wardrobe?.length ?? 1) >= 2 },
   { id: 'a-agbada', emoji: '👑', title: 'Owambe king', hint: 'Own an agbada', reward: 20000, done: (s) => !!s.wardrobe?.includes('agbada') },

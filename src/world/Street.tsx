@@ -15,7 +15,7 @@ import { KitModel } from './City';
 const LOOP = 30; // vehicles wrap between -15 and +15
 
 /** Street car: the detailed showroom model. Taxis get the green Abuja stripe. */
-export function Car({ body, stripe, kind = 'sedan' }: { body: string; roof?: string; stripe?: string; kind?: 'sedan' | 'suv' | 'gwagon' }) {
+export function Car({ body, stripe, kind = 'sedan' }: { body: string; roof?: string; stripe?: string; kind?: 'sedan' | 'suv' | 'gwagon' | 'gls' }) {
   return (
     <group scale={0.95}>
       <CarModel kind={kind} paint={body} />
@@ -78,7 +78,7 @@ const TRAFFIC: Mover[] = [
   { kind: 'danfo', lane: 1.0, dir: 1, speed: 3.2, offset: 22 },
 ];
 
-function Traffic() {
+function Traffic({ rich }: { rich: boolean }) {
   const refs = useRef<(Group | null)[]>([]);
   useFrame(({ clock }) => {
     const t = clock.getElapsedTime();
@@ -94,7 +94,7 @@ function Traffic() {
     <>
       {TRAFFIC.map((m, i) => (
         <group key={i} ref={(g) => { refs.current[i] = g; }}>
-          {m.kind === 'danfo' ? <Danfo /> : m.kind === 'keke' ? <Keke /> : m.kind === 'taxi' ? <Car body="#f4f4f4" roof="#f4f4f4" stripe="#1f8a4c" /> : <Car body={m.color!} kind={m.kind === 'suv' ? 'suv' : 'sedan'} />}
+          {m.kind === 'danfo' ? <Danfo /> : m.kind === 'keke' ? <Keke /> : m.kind === 'taxi' ? <Car body="#f4f4f4" roof="#f4f4f4" stripe="#1f8a4c" /> : <Car body={m.color!} kind={m.kind === 'suv' ? (rich ? 'gls' : 'suv') : 'sedan'} />}
         </group>
       ))}
     </>
@@ -410,7 +410,7 @@ export function Street() {
 
       <PowerLine />
       <MyCar />
-      <Traffic />
+      <Traffic rich={rich} />
       <Pedestrians rich={rich} />
     </group>
   );
