@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import { activityById, activityPlace, PLACE_NAMES, type Activity, type Place } from '../content/activities';
 import { entrySpot, exitSpot, homeBounds, homeSpot } from '../content/homeLayout';
-import { CELL_X, CELL_Z, currentCell, inGrid, placeAt, ROAD_HALF, ROAD_Z, route, type Cell } from '../content/worldmap';
+import { CELL_X, CELL_Z, cellOfPlace, currentCell, HOME_CELLS, inGrid, placeAt, ROAD_HALF, ROAD_Z, route, type Cell } from '../content/worldmap';
 import { AD_BIZ_BOOST } from '../content/billboards';
 import { appointChance, CAMPAIGN_DAYS, canRun, electionWon, MOVES, moveSupport, NO_POLITICS, OFFICES, startingSupport, TERM_DAYS, type CampaignMove, type Politics } from '../content/politics';
 import { courseById, GYM_DAYS, GYM_FEE, sickDodge, workEnergyFactor, type CourseId } from '../content/learning';
@@ -130,6 +130,10 @@ export type GameState = {
   cell?: Cell | null;
   /** The last place you were at before you stepped onto the road. */
   near?: Place;
+  /** You are behind the wheel, driving round town. */
+  driving: boolean;
+  /** Where you left your car (null: at your gate at home). Position is local to the block. */
+  parked?: { cell: Cell; pos: [number, number]; rot: number } | null;
   pending: string | null;
   active: Active | null;
   txns: Txn[];
@@ -163,6 +167,10 @@ export type GameState = {
   walkTo: (x: number, z: number) => void;
   /** You walked across a block edge: move the origin to the next block. */
   shiftCell: (dc: number, dr: number) => void;
+  /** Get into your car (walks you to it first if it is parked away). */
+  enterCar: () => void;
+  /** Park where you are and get out. */
+  parkCar: () => void;
   choose: (activityId: string) => void;
   arrive: (pos: [number, number]) => void;
   cancel: () => void;
@@ -250,17 +258,33 @@ const BOUNDS: Record<Place, { minX: number; maxX: number; minZ: number; maxZ: nu
 const plazaOf = (p: Place) => (p === 'home' || p === 'road' ? null : BOUNDS[p]);
 
 /** Plan a walk along the roads from where you stand to (x, z), all in local block coordinates. */
-function planWalk(s: { place: Place; area: AreaId; cell?: Cell | null; pos: [number, number] }, x: number, z: number): [number, number][] | null {
+function planWalk(s: { place: Place; area: AreaId; cell?: Cell | null; pos: [number, number]; driving?: boolean }, x: number, z: number): [number, number][] | null {
   const c = currentCell(s);
   if (!c) return null;
   const ox = c[0] * CELL_X;
   const oz = c[1] * CELL_Z;
   const from = live.pos ?? s.pos;
-  return route([from[0] + ox, from[1] + oz], [x + ox, z + oz], s.area, plazaOf).map(([wx, wz]) => [wx - ox, wz - oz]);
+  // Cars stay on the roads; on foot you can go into the places
+  return route([from[0] + ox, from[1] + oz], [x + ox, z + oz], s.area, s.driving ? () => null : plazaOf).map(([wx, wz]) => [wx - ox, wz - oz]);
 }
 
-/** Where your avatar is right now while walking (pos only updates when you reach a waypoint). */
-export const live: { pos: [number, number] | null } = { pos: null };
+/** Where your avatar is right now while walking (pos only updates when you reach a waypoint), and which way it faces. */
+export const live: { pos: [number, number] | null; rot: number } = { pos: null, rot: 0 };
+
+/** Your car's spot when it is at home: in front of your gate on your street. */
+export const HOME_PARK: [number, number] = [-5.6, -1.75];
+/** Road distance per world unit, for fuel. */
+export const KM_PER_UNIT = 0.1;
+/** Pending action meaning "get into the car when you reach it". */
+const ENTER_CAR = '__car';
+
+/** Where your parked car is, relative to the block you are in (null when it is not on the grid near you). */
+export function carSpot(s: { place: Place; area: AreaId; cell?: Cell | null; parked?: { cell: Cell; pos: [number, number]; rot: number } | null }): { pos: [number, number]; rot: number } | null {
+  const here = currentCell(s);
+  if (!here) return null;
+  const p = s.parked ?? { cell: HOME_CELLS[s.area], pos: HOME_PARK, rot: Math.PI / 2 };
+  return { pos: [p.pos[0] + (p.cell[0] - here[0]) * CELL_X, p.pos[1] + (p.cell[1] - here[1]) * CELL_Z], rot: p.rot };
+}
 
 /** Ride apps and the map treat the road as the place you were last near. */
 export const ridePlace = (s: { place: Place; near?: Place }): Place => (s.place === 'road' ? (s.near ?? 'street') : s.place);
@@ -346,6 +370,8 @@ const initial = () => ({
   target: null,
   route: [] as [number, number][],
   cell: null as Cell | null,
+  driving: false,
+  parked: null as { cell: Cell; pos: [number, number]; rot: number } | null,
   pending: null,
   active: null,
   txns: [{ at: START_TIME, label: 'Money wey you carry land Abuja', amount: START_MONEY }],
@@ -617,7 +643,13 @@ export const useGame = create<GameState>()(
         }
         set({ active: null, ...(a.away ? { pos: exitSpot(s.place, s.area) } : {}) });
         if (a.travelTo) {
-          set({ place: a.travelTo, pos: entrySpot(a.travelTo, s.area), target: null, route: [], cell: null });
+          set({ place: a.travelTo, pos: entrySpot(a.travelTo, s.area), target: null, route: [], cell: null, driving: false });
+          // You drove there: your car is parked by the entrance
+          if (a.id.startsWith('drive-')) {
+            const c = cellOfPlace(a.travelTo, s.area);
+            const e = entrySpot(a.travelTo, s.area);
+            set({ parked: a.travelTo === 'street' || a.travelTo === 'home' || !c ? null : { cell: c, pos: [e[0] + 1.6, e[1] + 1.4], rot: 0 } });
+          }
           get().toast(`📍 ${placeLabel(a.travelTo, s.area, PLACE_NAMES)}`);
         }
       };
@@ -1726,7 +1758,50 @@ export const useGame = create<GameState>()(
           if (here && here !== s.place) get().toast(`📍 ${placeLabel(here, s.area, PLACE_NAMES)}`);
         },
 
+        enterCar: () => {
+          const s = get();
+          if (!s.car || s.place === 'home' || s.active || s.driving) return;
+          if ((s.car.fuel ?? START_FUEL) <= 0) {
+            get().toast('⛽ No fuel for tank. Buy fuel for phone first.');
+            return;
+          }
+          const spot = carSpot(s);
+          if (!spot) return;
+          const me = live.pos ?? s.pos;
+          if (Math.hypot(me[0] - spot.pos[0], me[1] - spot.pos[1]) > 2.5) {
+            // Walk to the car first
+            const path = planWalk(s, spot.pos[0], spot.pos[1]);
+            if (path && path.length) set({ target: path[0], route: path.slice(1), pending: ENTER_CAR, menu: null });
+            else set({ target: spot.pos, route: [], pending: ENTER_CAR, menu: null });
+            return;
+          }
+          live.rot = spot.rot;
+          set({ driving: true, pos: spot.pos, target: null, route: [], menu: null });
+          get().toast('🚗 Tap anywhere for road to drive there');
+        },
+
+        parkCar: () => {
+          const s = get();
+          if (!s.driving) return;
+          const c = currentCell(s);
+          const here = live.pos ?? s.pos;
+          // Parking in front of your own gate counts as home
+          const home = c && s.place === 'street' && Math.hypot(here[0] - HOME_PARK[0], here[1] - HOME_PARK[1]) < 4;
+          // Step out onto the walkway beside the car
+          const side = Math.cos(live.rot) * 1.3;
+          const front = Math.sin(live.rot) * 1.3;
+          set({
+            driving: false,
+            target: null,
+            route: [],
+            pos: [here[0] - side, here[1] + front],
+            parked: home || !c ? null : { cell: c, pos: here, rot: live.rot },
+          });
+        },
+
         choose: (activityId) => {
+          // Park and get out before doing anything
+          if (get().driving) get().parkCar();
           const s = get();
           const a = activityById(activityId);
           if (!a) return;
@@ -1747,13 +1822,30 @@ export const useGame = create<GameState>()(
 
         arrive: (pos) => {
           const { pending, route: rest } = get();
+          // Driving burns fuel by distance
+          const d0 = get();
+          if (d0.driving && d0.car) {
+            const c = carById(d0.car.id);
+            const km = Math.hypot(pos[0] - d0.pos[0], pos[1] - d0.pos[1]) * KM_PER_UNIT;
+            const fuel = Math.max(0, (d0.car.fuel ?? START_FUEL) - (km * (c?.litresPer100 ?? 10)) / 100);
+            set({ car: { ...d0.car, fuel } });
+            if (fuel <= 0) {
+              set({ pos, target: null, route: [] });
+              get().parkCar();
+              get().toast('⛽ Fuel don finish! Motor park for roadside. Buy fuel for phone.');
+              return;
+            }
+          }
           // More road to walk
           if (rest.length) {
             set({ pos, target: rest[0], route: rest.slice(1) });
             return;
           }
           set({ pos, target: null });
-          if (pending) startActivity(pending);
+          if (pending === ENTER_CAR) {
+            set({ pending: null });
+            get().enterCar();
+          } else if (pending) startActivity(pending);
         },
 
         cancel: () => {
@@ -1792,6 +1884,7 @@ export const useGame = create<GameState>()(
         place: s.place,
         cell: s.cell,
         near: s.near,
+        parked: s.parked,
         needs: s.needs,
         packaging: s.packaging,
         pantry: s.pantry,

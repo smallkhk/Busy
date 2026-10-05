@@ -9,6 +9,8 @@ import { Neighborhood, type HoodStyle, type Rect } from './Neighborhood';
 import { CLEAR, hoodStyle, SCENES } from './placeScenes';
 import { CellCtx } from './origin';
 import { Tree } from './Street';
+import { CarModel } from './CarModel';
+import { carById } from '../content/cars';
 
 const ROAD_W = ROAD_HALF * 2 + 0.4;
 const GROUND: Record<HoodStyle, string> = { rich: '#6f9a52', mixed: '#b0703f', poor: '#b58d5c', city: '#a99a7c' };
@@ -169,6 +171,32 @@ export function WorldCells() {
         <Block key={cell.join(',')} cell={cell} offset={[dc * CELL_X, dr * CELL_Z]} current={dc === 0 && dr === 0} full={dc === 0 || dr === 0} area={area} />
       ))}
       <Roads center={center} />
+      <ParkedCar center={center} />
     </>
+  );
+}
+
+/** Your car where you left it on the road (at home it sits by your gate instead). */
+function ParkedCar({ center }: { center: Cell }) {
+  const parked = useGame((s) => (s.driving ? null : s.parked));
+  const car = useGame((s) => s.car);
+  const enter = useGame((s) => s.enterCar);
+  const c = car ? carById(car.id) : undefined;
+  if (!parked || !c) return null;
+  const dc = parked.cell[0] - center[0];
+  const dr = parked.cell[1] - center[1];
+  if (Math.abs(dc) > 1 || Math.abs(dr) > 1) return null;
+  return (
+    <group
+      position={[parked.pos[0] + dc * CELL_X, 0, parked.pos[1] + dr * CELL_Z]}
+      rotation={[0, parked.rot - Math.PI / 2, 0]}
+      onClick={(e) => {
+        e.stopPropagation();
+        if (e.delta > 8) return;
+        enter();
+      }}
+    >
+      <CarModel kind={c.model} paint={car?.paint ?? c.color} />
+    </group>
   );
 }

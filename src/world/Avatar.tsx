@@ -10,8 +10,13 @@ import { shiftOrigin } from './origin';
 import { homePoint } from '../content/homeLayout';
 import { HumanModel, type Hat, type HumanKind, type Move } from './HumanModel';
 import { dressFor } from './dress';
+import { CarModel } from './CarModel';
+import { carById } from '../content/cars';
+import { clockParts, daylight } from '../engine/clock';
 
 const SPEED = 2.6; // world units per second
+/** Driving round town. */
+const CAR_SPEED = 9;
 const BED_POS: [number, number] = [-2.9, -1.9];
 
 function Hairdo({ hair, color = '#111' }: { hair: Hair; color?: string }) {
@@ -245,6 +250,10 @@ export function Avatar() {
   const activity = active ? activityById(active.id) : undefined;
   const hidden = !!activity?.away;
   const sleeping = !!activity?.sleep;
+  const driving = useGame((s) => s.driving);
+  const car = useGame((s) => s.car);
+  const carDef = car ? carById(car.id) : undefined;
+  const night = useGame((s) => daylight(clockParts(Math.floor(s.time / 30) * 30).minuteOfDay) < 0.3);
 
   useFrame((_, dt) => {
     const g = group.current;
@@ -270,19 +279,28 @@ export function Avatar() {
       const dx = target[0] - g.position.x;
       const dz = target[1] - g.position.z;
       const dist = Math.hypot(dx, dz);
-      const step = SPEED * dt;
+      const step = (useGame.getState().driving ? CAR_SPEED : SPEED) * dt;
       if (dist <= step || dist < 0.02) {
         g.position.set(target[0], 0, target[1]);
         arrive([target[0], target[1]]);
       } else {
         g.position.x += (dx / dist) * step;
         g.position.z += (dz / dist) * step;
-        g.rotation.y = Math.atan2(dx, dz);
+        // Ease round corners
+        const want = Math.atan2(dx, dz);
+        let turn = want - g.rotation.y;
+        turn = Math.atan2(Math.sin(turn), Math.cos(turn));
+        g.rotation.y += turn * Math.min(1, dt * 12);
+        live.rot = g.rotation.y;
         walkPhase.current += dt * 11;
       }
     } else {
       // Snap to saved position (e.g. after load or coming back from work)
-      if (Math.hypot(g.position.x - pos[0], g.position.z - pos[1]) > 0.05) g.position.set(pos[0], 0, pos[1]);
+      if (Math.hypot(g.position.x - pos[0], g.position.z - pos[1]) > 0.05) {
+        g.position.set(pos[0], 0, pos[1]);
+        // Climbing into a parked car: face the way it is parked
+        if (useGame.getState().driving) g.rotation.y = live.rot;
+      }
       walkPhase.current = 0;
     }
 
@@ -305,18 +323,28 @@ export function Avatar() {
       }
     }
 
-    const swing = target ? Math.sin(walkPhase.current) * 0.5 : 0;
+    const inCar = useGame.getState().driving;
+    const swing = target && !inCar ? Math.sin(walkPhase.current) * 0.5 : 0;
     legs.current.forEach((l, i) => l && (l.rotation.x = i % 2 === 0 ? swing : -swing));
-    g.position.y = target ? Math.abs(Math.sin(walkPhase.current)) * 0.04 : 0;
+    g.position.y = target && !inCar ? Math.abs(Math.sin(walkPhase.current)) * 0.04 : 0;
     avatarLabelPos.set(g.position.x, 1.75, g.position.z);
   });
 
   return (
     <group ref={group} visible={!hidden}>
+      {driving && carDef ? (
+        // Your own motor, nose forward (car models face +x, you face +z)
+        <group rotation={[0, -Math.PI / 2, 0]}>
+          <CarModel kind={carDef.model} paint={car?.paint ?? carDef.color} lights={night} />
+        </group>
+      ) : (
+      <>
       {/* Fitness shows: fit people get broader shoulders */}
       <group scale={[0.92 + fitness * 0.0016, 1, 0.94 + fitness * 0.0012]}>
         <Person shirt={shirt} legs={legs} outfit={look?.outfit} hair={look?.hair} skin={SKINS[look?.skin ?? 2]} move={walking ? 'Walk' : active && !sleeping ? 'Interact' : 'Idle'} />
       </group>
+      </>
+      )}
     </group>
   );
 }
