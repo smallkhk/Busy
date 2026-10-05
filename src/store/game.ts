@@ -8,6 +8,7 @@ import { businessById, dailyProfit, MAX_BIZ_LEVEL, upgradeCost, type OwnedBusine
 import { GRADES, OFFICE_SHIFT_ID, payFor, promotionBlock } from '../content/career';
 import { carById, repairCost, RESALE } from '../content/cars';
 import { EVENTS } from '../content/events';
+import { rollSickness, SICK_DRAIN, SICKNESS, type Sickness } from '../content/health';
 import { ALL_GOALS } from '../content/goals';
 import { LOAN_DAYS, LOAN_FEE, LOAN_MAX, SAVINGS_DAILY_RATE, TOKEN_COST } from '../content/phoneapps';
 import { BRAND_COOLDOWN_DAYS, BRAND_MIN_FOLLOWERS, brandPay, followersGain, packagingGap, POST_COOLDOWN_MIN, postById } from '../content/gram';
@@ -50,6 +51,8 @@ type GameState = {
   gradeShifts: number;
   businesses: Record<string, OwnedBusiness>;
   car: { id: string; condition: number } | null;
+  sick: Sickness | null;
+  hasNet: boolean;
   /** Goal ids already completed. */
   goals: string[];
   savings: number;
@@ -121,6 +124,7 @@ const BOUNDS: Record<Place, { minX: number; maxX: number; minZ: number; maxZ: nu
   wuse: { minX: -6.5, maxX: 6.5, minZ: -1.6, maxZ: 3.4 },
   jabi: { minX: -7.5, maxX: 6.5, minZ: -2.0, maxZ: 3.4 },
   secretariat: { minX: -7, maxX: 7, minZ: -2.0, maxZ: 3.6 },
+  hospital: { minX: -6.5, maxX: 6.5, minZ: -1.8, maxZ: 3.6 },
   lounge: { minX: -6.8, maxX: 6.5, minZ: -2.0, maxZ: 3.4 },
 };
 
@@ -163,6 +167,8 @@ const initial = () => ({
   gradeShifts: 0,
   businesses: {} as Record<string, OwnedBusiness>,
   car: null as { id: string; condition: number } | null,
+  sick: null as Sickness | null,
+  hasNet: false,
   goals: [] as string[],
   savings: 0,
   savingsInterest: 0,
@@ -189,7 +195,7 @@ const initial = () => ({
 });
 
 /** Why an activity can't start right now, or null if it can. */
-export type BlockState = Pick<GameState, 'time' | 'money' | 'power' | 'active' | 'packaging' | 'pantry' | 'cv' | 'area' | 'rentLocked'> & { unlocks?: string[]; grade?: number; hasCar?: boolean; car?: unknown };
+export type BlockState = Pick<GameState, 'time' | 'money' | 'power' | 'active' | 'packaging' | 'pantry' | 'cv' | 'area' | 'rentLocked'> & { unlocks?: string[]; grade?: number; hasCar?: boolean; car?: unknown; sick?: Sickness | null };
 
 export function blockReason(a: Activity, s: BlockState): string | null {
   if (a.locked) return a.locked;
@@ -203,6 +209,7 @@ export function blockReason(a: Activity, s: BlockState): string | null {
   }
   // UI passes hasCar; the store passes its full state with `car`.
   if (a.requires?.car && !(s.hasCar ?? !!s.car)) return 'You no get car. Buy one for 🚗 Cars app';
+  if (s.sick && (a.pay || a.id === OFFICE_SHIFT_ID)) return `You dey sick (${SICKNESS[s.sick].name}). Treat am first 🤒`;
   if (a.usesPantry && s.pantry < a.usesPantry) return 'No foodstuff. Buy for Wuse Market';
   const cost = (a.cost ?? 0) + (a.requiresPower && !s.power ? GEN_COST : 0);
   if (cost > s.money) return `You need ${formatNaira(cost)}`;
@@ -279,6 +286,17 @@ export const useGame = create<GameState>()(
         }
         bump(...keys);
         if (fx?.meet) meetContact(fx.meet);
+        if (fx?.net && !s.hasNet) {
+          set({ hasNet: true });
+          get().toast('🦟 Mosquito net don hang. Malaria go reduce');
+        }
+        if (fx?.cure && s.sick && (fx.cure === true || fx.cure.includes(s.sick))) {
+          set({ sick: null });
+          bump('cured');
+          get().toast(`💪 ${SICKNESS[s.sick].name} don clear! You don dey kampe`);
+        } else if (fx?.cure && s.sick) {
+          get().toast(`😕 That drug no be for ${SICKNESS[s.sick].name}`);
+        }
         if (fx) {
           set({
             packaging: Math.min(100, s.packaging + (fx.packaging ?? 0)),
@@ -734,6 +752,7 @@ export const useGame = create<GameState>()(
           } else {
             const step = dtReal; // 1 real second = 1 game minute
             needs = tickNeeds(needs, step);
+            if (s.sick) needs = { ...needs, energy: clamp(needs.energy - (SICK_DRAIN.energy! * step) / 60), fun: clamp(needs.fun - (SICK_DRAIN.fun! * step) / 60) };
             time += step;
             set({ needs, time });
             if (!s.target && !s.menu && !s.phone && time >= s.nextEventCheck) {
@@ -797,6 +816,18 @@ export const useGame = create<GameState>()(
               Object.entries(get().contacts).map(([id, c]) => [id, { ...c, rel: Math.max(5, c.rel - 1) }]),
             );
             set({ contacts });
+            // Sickness roll for the new day
+            const hs = get();
+            if (!hs.sick) {
+              const kind = rollSickness(hs.needs, hs.hasNet, Math.random);
+              if (kind && !hs.event && !hs.eventResult) {
+                const info = SICKNESS[kind];
+                set({
+                  sick: kind,
+                  eventResult: { emoji: info.emoji, title: `${info.name} don catch you!`, text: info.text, chips: ['🤒 You no fit work', `💊 ${info.cure}`] },
+                });
+              }
+            }
             // Business income lands every morning
             const bz = get();
             let income = 0;
@@ -909,6 +940,8 @@ export const useGame = create<GameState>()(
         gradeShifts: s.gradeShifts,
         businesses: s.businesses,
         car: s.car,
+        sick: s.sick,
+        hasNet: s.hasNet,
         goals: s.goals,
         savings: s.savings,
         savingsInterest: s.savingsInterest,

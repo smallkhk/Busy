@@ -514,6 +514,22 @@ export const EVENTS: GameEvent[] = [
     ],
   },
 
+  // ---------------- Hospital ----------------
+  {
+    id: 'doctors-strike',
+    emoji: '🪧',
+    title: 'Doctors don go strike',
+    text: 'Notice for gate: "Resident doctors on indefinite strike." Only one nurse dey, and she dey charge "consultation" ₦5,000 make she help you.',
+    trigger: 'idle',
+    weight: 4,
+    cooldownHours: 168,
+    when: (c) => c.place === 'hospital',
+    choices: [
+      { label: 'Pay the nurse (₦5,000)', cost: 5000, outcomes: [{ text: 'She check you well and give you prescription. God bless nurses 🙏', effect: { needs: { energy: 10 } } }] },
+      { label: 'Go private hospital instead', outcomes: [{ text: 'Private hospital collect ₦25,000 but dem attend to you sharp sharp.', effect: { money: -25000, minutes: 90, needs: { energy: 15 } } }] },
+    ],
+  },
+
   // ---------------- On the road ----------------
   {
     id: 'checkpoint',

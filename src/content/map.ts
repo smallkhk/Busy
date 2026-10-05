@@ -16,6 +16,7 @@ export const MAP_SPOTS: MapSpot[] = [
   { id: 'wuse', name: 'Wuse Market', emoji: '🛍️', x: 162, y: 168, place: 'wuse', label: 'above' },
   { id: 'lounge', name: 'Wuse 2 lounge', short: 'Wuse 2', emoji: '🍾', x: 214, y: 146, place: 'lounge', label: 'right' },
   { id: 'secretariat', name: 'Federal Secretariat (CBD)', short: 'Secretariat', emoji: '🏛️', x: 214, y: 214, place: 'secretariat', label: 'left' },
+  { id: 'hospital', name: 'General Hospital', short: 'Hospital', emoji: '🏥', x: 166, y: 232, place: 'hospital', label: 'left' },
   { id: 'maitama', name: 'Maitama', emoji: '💎', x: 230, y: 96, note: 'Embassies and big men. Coming soon' },
   { id: 'asorock', name: 'Aso Rock', emoji: '⛰️', x: 280, y: 196, label: 'above', note: 'Presidential Villa. You no fit enter 😅' },
   { id: 'asokoro', name: 'Asokoro', emoji: '🏰', x: 262, y: 240, label: 'left', note: 'Coming soon' },

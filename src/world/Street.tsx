@@ -269,6 +269,15 @@ export function Street() {
         {night && <pointLight position={[4.8, 1.0, -2.5]} intensity={5} distance={3.5} color="#ff8c3a" />}
       </Tappable>
 
+      <Tappable id="chemist">
+        {/* Green-cross chemist kiosk */}
+        <Box p={[6.6, 0.9, 3.5]} s={[1.4, 1.8, 0.9]} c="#f2f4f5" />
+        <Box p={[6.6, 1.9, 3.5]} s={[1.6, 0.12, 1.1]} c="#1f8a4c" />
+        <Box p={[6.6, 1.45, 3.04]} s={[0.4, 0.12, 0.02]} c="#2ecc71" />
+        <Box p={[6.6, 1.45, 3.04]} s={[0.12, 0.4, 0.02]} c="#2ecc71" />
+        <Box p={[6.6, 0.6, 3.04]} s={[1.1, 0.6, 0.02]} c="#2b3a44" />
+      </Tappable>
+
       <Tappable id="busstop">
         <Box p={[1.0, 2.0, 3.6]} s={[2.4, 0.08, 1.1]} c="#1f8a4c" />
         <Box p={[0.0, 1.0, 3.9]} s={[0.08, 2.0, 0.08]} c="#555" />
