@@ -1,10 +1,12 @@
 import type { ThreeEvent } from '@react-three/fiber';
 import { useState, type ReactNode } from 'react';
-import { AREAS, homeTier } from '../content/housing';
+import { AREAS, homeTier, type HomeTier } from '../content/housing';
 import { useGame } from '../store/game';
 import { Person } from './Avatar';
 import { Mansion } from './Mansion';
 import { Flat } from './Flat';
+import { At, Shell, SpreadCtx, WallCutaway } from './Spread';
+import { HOME_SCALE } from '../content/homeLayout';
 import { cementFloor, Floor, marble, paint } from './Interior';
 import { BoxGeometry, type BufferGeometry } from 'three';
 import { RoundedBoxGeometry } from 'three-stdlib';
@@ -87,6 +89,7 @@ function SelfCon({ onFloor }: { onFloor: (e: ThreeEvent<MouseEvent>) => void }) 
   const floorBed = area === 'mararaba';
   return (
     <group>
+      <Shell>
       <Floor x0={-4} z0={-3} x1={4} z1={3} tex={floorTex} tile={cement ? 3 : 1.2} y={0} rough={0.85} onFloor={onFloor} />
       {/* Clothes line with wash hanging */}
       <Cyl p={[-3.9, 1.0, 2.7]} r={0.02} h={2.0} c="#555" />
@@ -141,7 +144,9 @@ function SelfCon({ onFloor }: { onFloor: (e: ThreeEvent<MouseEvent>) => void }) 
         <planeGeometry args={[2.2, 1.6]} />
         <meshStandardMaterial color={theme.rug} />
       </mesh>
+      </Shell>
 
+      <At id="bed">
       <Tappable id="bed">
         {floorBed ? (
           <>
@@ -159,13 +164,17 @@ function SelfCon({ onFloor }: { onFloor: (e: ThreeEvent<MouseEvent>) => void }) 
           </>
         )}
       </Tappable>
+      </At>
 
+      <At id="cooler">
       <Tappable id="cooler">
         <Box p={[-0.7, 0.25, -2.6]} s={[0.8, 0.5, 0.5]} c="#c8312b" />
         <Box p={[-0.7, 0.54, -2.6]} s={[0.84, 0.08, 0.54]} c="#f4f4f4" />
         <Box p={[-0.7, 0.6, -2.6]} s={[0.4, 0.04, 0.08]} c="#f4f4f4" />
       </Tappable>
+      </At>
 
+      <At id="stove">
       <Tappable id="stove">
         <Box p={[0.8, 0.4, -2.65]} s={[1.0, 0.8, 0.5]} c="#7a5a3c" />
         <Box p={[0.8, 0.86, -2.65]} s={[0.8, 0.1, 0.42]} c="#2b2b2b" />
@@ -175,18 +184,24 @@ function SelfCon({ onFloor }: { onFloor: (e: ThreeEvent<MouseEvent>) => void }) 
         {/* Gas cylinder */}
         <Cyl p={[1.55, 0.3, -2.7]} r={0.17} h={0.6} c="#2f8f4e" />
       </Tappable>
+      </At>
 
+      <At id="bucket">
       <Tappable id="bucket">
         <Cyl p={[2.5, 0.2, -2.6]} r={0.2} h={0.4} c="#2f6fd6" />
         <Cyl p={[2.5, 0.41, -2.6]} r={0.18} h={0.02} c="#8fc8ff" />
         <Box p={[2.85, 0.12, -2.65]} s={[0.25, 0.2, 0.25]} c="#f0c419" />
       </Tappable>
+      </At>
 
+      <At id="toilet">
       <Tappable id="toilet">
         <Box p={[3.5, 0.22, -2.55]} s={[0.4, 0.44, 0.55]} c="#f5f5f5" />
         <Box p={[3.5, 0.6, -2.85]} s={[0.45, 0.45, 0.2]} c="#f5f5f5" />
       </Tappable>
+      </At>
 
+      <At id="tv">
       <Tappable id="tv">
         <Box p={[-3.6, 0.3, 1]} s={[0.5, 0.6, 1.4]} c="#3d2a1a" />
         <Box p={[-3.62, 0.95, 1]} s={[0.08, 0.68, 1.15]} c="#111" />
@@ -213,7 +228,9 @@ function SelfCon({ onFloor }: { onFloor: (e: ThreeEvent<MouseEvent>) => void }) 
           </group>
         ))}
       </Tappable>
+      </At>
 
+      <Shell>
       {(upgraded || has('ac')) && (
         <>
           {/* Split AC on the wall */}
@@ -228,6 +245,8 @@ function SelfCon({ onFloor }: { onFloor: (e: ThreeEvent<MouseEvent>) => void }) 
           <Box p={[-3.96, 1.7, -0.6]} s={[0.02, 0.66, 0.96]} c={AREAS[area].lux ? '#e8b04b' : '#3ccf8e'} />
         </>
       )}
+      </Shell>
+      <At x={-3.5} z={2.6}>
       {AREAS[area].lux && (
         <>
           {/* Potted plant and a coffee table */}
@@ -239,9 +258,13 @@ function SelfCon({ onFloor }: { onFloor: (e: ThreeEvent<MouseEvent>) => void }) 
           <Box p={[-2.6, 0.25, 1.0]} s={[0.6, 0.06, 0.9]} c="#1f1f1f" />
         </>
       )}
+      </At>
 
       {/* House upgrades you don buy */}
+      <At id="bed">
       {has('mattress') && <Box p={[-2.9, 0.63, -1.85]} s={[1.42, 0.12, 2.0]} c="#f6f2ea" />}
+      </At>
+      <At id="tv">
       {has('smarttv') && (
         <group>
           <Box p={[-3.68, 1.15, 1]} s={[0.06, 0.95, 1.7]} c="#0d0d0d" />
@@ -251,12 +274,16 @@ function SelfCon({ onFloor }: { onFloor: (e: ThreeEvent<MouseEvent>) => void }) 
           </mesh>
         </group>
       )}
+      </At>
+      <At x={-3.6} z={-0.35}>
       {has('fridge') && (
         <group>
           <Box p={[-3.6, 0.75, -0.35]} s={[0.6, 1.5, 0.6]} c="#d9dde0" />
           <Box p={[-3.29, 1.0, -0.2]} s={[0.02, 0.4, 0.04]} c="#888" />
         </group>
       )}
+      </At>
+      <At id="tv">
       {has('wifi') && (
         <group>
           <Box p={[-3.55, 0.64, 0.45]} s={[0.25, 0.06, 0.18]} c="#f4f4f4" />
@@ -270,6 +297,8 @@ function SelfCon({ onFloor }: { onFloor: (e: ThreeEvent<MouseEvent>) => void }) 
           <Box p={[-3.39, 0.45, 2.35]} s={[0.02, 0.06, 0.06]} c="#2ecc71" />
         </group>
       )}
+      </At>
+      <At x={4} z={2.9}>
       {has('generator') && (
         <group position={[5.0, 0, 2.9]}>
           <Box p={[0, 0.28, 0]} s={[0.75, 0.5, 0.48]} c="#e2b13c" />
@@ -282,20 +311,32 @@ function SelfCon({ onFloor }: { onFloor: (e: ThreeEvent<MouseEvent>) => void }) 
           <Box p={[0, 0.05, -0.17]} s={[0.04, 0.04, 0.02]} c="#e74c3c" />
         </group>
       )}
+      </At>
 
       {/* Standing fan */}
+      <At x={2.6} z={0.6}>
       <group position={[2.6, 0, 0.6]}>
         <Cyl p={[0, 0.03, 0]} r={0.25} h={0.06} c="#333" />
         <Cyl p={[0, 0.6, 0]} r={0.03} h={1.2} c="#ccc" />
         <Cyl p={[0, 1.25, 0]} r={0.25} h={0.08} c="#e8e8e8" />
       </group>
+      </At>
 
       {/* Door (open) */}
+      <At x={4} z={1.85}>
       <Box p={[4.05, 1.0, 1.85]} s={[0.06, 2, 0.05]} c="#5b3a21" />
       <Box p={[4.5, 1.0, 1.35]} s={[0.9, 2, 0.06]} c="#7a4e2a" r={[0, -0.6, 0]} />
+      </At>
 
     </group>
   );
+}
+
+/** Where the back and west walls stand, and the middle of the house, for the wall cut-away. */
+function cutaway(tier: HomeTier) {
+  const k = HOME_SCALE[tier];
+  const west = tier === 'mansion' ? -8.72 : tier === 'flat' ? -6.72 : -4.1;
+  return { xmin: west * k, zmin: -3.11 * k, cx: ((west + 4) / 2) * k, cz: 0 };
 }
 
 export function Room() {
@@ -312,20 +353,25 @@ export function Room() {
   };
 
   return (
+    <SpreadCtx.Provider value={HOME_SCALE[tier]}>
+    <WallCutaway {...cutaway(tier)} />
     <group>
       {/* Ground: compound sand + tiled room floor */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[2, -0.02, 0.5]} receiveShadow onClick={onFloor}>
         <planeGeometry args={[60, 60]} />
         <meshStandardMaterial color={mansion ? '#6f9a52' : '#b98f5e'} />
       </mesh>
+      <At x={4} z={2.9}>
       {/* Concrete compound slab outside the door */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[5.2, 0.004, 1.2]} receiveShadow onClick={onFloor}>
         <planeGeometry args={[2.4, 5]} />
         <meshStandardMaterial color="#a7a39a" />
       </mesh>
+      </At>
 
       {mansion ? <Mansion onFloor={onFloor} /> : tier === 'flat' ? <Flat onFloor={onFloor} /> : <SelfCon onFloor={onFloor} />}
 
+      <At id="bench">
       <Tappable id="bench">
         <Box p={[3.6, 0.35, 3.3]} s={[1.6, 0.08, 0.4]} c="#8a6a45" />
         <Box p={[3.0, 0.17, 3.3]} s={[0.08, 0.34, 0.35]} c="#6b4f32" />
@@ -334,7 +380,9 @@ export function Room() {
           <Person shirt="#7b4fb0" trousers="#3a3a3a" skin="#6b4430" />
         </group>
       </Tappable>
+      </At>
 
+      <At id="maishayi">
       <Tappable id="maishayi">
         {/* Mai Shayi kiosk: table, gas burner, kettle, Milo, Peak, Lipton, bread and eggs */}
         <Box p={[5.8, 0.45, 0]} s={[1.2, 0.08, 0.7]} c="#2c6e9b" />
@@ -377,7 +425,9 @@ export function Room() {
           <meshStandardMaterial color="#e2a531" />
         </mesh>
       </Tappable>
+      </At>
 
+      <At id="gate">
       <Tappable id="gate">
         {/* Compound wall + blue metal gate */}
         <Box p={[6.95, 0.9, 1.95]} s={[0.25, 1.8, 0.25]} c="#cbbd9d" />
@@ -387,9 +437,13 @@ export function Room() {
           <Box key={z} p={[6.9, 0.95, z]} s={[0.04, 1.8, 0.05]} c="#1c467a" />
         ))}
       </Tappable>
+      </At>
 
       {/* Compound fence */}
+      <Shell>
       <Box p={mansion ? [-1, 0.8, -4.1] : tier === 'flat' ? [0.2, 0.8, -4.1] : [2, 0.8, -4.1]} s={[mansion ? 17 : tier === 'flat' ? 14.6 : 11, 1.6, 0.15]} c="#cbbd9d" />
+      </Shell>
     </group>
+    </SpreadCtx.Provider>
   );
 }

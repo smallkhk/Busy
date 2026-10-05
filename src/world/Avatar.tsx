@@ -5,6 +5,7 @@ import { activityById } from '../content/activities';
 import { useGame } from '../store/game';
 import { SKINS, type Hair, type Outfit } from '../content/fashion';
 import { avatarLabelPos } from './labels';
+import { homePoint } from '../content/homeLayout';
 import { HumanModel, type Hat, type HumanKind, type Move } from './HumanModel';
 import { dressFor } from './dress';
 
@@ -250,8 +251,10 @@ export function Avatar() {
 
     if (sleeping) {
       // Faint on the floor if not at the bed
-      const atBed = useGame.getState().place === 'home' && Math.hypot(pos[0] - BED_POS[0], pos[1] - BED_POS[1]) < 2;
-      g.position.set(atBed ? BED_POS[0] : pos[0], atBed ? (useGame.getState().area === 'mararaba' ? 0.32 : 0.62) : 0.15, atBed ? -1.25 : pos[1]);
+      const { area, place } = useGame.getState();
+      const [bx, bz] = homePoint(area, 'bed', BED_POS[0], BED_POS[1]);
+      const atBed = place === 'home' && Math.hypot(pos[0] - bx, pos[1] - bz) < 2.5;
+      g.position.set(atBed ? bx : pos[0], atBed ? (area === 'mararaba' ? 0.32 : 0.62) : 0.15, atBed ? bz + 0.65 : pos[1]);
       g.rotation.set(-Math.PI / 2, 0, 0);
       avatarLabelPos.set(g.position.x, g.position.y + 0.5, g.position.z - 0.6);
       return;

@@ -1,9 +1,9 @@
-import { MapControls, OrthographicCamera } from '@react-three/drei';
-import type { MapControls as MapControlsImpl } from 'three-stdlib';
+import { MapControls, OrbitControls, OrthographicCamera, PerspectiveCamera } from '@react-three/drei';
+import type { MapControls as MapControlsImpl, OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 import { Neighborhood, type Rect } from './Neighborhood';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { useEffect, useMemo, useRef, type ReactElement } from 'react';
-import { Color, Object3D, Vector3, type AmbientLight, type InstancedMesh } from 'three';
+import { Color, MOUSE, Object3D, TOUCH, Vector3, type AmbientLight, type InstancedMesh } from 'three';
 import { clockParts, daylight } from '../engine/clock';
 import { useGame } from '../store/game';
 import { useSettings } from '../settings';
@@ -19,7 +19,8 @@ import { WuseMarket } from './places/WuseMarket';
 import { Airport, Asokoro, Garki, Maitama, Mararaba, Nyanya, Utako } from './places/Districts';
 import { Park, Stadium } from './places/Landmarks';
 import { INTERACTABLES, type Place } from '../content/activities';
-import { homeTier } from '../content/housing';
+import { homeTier, type AreaId } from '../content/housing';
+import { COMPOUND, HOME_SCALE, homeLabel } from '../content/homeLayout';
 import { avatarLabelPos, labelEls } from './labels';
 import { RemotePlayers, remoteLabelPos } from '../net/RemotePlayers';
 import { Npcs, npcLabelPos } from './Npcs';
@@ -82,13 +83,26 @@ function GameLoop() {
 }
 
 const LABEL_POS = new Map(INTERACTABLES.map((i) => [i.id, new Vector3(...i.label)]));
+const HOME_IDS = new Set(INTERACTABLES.filter((i) => i.place === 'home').map((i) => i.id));
+/** Home labels move with the spread-out house, so cache them per area. */
+const homeLabels = new Map<string, Map<string, Vector3>>();
+function homeLabelPos(area: AreaId) {
+  let m = homeLabels.get(area);
+  if (!m) {
+    m = new Map(INTERACTABLES.filter((i) => HOME_IDS.has(i.id)).map((i) => [i.id, new Vector3(...homeLabel(area, i.id, i.label))]));
+    homeLabels.set(area, m);
+  }
+  return m;
+}
 const tmp = new Vector3();
 
 /** Projects world label anchors to screen space and moves the DOM labels there. */
 function LabelSync() {
   useFrame(({ camera, size }) => {
+    const g = useGame.getState();
+    const home = g.place === 'home' ? homeLabelPos(g.area) : null;
     for (const [key, el] of labelEls) {
-      const world = key === 'avatar' ? avatarLabelPos : key.startsWith('p:') ? remoteLabelPos.get(key.slice(2)) : key.startsWith('n:') ? npcLabelPos.get(key.slice(2)) : LABEL_POS.get(key);
+      const world = key === 'avatar' ? avatarLabelPos : key.startsWith('p:') ? remoteLabelPos.get(key.slice(2)) : key.startsWith('n:') ? npcLabelPos.get(key.slice(2)) : (home?.get(key) ?? LABEL_POS.get(key));
       if (!world) continue;
       tmp.copy(world).project(camera);
       const x = ((tmp.x + 1) / 2) * size.width;
@@ -99,17 +113,14 @@ function LabelSync() {
   return null;
 }
 
-/** Iso camera you fit drag around and pinch to zoom. It follows you when you waka off screen. */
+/** Iso camera for the streets and districts: drag around and pinch to zoom. It follows you when you waka off screen. */
 function IsoCamera({ place }: { place: Place }) {
   const { size, camera } = useThree();
   const controls = useRef<MapControlsImpl>(null);
-  const tier = useGame((s) => (place === 'home' ? homeTier(s.area) : null));
-  const mansion = tier === 'mansion';
-  const flat = tier === 'flat';
-  const CENTER: [number, number, number] = mansion ? [-2.0, 0, 0.0] : flat ? [-1.2, 0, 0.1] : CENTERS[place];
-  const span = mansion ? 12.5 : flat ? 11.5 : place === 'home' ? 10.5 : 12.5;
+  const CENTER = CENTERS[place];
+  const span = 12.5;
   const zoom = Math.min(size.width / span, size.height / 9);
-  const reach = mansion ? 6.5 : flat ? 5.5 : place === 'home' ? 5 : 13;
+  const reach = 13;
 
   // Keep the view near the action: clamp how far you fit pan
   const clamp = () => {
@@ -153,6 +164,68 @@ function IsoCamera({ place }: { place: Place }) {
         screenSpacePanning={false}
         minZoom={zoom * 0.5}
         maxZoom={zoom * 2.2}
+        onChange={clamp}
+      />
+    </>
+  );
+}
+
+/** Middle of each house size (before spreading) and how wide it is on screen. */
+const HOME_VIEW = {
+  room: { center: [0.6, 0.2], width: 9.5 },
+  flat: { center: [-1.2, 0.1], width: 11.5 },
+  mansion: { center: [-2.0, 0.0], width: 14 },
+} as const;
+
+/**
+ * At home the camera is real 3D: one finger turns round the house, two fingers
+ * pinch to zoom and drag to move. Taps still walk you around.
+ */
+function HomeCamera() {
+  const { size } = useThree();
+  const controls = useRef<OrbitControlsImpl>(null);
+  const tier = useGame((s) => homeTier(s.area));
+  const k = HOME_SCALE[tier];
+  const view = HOME_VIEW[tier];
+  const target: [number, number, number] = [view.center[0] * k, 0, view.center[1] * k];
+  const fov = 40;
+  const vHalf = (fov / 2) * (Math.PI / 180);
+  const hHalf = Math.atan(Math.tan(vHalf) * (size.width / size.height));
+  // Fit most of the house across the screen; pinch to see the rest
+  const width = view.width * k * (tier === 'mansion' ? 0.72 : 0.9);
+  const dist = Math.max(width / 2 / Math.tan(hHalf), (width * 0.55) / 2 / Math.tan(vHalf), 9);
+  const dir = new Vector3(1, 0.95, 1).normalize().multiplyScalar(dist);
+  const reach = view.width * k * 0.45;
+
+  // Keep the view on the house when you drag far
+  const clamp = () => {
+    const c = controls.current;
+    if (!c) return;
+    const t = c.target;
+    const cx = Math.max(target[0] - reach, Math.min(target[0] + reach, t.x));
+    const cz = Math.max(target[2] - reach * 0.6, Math.min(target[2] + reach * 0.6, t.z));
+    if (cx !== t.x || cz !== t.z || t.y !== 0) {
+      c.object.position.x += cx - t.x;
+      c.object.position.z += cz - t.z;
+      t.set(cx, 0, cz);
+    }
+  };
+
+  return (
+    <>
+      <PerspectiveCamera makeDefault fov={fov} near={0.3} far={220} position={[target[0] + dir.x, dir.y, target[2] + dir.z]} />
+      <OrbitControls
+        ref={controls}
+        target={target}
+        enableDamping
+        dampingFactor={0.1}
+        minDistance={4}
+        maxDistance={dist * 1.6}
+        minPolarAngle={0.25}
+        maxPolarAngle={1.32}
+        screenSpacePanning={false}
+        touches={{ ONE: TOUCH.ROTATE, TWO: TOUCH.DOLLY_PAN }}
+        mouseButtons={{ LEFT: MOUSE.ROTATE, MIDDLE: MOUSE.DOLLY, RIGHT: MOUSE.PAN }}
         onChange={clamp}
       />
     </>
@@ -249,6 +322,7 @@ function Lights({ place }: { place: Place }) {
   const bucket = useGame((s) => Math.floor(s.time / 10));
   const power = useGame((s) => s.power);
   const weather = useGame((s) => s.weather ?? 'sunny');
+  const k = useGame((s) => HOME_SCALE[homeTier(s.area)]);
   const { scene } = useThree();
   const { minuteOfDay, hour } = clockParts(bucket * 10);
   const dim = { sunny: 1, cloudy: 0.82, rain: 0.62, storm: 0.45 }[weather];
@@ -289,9 +363,9 @@ function Lights({ place }: { place: Place }) {
         shadow-camera-near={0.5}
         shadow-camera-far={60}
       />
-      {place === 'home' && power && <pointLight position={[0, 2.5, 0]} intensity={light > 0.7 ? 3 : 14} distance={9} decay={1.6} color="#ffd9a0" />}
+      {place === 'home' && power && <pointLight position={[0, 2.5, 0]} intensity={light > 0.7 ? 3 : 14} distance={11} decay={1.6} color="#ffd9a0" />}
       {/* Mai Shayi's lantern keeps the kiosk lit at night */}
-      {place === 'home' && <pointLight position={[5.8, 1.6, 0.2]} intensity={light > 0.5 ? 0 : 6} distance={4} color="#ffb347" />}
+      {place === 'home' && <pointLight position={[5.8 + COMPOUND[0] * (k - 1), 1.6, 0.2 + COMPOUND[1] * (k - 1)]} intensity={light > 0.5 ? 0 : 6} distance={4} color="#ffb347" />}
     </>
   );
 }
@@ -307,7 +381,7 @@ export function Scene() {
   const tier = useGame((s) => (place === 'home' ? homeTier(s.area) : 'x'));
   return (
     <Canvas key={low ? 'low' : 'high'} shadows={low ? true : 'soft'} dpr={low ? 1 : [1, 2]} gl={{ antialias: !low, powerPreference: 'high-performance' }} className="scene">
-      <IsoCamera key={`${place}${tier}`} place={place} />
+      {place === 'home' ? <HomeCamera key={tier} /> : <IsoCamera key={place} place={place} />}
       <Lights place={place} />
       <GameLoop />
       <LabelSync />
