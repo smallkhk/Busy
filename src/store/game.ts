@@ -9,7 +9,7 @@ import { clockParts, formatNaira, inHours } from '../engine/clock';
 import { CALL_COST, contactById, FIRST_MEET_REL, GIFT_COST, longLeg, type ContactState } from '../content/contacts';
 import { badDayChance, businessById, dailyNet, MAX_BIZ_LEVEL, MAX_STAFF, upgradeCost, wageOf, type OwnedBusiness } from '../content/business';
 import { GRADES, OFFICE_SHIFT_ID, payFor, promotionBlock } from '../content/career';
-import { carById, litresFor, repairCost, RESALE, START_FUEL, TANK } from '../content/cars';
+import { carById, litresFor, repairCost, RESALE, RESPRAY_COST, START_FUEL, TANK } from '../content/cars';
 import { EVENTS } from '../content/events';
 import { rollSickness, SICK_DRAIN, SICKNESS, type Sickness } from '../content/health';
 import { ALL_GOALS } from '../content/goals';
@@ -56,7 +56,7 @@ type GameState = {
   /** Office shifts done at the current grade. */
   gradeShifts: number;
   businesses: Record<string, OwnedBusiness>;
-  car: { id: string; condition: number; /** Litres in the tank (old saves: undefined = START_FUEL). */ fuel?: number } | null;
+  car: { id: string; condition: number; /** Litres in the tank (old saves: undefined = START_FUEL). */ fuel?: number; /** Paint colour you chose. */ paint?: string } | null;
   sick: Sickness | null;
   /** Police suspicion 0–100. Goes down small small every day. */
   heat: number;
@@ -120,9 +120,10 @@ type GameState = {
   dismissToast: (id: number) => void;
   openMenu: (id: string | null) => void;
   openPhone: (app: PhoneApp | null) => void;
-  buyCar: (id: string) => void;
+  buyCar: (id: string, paint?: string) => void;
   sellCar: () => void;
   repairCar: () => void;
+  resprayCar: (paint: string) => void;
   promote: () => void;
   buyBusiness: (id: string) => void;
   upgradeBusiness: (id: string) => void;
@@ -233,7 +234,7 @@ const initial = () => ({
   grade: 0,
   gradeShifts: 0,
   businesses: {} as Record<string, OwnedBusiness>,
-  car: null as { id: string; condition: number; fuel?: number } | null,
+  car: null as { id: string; condition: number; fuel?: number; paint?: string } | null,
   sick: null as Sickness | null,
   heat: 0,
   flags: {} as Record<string, number>,
@@ -595,7 +596,7 @@ export const useGame = create<GameState>()(
 
         closeEvent: () => set({ eventResult: null }),
 
-        buyCar: (id) => {
+        buyCar: (id, paint) => {
           const s = get();
           const c = carById(id);
           if (!c || s.car?.id === id) return;
@@ -606,11 +607,19 @@ export const useGame = create<GameState>()(
           if (cost > s.money) return get().toast(`😕 You need ${formatNaira(cost)}${old ? ' (after trade-in)' : ''}`);
           set({
             money: s.money - cost,
-            car: { id, condition: 100, fuel: s.car?.fuel ?? START_FUEL },
+            car: { id, condition: 100, fuel: s.car?.fuel ?? START_FUEL, paint: paint ?? c.color },
             packaging: clamp(s.packaging + c.packaging - (old?.packaging ?? 0)),
             txns: [{ at: s.time, label: `Bought ${c.name}${old ? ` (traded in ${old.name})` : ''}`, amount: -cost }, ...s.txns].slice(0, 40),
           });
           get().toast(`${c.emoji} You don buy ${c.name}! 👔 +${c.packaging - (old?.packaging ?? 0)}`);
+        },
+
+        resprayCar: (paint) => {
+          const s = get();
+          if (!s.car || s.car.paint === paint) return;
+          if (s.money < RESPRAY_COST) return get().toast(`😕 Respray na ${formatNaira(RESPRAY_COST)}`);
+          set({ money: s.money - RESPRAY_COST, car: { ...s.car, paint }, txns: [{ at: s.time, label: 'Car respray', amount: -RESPRAY_COST }, ...s.txns].slice(0, 40) });
+          get().toast('🎨 Your car don get new paint! E dey shine 😎');
         },
 
         sellCar: () => {

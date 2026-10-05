@@ -125,6 +125,15 @@ export const sfx = {
     burst(t, 0.8, 900, 0.6, master, 'lowpass');
     burst(t + 0.05, 0.4, 3500, 0.3);
   },
+  horn() {
+    if (!ctx) return;
+    const t = ctx.currentTime;
+    // Two-tone car horn: "poo-poo!"
+    [0, 0.32].forEach((d) => {
+      tone(392, t + d, 0.24, 'sawtooth', 0.12);
+      tone(494, t + d, 0.24, 'sawtooth', 0.1);
+    });
+  },
   ring() {
     if (!ctx) return;
     const t = ctx.currentTime;

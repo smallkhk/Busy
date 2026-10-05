@@ -1,13 +1,17 @@
 import { RIDES, RIDE_PLACES, rideKm } from './phoneapps';
 import { PLACE_NAMES, type Activity } from './common';
 
-export type Car = { id: string; name: string; emoji: string; price: number; packaging: number; color: string; blurb: string; /** Fuel use. */ litresPer100: number };
+export type Car = { id: string; name: string; emoji: string; price: number; packaging: number; color: string; blurb: string; /** Fuel use. */ litresPer100: number; /** 3D body for the showroom and the street. */ model: 'sedan' | 'suv' | 'gwagon'; /** Top speed, just for show 😎 */ topSpeed: number; seats: number };
 
 export const CARS: Car[] = [
-  { id: 'corolla', name: 'Tokunbo Corolla', emoji: '🚗', price: 4500000, packaging: 12, color: '#b9bcc2', blurb: 'Abuja workhorse. Fuel friendly, spare parts everywhere.', litresPer100: 8 },
-  { id: 'suv', name: 'Lexus-style SUV', emoji: '🚙', price: 14000000, packaging: 25, color: '#20232a', blurb: 'Tinted glass. People go start to call you "Chairman".', litresPer100: 13 },
-  { id: 'benz', name: 'Benz SUV', emoji: '🚘', price: 48000000, packaging: 45, color: '#f4f4f4', blurb: 'When you park, the whole street go look. Real one, no rent 😎', litresPer100: 16 },
+  { id: 'corolla', name: 'Tokunbo Corolla', emoji: '🚗', price: 4500000, packaging: 12, color: '#b9bcc2', blurb: 'Abuja workhorse. Fuel friendly, spare parts everywhere.', litresPer100: 8, model: 'sedan', topSpeed: 180, seats: 5 },
+  { id: 'suv', name: 'Lexus-style SUV', emoji: '🚙', price: 14000000, packaging: 25, color: '#20232a', blurb: 'Tinted glass. People go start to call you "Chairman".', litresPer100: 13, model: 'suv', topSpeed: 200, seats: 7 },
+  { id: 'benz', name: 'Benz SUV', emoji: '🚘', price: 48000000, packaging: 45, color: '#f4f4f4', blurb: 'When you park, the whole street go look. Real one, no rent 😎', litresPer100: 16, model: 'gwagon', topSpeed: 220, seats: 5 },
 ];
+
+/** Paint you fit pick in the showroom. */
+export const PAINTS = ['#b9bcc2', '#f4f4f4', '#20232a', '#8b1e3f', '#1f4f7a', '#118a4c', '#c9a24a', '#e8336d'];
+export const RESPRAY_COST = 80000;
 
 export const carById = (id: string) => CARS.find((c) => c.id === id);
 
