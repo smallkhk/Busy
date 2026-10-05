@@ -1,4 +1,5 @@
 import { ActionMenu, ActiveBanner, NeedsPanel, Toasts, TopBar } from './ui/Hud';
+import { AudioDirector } from './audio/AudioDirector';
 import { EventModal } from './ui/EventModal';
 import { QuestPill } from './ui/Goals';
 import { Labels } from './ui/Labels';
@@ -34,6 +35,7 @@ export default function App() {
   const mapOpen = useGame((s) => s.phone === 'map');
   return (
     <div className="app-root">
+      <AudioDirector />
       {!mapOpen && <Scene />}
       {started ? (
         <>

@@ -1,4 +1,6 @@
+import { useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
+import { isMuted, setMuted } from '../audio/sound';
 import { activityById, INTERACTABLES, PLACE_NAMES } from '../content/activities';
 import { SICKNESS } from '../content/health';
 import { placeLabel } from '../content/housing';
@@ -16,6 +18,7 @@ export function TopBar() {
   const packaging = useGame((s) => s.packaging);
   const area = useGame((s) => s.area);
   const sick = useGame((s) => s.sick);
+  const [soundOff, setSoundOff] = useState(isMuted());
   const { day } = clockParts(time);
   return (
     <div className="topbar">
@@ -27,6 +30,9 @@ export function TopBar() {
         <span>{power ? '💡' : '🕯️'}</span>
         <span title={sick ? SICKNESS[sick].name : 'Mood'}>{sick ? '🤒' : moodFace(mood(needs))}</span>
       </div>
+      <button className="pill small-pill" onClick={() => { const m = !soundOff; setMuted(m); setSoundOff(m); }} aria-label={soundOff ? 'Turn sound on' : 'Turn sound off'}>
+        {soundOff ? '🔇' : '🔊'}
+      </button>
       <div className="pill small-pill" title="Packaging: how rich you look">👔{Math.round(packaging)}</div>
       <div className={`pill money ${money < 0 ? "debt" : ""}`} title={money < 0 ? "You dey owe" : "Your money"}>{formatNaira(money)}</div>
     </div>
