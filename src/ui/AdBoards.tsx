@@ -136,13 +136,19 @@ export function AdSheet({ slot, onClose }: { slot: number; onClose: () => void }
   const cost = b.pricePerDay * Math.min(days, maxDays);
 
   const rent = async () => {
-    if (money < cost) return setErr(`You need ${formatNaira(cost)}`);
+    const game = useGame.getState();
+    if (game.money < cost) return setErr(`You need ${formatNaira(cost)}`);
+    // Take the money first so the balance can't go negative while we wait
+    if (cost) game.adjustMoney(-cost, `Billboard: ${b.where}`);
     setBusy(true);
     const e = await rentAd(slot, { body, emoji, color, days: Math.min(days, maxDays) }, name);
     setBusy(false);
-    if (e) return setErr(e);
+    if (e) {
+      if (cost) useGame.getState().adjustMoney(cost, `Billboard refund: ${b.where}`);
+      return setErr(e);
+    }
     const until = Date.parse(useBoards.getState().ads[slot]?.expires_at ?? '') || Date.now() + days * 86400000;
-    useGame.getState().payForAd(cost, `Billboard: ${b.where}`, until);
+    useGame.getState().payForAd(0, `Billboard: ${b.where}`, until);
     onClose();
   };
 

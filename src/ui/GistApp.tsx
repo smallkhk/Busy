@@ -127,12 +127,16 @@ function PayPanel({ to, name, onDone }: { to: string; name: string; onDone: () =
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const send = async () => {
-    if (amount > money) return setErr('You no get reach that one 😅');
+    if (amount > useGame.getState().money) return setErr('You no get reach that one 😅');
+    // Take the money first so the balance can't go negative while we wait
+    useGame.getState().adjustMoney(-amount, `Transfer to ${name}`);
     setBusy(true);
     const e = await sendCash(to, amount, note);
     setBusy(false);
-    if (e) return setErr(e);
-    useGame.getState().adjustMoney(-amount, `Transfer to ${name}`);
+    if (e) {
+      useGame.getState().adjustMoney(amount, `Transfer refund (${name})`);
+      return setErr(e);
+    }
     useGame.getState().toast(`💸 You don send ${name} ₦${amount.toLocaleString('en-NG')}`);
     void sendMessage(to, `💸 I don send you ₦${amount.toLocaleString('en-NG')}${note.trim() ? `: ${note.trim()}` : ''}`);
     onDone();
