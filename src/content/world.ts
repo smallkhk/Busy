@@ -88,7 +88,7 @@ const round100 = (n: number) => Math.round(n / 100) * 100;
 export function priceOf(a: Activity, mods: Mods): number {
   const base = a.cost ?? 0;
   if (!base) return 0;
-  if (a.id.startsWith('drive-') && mods.fuel) return round100(base * mods.fuel);
+  if (a.effects?.fuel && mods.fuel) return round100(base * mods.fuel);
   if (a.travelTo && !a.id.startsWith('drive-') && mods.fares) return round100(base * mods.fares);
   if (a.effects?.pantry && mods.food) return round100(base * mods.food);
   return base;

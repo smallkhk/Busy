@@ -63,6 +63,8 @@ export type Effect = {
   heat?: number;
   /** Damage to your car condition. */
   carWear?: number;
+  /** Litres into your car tank. */
+  fuel?: number;
   /** Story flags to set (remembered with today's day). */
   flag?: string | string[];
 };
@@ -147,6 +149,7 @@ export function effectChips(effect: Effect | undefined, cost = 0, needEmoji: Rec
   if (effect?.followersPct) chips.push(`${effect.followersPct > 0 ? '+' : ''}${effect.followersPct}% 📸 followers`);
   if (effect?.closeBusiness) chips.push(`Business closed ${effect.closeBusiness.days} days 🔒`);
   if (effect?.carRepair) chips.push('Car don fix 🔧');
+  if (effect?.fuel) chips.push(`+${effect.fuel}L ⛽`);
   if (effect?.carWear) chips.push(`Car condition -${effect.carWear} 🚗`);
   if (effect?.heat) chips.push(`🚨 Police heat ${effect.heat > 0 ? '+' : ''}${effect.heat}`);
   if (effect?.rentGraceDays) chips.push(`+${effect.rentGraceDays} days to pay rent 🏠`);

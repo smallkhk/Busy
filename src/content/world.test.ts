@@ -14,8 +14,8 @@ describe('world news', () => {
 
   it('fuel news moves driving cost, fare news moves bus fares, food news moves foodstuff', () => {
     const mods = combinedMods([{ id: 'fuel-hike', until: 9 }, { id: 'tomato-crash', until: 9 }], 1);
-    const drive = act('drive-street-wuse');
-    expect(priceOf(drive, mods)).toBeGreaterThan(drive.cost!);
+    const fill = act('nnpc-fill');
+    expect(priceOf(fill, mods)).toBeGreaterThan(fill.cost!);
     expect(priceOf(act('to-wuse'), mods)).toBeGreaterThan(act('to-wuse').cost!);
     expect(priceOf(act('foodstuff-big'), mods)).toBeLessThan(act('foodstuff-big').cost!);
     expect(priceOf(act('zobo'), mods)).toBe(act('zobo').cost);
