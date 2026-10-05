@@ -9,6 +9,7 @@ const roomName = (r: string) => (r.startsWith('street-') ? `${r.slice(7).replace
 /** Online count, recent messages and a chat box for the place you dey. */
 export function ChatBar() {
   const connected = useNet((s) => s.connected);
+  const ever = useNet((s) => s.everConnected);
   const online = useNet((s) => s.online);
   const room = useNet((s) => s.room);
   const here = useNet((s) => Object.keys(s.players).length);
@@ -21,7 +22,7 @@ export function ChatBar() {
   return (
     <div className="chatbar card">
       <div className="chat-head small">
-        <span className={`dot ${connected ? 'on' : ''}`} /> {connected ? `${online.toLocaleString('en-NG')} online` : 'Connecting…'}
+        <span className={`dot ${connected ? 'on' : ''}`} /> {connected ? `${online.toLocaleString('en-NG')} online` : ever ? 'Reconnecting…' : 'Connecting…'}
         {room && <span className="muted"> · {here} other{here === 1 ? '' : 's'} for {roomName(room)}</span>}
       </div>
       {room && chat.length > 0 && (

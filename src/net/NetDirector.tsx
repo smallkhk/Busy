@@ -25,7 +25,7 @@ export function NetDirector() {
       const a = g.active ? activityById(g.active.id) : undefined;
       sendMove(avatarLabelPos.x, avatarLabelPos.z, !!a?.away);
     }, 300);
-    const presence = window.setInterval(refreshPresence, 5000);
+    const presence = window.setInterval(refreshPresence, 15000);
     return () => {
       unsub();
       clearInterval(move);
