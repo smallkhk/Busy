@@ -26,6 +26,7 @@ export const EXIT_SPOT: Record<Place, [number, number]> = {
   mararaba: [4.4, 2.6],
   park: [4.4, 2.6],
   stadium: [4.4, 2.6],
+  road: [0, 7],
 };
 /** Where you appear when you arrive at a place. */
 export const ENTRY_SPOT: Record<Place, [number, number]> = {
@@ -45,6 +46,7 @@ export const ENTRY_SPOT: Record<Place, [number, number]> = {
   mararaba: [3.8, 2.0],
   park: [3.8, 2.0],
   stadium: [3.8, 2.0],
+  road: [0, 7],
 };
 
 const HOME_AND_STREET: Interactable[] = [

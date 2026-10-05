@@ -7,7 +7,7 @@ import { DRIVES } from '../content/cars';
 import { fromPlace, rideBetween, rideKm, trekBetween } from '../content/phoneapps';
 
 const driveBetween = (from: Place, to: Place) => DRIVES.find((d) => d.id === `drive-${fromPlace(from)}-${to}`);
-import { blockReason, useGame } from '../store/game';
+import { blockReason, ridePlace, useGame } from '../store/game';
 import { activityDetail } from './detail';
 
 /** Public bus/taxi from the motor park where you dey now, if one goes there. */
@@ -56,7 +56,7 @@ export function useMapSpots(): MapSpot[] {
 
 /** Distance and the ways to reach a spot from where you dey. */
 export function TravelSheet({ sel }: { sel: MapSpot }) {
-  const place = useGame((s) => s.place);
+  const place = useGame(ridePlace);
   const area = useGame((s) => s.area);
   const hasCar = useGame((s) => !!s.car);
   const here = fromPlace(place);
@@ -86,7 +86,7 @@ export function TravelSheet({ sel }: { sel: MapSpot }) {
 }
 
 export function MapView() {
-  const place = useGame((s) => s.place);
+  const place = useGame(ridePlace);
   const [selected, setSelected] = useState<string | null>(null);
   const here = fromPlace(place);
   const spots = useMapSpots();

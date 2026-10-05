@@ -12,9 +12,11 @@ import { initAdmin, setAnnounceHandler } from './admin';
 import { newsById } from '../content/world';
 
 /** Room players share: your house is private; streets are per area. */
-function roomFor(place: string, area: string): string | null {
+function roomFor(place: string, area: string, cell?: [number, number] | null): string | null {
   if (place === 'home') return null;
   if (place === 'street') return `street-${area}`;
+  // Out on the road: everybody on the same block of road
+  if (place === 'road') return cell ? `road-${cell[0]}-${cell[1]}` : null;
   return place;
 }
 
@@ -52,9 +54,9 @@ export function NetDirector() {
       startCloud();
       void initAdmin();
     });
-    joinRoom(roomFor(s.place, s.area));
+    joinRoom(roomFor(s.place, s.area, s.cell));
     const unsub = useGame.subscribe((n, p) => {
-      if (n.place !== p.place || n.area !== p.area) joinRoom(roomFor(n.place, n.area));
+      if (n.place !== p.place || n.area !== p.area || n.cell !== p.cell) joinRoom(roomFor(n.place, n.area, n.cell));
       if (n.look !== p.look || n.shirt !== p.shirt) setAppearance(n.shirt, encodeLook(n.look ?? DEFAULT_LOOK));
     });
     const move = window.setInterval(() => {

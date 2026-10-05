@@ -1,9 +1,14 @@
 import type { ThreeEvent } from '@react-three/fiber';
+import { useContext } from 'react';
 import { useGame } from '../../store/game';
+import { CellCtx } from '../origin';
 
 /** Walkable ground plane: tapping it walks the player there. */
 export function Ground({ color, size = [80, 80], pos = [0, -0.02, 0] }: { color: string; size?: [number, number]; pos?: [number, number, number] }) {
   const walkTo = useGame((s) => s.walkTo);
+  // In the connected city the big ground only covers this block
+  const cell = useContext(CellCtx);
+  if (cell && size[0] >= 60) size = cell.ground;
   const onDown = (e: ThreeEvent<MouseEvent>) => {
     e.stopPropagation();
     // A drag moves the camera; only a tap counts

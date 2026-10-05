@@ -1,9 +1,13 @@
 import { MapControls, OrbitControls, OrthographicCamera, PerspectiveCamera } from '@react-three/drei';
 import type { MapControls as MapControlsImpl, OrbitControls as OrbitControlsImpl } from 'three-stdlib';
-import { Neighborhood, type HoodStyle, type Rect } from './Neighborhood';
+import { Neighborhood } from './Neighborhood';
+import { WorldCells } from './World';
+import { onOriginShift } from './origin';
+import { CLEAR, hoodStyle, SEEDS } from './placeScenes';
+import { Room } from './Room';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { useEffect, useMemo, useRef, type ReactElement } from 'react';
-import { Color, MOUSE, Object3D, PMREMGenerator, TOUCH, Vector3, type AmbientLight, type InstancedMesh } from 'three';
+import { useEffect, useMemo, useRef } from 'react';
+import { Color, type DirectionalLight, MOUSE, Object3D, PMREMGenerator, TOUCH, Vector3, type AmbientLight, type InstancedMesh } from 'three';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import { Bloom, EffectComposer, N8AO, ToneMapping } from '@react-three/postprocessing';
 import { ToneMappingMode } from 'postprocessing';
@@ -12,15 +16,6 @@ import { useGame } from '../store/game';
 import { useSettings } from '../settings';
 import { festivalOn } from '../content/festivals';
 import { Avatar } from './Avatar';
-import { Room } from './Room';
-import { Street } from './Street';
-import { Hospital } from './places/Hospital';
-import { JabiLake } from './places/JabiLake';
-import { Lounge } from './places/Lounge';
-import { Secretariat } from './places/Secretariat';
-import { WuseMarket } from './places/WuseMarket';
-import { Airport, Asokoro, Garki, Maitama, Mararaba, Nyanya, Utako } from './places/Districts';
-import { Park, Stadium } from './places/Landmarks';
 import { INTERACTABLES, type Place } from '../content/activities';
 import { homeTier, type AreaId } from '../content/housing';
 import { COMPOUND, HOME_SCALE, homeLabel } from '../content/homeLayout';
@@ -28,78 +23,6 @@ import { avatarLabelPos, labelEls } from './labels';
 import { RemotePlayers, remoteLabelPos } from '../net/RemotePlayers';
 import { Npcs, npcLabelPos } from './Npcs';
 
-const CENTERS: Record<Place, [number, number, number]> = {
-  home: [1.4, 0, 0.4],
-  street: [-0.6, 0, -1.2],
-  wuse: [-1.0, 0, 0],
-  jabi: [-0.6, 0, -0.8],
-  secretariat: [0, 0, -0.6],
-  lounge: [-0.2, 0, -0.6],
-  hospital: [-0.4, 0, -0.6],
-  maitama: [-0.4, 0, -0.6],
-  asokoro: [-0.4, 0, -0.6],
-  garki: [-0.4, 0, -0.6],
-  nyanya: [-0.4, 0, -0.6],
-  airport: [-0.4, 0, -0.6],
-  utako: [-0.4, 0, -0.6],
-  mararaba: [-0.4, 0, -0.6],
-  park: [-0.4, 0, -0.6],
-  stadium: [-0.4, 0, -0.6],
-};
-
-/** Each place gets its own neighbourhood layout. */
-const SEEDS = Object.fromEntries(Object.keys(CENTERS).map((p, i) => [p, 11 + i * 37])) as Record<Place, number>;
-
-/** Spots the filler houses must avoid in each scene (big props, lakes, the road). */
-const CLEAR: Partial<Record<Place, Rect[]>> = {
-  home: [[-5, -4.5, 9, 7]],
-  street: [[-12, -6, 8.6, 4.6], [-15, -19, 10, -14]],
-  jabi: [[-8.6, -8, 8.6, 4.6], [-5, -16, 15, -3]],
-  stadium: [[-8.6, -8, 8.6, 4.6], [-9, -13, 5, -1]],
-  airport: [[-8.6, -8, 8.6, 4.6], [-15, -10.5, 18, -5.5]],
-  lounge: [[-8.6, -8, 8.6, 4.6]],
-};
-
-/** What the surrounding blocks look like: towers downtown, big houses in Maitama, face-me-I-face-you in Nyanya. */
-const STYLE: Partial<Record<Place, HoodStyle>> = {
-  maitama: 'rich',
-  asokoro: 'rich',
-  secretariat: 'city',
-  garki: 'city',
-  utako: 'city',
-  wuse: 'city',
-  hospital: 'city',
-  airport: 'city',
-  nyanya: 'poor',
-  mararaba: 'poor',
-};
-
-function hoodStyle(place: Place, area: AreaId): HoodStyle {
-  if (place === 'home' || place === 'street') {
-    const tier = homeTier(area);
-    return tier === 'mansion' ? 'rich' : tier === 'room' ? 'poor' : 'mixed';
-  }
-  return STYLE[place] ?? 'mixed';
-}
-
-const SCENES: Record<Place, () => ReactElement> = {
-  home: Room,
-  street: Street,
-  wuse: WuseMarket,
-  jabi: JabiLake,
-  secretariat: Secretariat,
-  lounge: Lounge,
-  hospital: Hospital,
-  maitama: Maitama,
-  asokoro: Asokoro,
-  garki: Garki,
-  nyanya: Nyanya,
-  airport: Airport,
-  utako: Utako,
-  mararaba: Mararaba,
-  park: Park,
-  stadium: Stadium,
-};
 
 function GameLoop() {
   const tick = useGame((s) => s.tick);
@@ -139,57 +62,66 @@ function LabelSync() {
 }
 
 /** Iso camera for the streets and districts: drag around and pinch to zoom. It follows you when you waka off screen. */
-function IsoCamera({ place }: { place: Place }) {
+/**
+ * Camera for the connected city: isometric, follows you down the road, and you
+ * fit drag to look around or pinch to see more of town.
+ */
+function WorldCamera() {
   const { size, camera } = useThree();
   const controls = useRef<MapControlsImpl>(null);
-  const CENTER = CENTERS[place];
+  const start = useGame.getState().pos;
   const span = 12.5;
   const zoom = Math.min(size.width / span, size.height / 9);
-  const reach = 13;
 
-  // Keep the view near the action: clamp how far you fit pan
-  const clamp = () => {
+  // Walking into the next block moves the origin: move the camera with it
+  useEffect(
+    () =>
+      onOriginShift((dx, dz) => {
+        const c = controls.current;
+        camera.position.x -= dx;
+        camera.position.z -= dz;
+        if (c) {
+          c.target.x -= dx;
+          c.target.z -= dz;
+          c.update();
+        }
+      }),
+    [camera],
+  );
+
+  // Keep you on screen while you walk, and settle on you for a moment after
+  const settle = useRef(0);
+  useFrame((_, dt) => {
     const c = controls.current;
     if (!c) return;
-    const t = c.target;
-    const cx = Math.max(CENTER[0] - reach, Math.min(CENTER[0] + reach, t.x));
-    const cz = Math.max(CENTER[2] - reach * 0.75, Math.min(CENTER[2] + reach * 0.75, t.z));
-    if (cx !== t.x || cz !== t.z) {
-      camera.position.x += cx - t.x;
-      camera.position.z += cz - t.z;
-      t.set(cx, t.y, cz);
-    }
-  };
-
-  // Follow the player when they walk near the edge of the screen
-  useFrame(() => {
-    const c = controls.current;
-    if (!c || !useGame.getState().target) return;
+    if (useGame.getState().target) settle.current = 1.2;
+    else if (settle.current > 0) settle.current -= dt;
+    else return;
+    // Frame-rate independent easing; faster when you are near the edge of the screen
     tmp.copy(avatarLabelPos).project(camera);
-    if (Math.abs(tmp.x) < 0.6 && Math.abs(tmp.y) < 0.55) return;
-    const dx = (avatarLabelPos.x - c.target.x) * 0.04;
-    const dz = (avatarLabelPos.z - c.target.z) * 0.04;
+    const edge = Math.max(Math.abs(tmp.x), Math.abs(tmp.y));
+    const k = 1 - Math.exp(-dt * (edge > 0.5 ? 6 : 3));
+    const dx = (avatarLabelPos.x - c.target.x) * k;
+    const dz = (avatarLabelPos.z - c.target.z) * k;
     c.target.x += dx;
     c.target.z += dz;
     camera.position.x += dx;
     camera.position.z += dz;
-    clamp();
     c.update();
   });
 
   return (
     <>
-      <OrthographicCamera makeDefault zoom={zoom} position={[CENTER[0] + 12, 11, CENTER[2] + 12]} near={-50} far={120} />
+      <OrthographicCamera makeDefault zoom={zoom} position={[start[0] + 12, 11, start[1] + 12]} near={-60} far={160} />
       <MapControls
         ref={controls}
-        target={CENTER}
+        target={[start[0], 0, start[1]]}
         enableRotate={false}
         enableDamping
         dampingFactor={0.12}
         screenSpacePanning={false}
-        minZoom={zoom * 0.5}
+        minZoom={zoom * 0.3}
         maxZoom={zoom * 2.2}
-        onChange={clamp}
       />
     </>
   );
@@ -387,6 +319,16 @@ function Lights({ place }: { place: Place }) {
   const sunAngle = Math.min(Math.PI - 0.25, Math.max(0.25, ((minuteOfDay - 360) / 720) * Math.PI));
   const sun: [number, number, number] = [Math.cos(sunAngle) * 14, 4 + Math.sin(sunAngle) * 14, 7];
 
+  // Out in town the sun's shadow box follows you down the road
+  const sunRef = useRef<DirectionalLight>(null);
+  useFrame(() => {
+    const l = sunRef.current;
+    if (!l || place === 'home') return;
+    l.position.set(avatarLabelPos.x + sun[0], sun[1], avatarLabelPos.z + sun[2]);
+    l.target.position.set(avatarLabelPos.x, 0, avatarLabelPos.z);
+    l.target.updateMatrixWorld();
+  });
+
   const sky = useMemo(() => {
     const c = NIGHT_SKY.clone().lerp(DAY_SKY, light);
     if ((hour >= 17 && hour < 20) || (hour >= 5 && hour < 8)) c.lerp(DUSK, 0.35 * (1 - Math.abs(light - 0.5) * 2));
@@ -405,6 +347,7 @@ function Lights({ place }: { place: Place }) {
       <ambientLight intensity={0.42 - light * 0.12} color={light > 0.2 ? '#fff6e8' : '#9fb0dc'} />
       {/* The sun: rises in the east, crosses the sky, sets warm in the west */}
       <directionalLight
+        ref={sunRef}
         position={sun}
         intensity={0.6 + light * 1.65}
         color={light === 0 ? '#c9d6ff' : light < 0.6 ? '#ffb877' : '#fff4e0'}
@@ -433,18 +376,23 @@ export function Scene() {
   const place = useGame((s) => s.place);
   const weather = useGame((s) => s.weather ?? 'sunny');
   const wet = weather === 'rain' || weather === 'storm';
-  const PlaceScene = SCENES[place];
   const tier = useGame((s) => (place === 'home' ? homeTier(s.area) : 'x'));
   const style = useGame((s) => hoodStyle(place, s.area));
   return (
     <Canvas key={low ? 'low' : 'high'} shadows={low ? true : 'soft'} dpr={low ? 1 : [1, 2]} gl={{ antialias: !low, powerPreference: 'high-performance' }} className="scene">
-      {place === 'home' ? <HomeCamera key={tier} /> : <IsoCamera key={place} place={place} />}
+      {place === 'home' ? <HomeCamera key={tier} /> : <WorldCamera />}
       {place === 'home' && <HomeLook />}
       <Lights place={place} />
       <GameLoop />
       <LabelSync />
-      <PlaceScene />
-      <Neighborhood key={`${place}${tier}`} style={style} extent={low ? 15 : 26} far={low ? -13 : -19} frontFar={low ? 11 : 17} seed={SEEDS[place]} clear={tier === 'mansion' ? [[-10, -4.5, 9, 7]] : tier === 'flat' ? [[-8, -4.5, 9, 7]] : CLEAR[place] ?? [[-8.6, -8, 8.6, 4.6]]} near={place === 'home' ? -4.6 : -5.5} />
+      {place === 'home' ? (
+        <>
+          <Room />
+          <Neighborhood key={`home${tier}`} style={style} extent={low ? 15 : 26} far={low ? -13 : -19} frontFar={low ? 11 : 17} seed={SEEDS.home} clear={tier === 'mansion' ? [[-10, -4.5, 9, 7]] : tier === 'flat' ? [[-8, -4.5, 9, 7]] : CLEAR.home} near={-4.6} />
+        </>
+      ) : (
+        <WorldCells />
+      )}
       <Avatar />
       <RemotePlayers />
       {fest && fest.decor.length > 0 && place !== 'home' && <FestivalDecor colors={fest.decor} night={night} />}
