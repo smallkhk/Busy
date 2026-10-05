@@ -3,6 +3,7 @@ import { activityById } from '../content/activities';
 import { cookScore, DECOYS, DRIVE_SECONDS, driveScore, inZone, LANES, markerAt, matchResult, MATCHES_TV, posRound, RECIPES, ROAD_HAZARDS, type Pick } from '../content/minigames';
 import { formatNaira } from '../engine/clock';
 import { useGame } from '../store/game';
+import { DriveRoad, type RoadHazard } from '../world/DriveRoad';
 
 type Done = (score: number) => void;
 
@@ -141,17 +142,17 @@ function Predict({ done }: { done: Done }) {
   );
 }
 
-type Hazard = { id: number; lane: number; y: number; emoji: string; hit?: boolean };
+type Hazard = RoadHazard;
 
 function Drive({ done }: { done: Done }) {
   const [lane, setLane] = useState(1);
-  const [hazards, setHazards] = useState<Hazard[]>([]);
   const [hits, setHits] = useState(0);
   const [left, setLeft] = useState(DRIVE_SECONDS);
   const laneRef = useRef(1);
   laneRef.current = lane;
   const over = useRef(false);
   const list = useRef<Hazard[]>([]);
+  const swipe = useRef<number | null>(null);
   useEffect(() => {
     let id = 0;
     let last = performance.now();
@@ -177,7 +178,6 @@ function Drive({ done }: { done: Done }) {
         return h;
       });
       list.current = hs.filter((h) => h.y < 1.1);
-      setHazards(list.current);
       if (newHits) setHits((n) => n + newHits);
       if ((t - start) / 1000 < DRIVE_SECONDS) raf = requestAnimationFrame(loop);
     };
@@ -193,12 +193,18 @@ function Drive({ done }: { done: Done }) {
   return (
     <>
       <p className="small">Dodge potholes, okada and goats! ⏱️ {Math.ceil(left)}s · 💥 {hits}</p>
-      <div className="mg-road">
-        {[1, 2].map((i) => <div key={i} className="mg-lane-line" style={{ left: `${(i / LANES) * 100}%` }} />)}
-        {hazards.map((h) => (
-          <span key={h.id} className={`mg-hazard ${h.hit ? 'hit' : ''}`} style={{ left: `${((h.lane + 0.5) / LANES) * 100}%`, top: `${h.y * 100}%` }}>{h.emoji}</span>
-        ))}
-        <span className="mg-mycar" style={{ left: `${((lane + 0.5) / LANES) * 100}%` }}>🚗</span>
+      {/* Your real car on a 3D Abuja road; swipe or use the buttons to change lane */}
+      <div
+        className="mg-road3d"
+        onPointerDown={(e) => { swipe.current = e.clientX; }}
+        onPointerUp={(e) => {
+          if (swipe.current === null) return;
+          const dx = e.clientX - swipe.current;
+          swipe.current = null;
+          if (Math.abs(dx) > 30) setLane((l) => Math.max(0, Math.min(LANES - 1, l + Math.sign(dx))));
+        }}
+      >
+        <DriveRoad lane={laneRef} hazards={list} hits={hits} />
       </div>
       <div className="mg-steer">
         <button className="primary" onPointerDown={() => setLane((l) => Math.max(0, l - 1))}>⬅️ Left</button>

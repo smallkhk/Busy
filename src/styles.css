@@ -458,6 +458,7 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
 .ad-days { display: flex; align-items: center; gap: 8px; }
 .ad-days input { flex: 1; }
 .mg-road { position: relative; height: 260px; border-radius: 12px; background: #3a3d42; overflow: hidden; }
+.mg-road3d { position: relative; height: min(46vh, 340px); border-radius: 12px; overflow: hidden; touch-action: none; background: #bfe3f7; }
 .mg-lane-line { position: absolute; top: 0; bottom: 0; width: 0; border-left: 3px dashed #f2c230; opacity: 0.7; }
 .mg-hazard, .mg-mycar { position: absolute; transform: translate(-50%, -50%); font-size: 30px; }
 .mg-hazard.hit { opacity: 0.35; }
