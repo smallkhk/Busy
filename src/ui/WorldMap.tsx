@@ -47,37 +47,47 @@ function Block({ p, s, c, emissive }: { p: [number, number, number]; s: [number,
   );
 }
 
-/** Rows of identical houses, like an Abuja estate. */
+const ESTATE_WALLS = ['#efe4cf', '#f3d9c4', '#d9e6ef', '#dcefdc', '#f7f3ea', '#e8d3a9', '#f2d0d6', '#f4e7a8'];
+const ESTATE_ROOFS = ['#a33b2b', '#7a2b2b', '#2f6b4a', '#2a5d9f', '#6b4a2b', '#5f6670', '#8a5a2b'];
+
+/** An Abuja estate: houses in rows, but each one get its own size, paint and roof. */
 function Estate({ cx, cz, cols, rows, roof, seed }: { cx: number; cz: number; cols: number; rows: number; roof: string; seed: number }) {
-  const r = rng(seed);
-  const houses = useMemo(
-    () =>
-      Array.from({ length: cols * rows }, (_, i) => ({
-        x: cx + (i % cols) * 0.42 - (cols * 0.42) / 2,
-        z: cz + Math.floor(i / cols) * 0.42 - (rows * 0.42) / 2,
-        h: 0.18 + r() * 0.08,
-      })),
+  const houses = useMemo(() => {
+    const r = rng(seed);
+    return Array.from({ length: cols * rows }, (_, i) => {
+      const twoFloor = r() < 0.3;
+      return {
+        x: cx + (i % cols) * 0.42 - (cols * 0.42) / 2 + (r() - 0.5) * 0.06,
+        z: cz + Math.floor(i / cols) * 0.42 - (rows * 0.42) / 2 + (r() - 0.5) * 0.06,
+        h: (twoFloor ? 0.34 : 0.18) + r() * 0.08,
+        w: 0.22 + r() * 0.1,
+        d: 0.22 + r() * 0.1,
+        wall: ESTATE_WALLS[Math.floor(r() * ESTATE_WALLS.length)],
+        roof: r() < 0.5 ? roof : ESTATE_ROOFS[Math.floor(r() * ESTATE_ROOFS.length)],
+        flat: r() < 0.2,
+      };
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [cx, cz, cols, rows],
-  );
+  }, [cx, cz, cols, rows]);
+  const pitched = houses.filter((h) => !h.flat);
   return (
     <>
       <mesh position={[cx - 0.21, 0.015, cz - 0.21]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
         <planeGeometry args={[cols * 0.42 + 0.3, rows * 0.42 + 0.3]} />
         <meshStandardMaterial color="#c9c0a8" />
       </mesh>
-      <Instances limit={houses.length}>
-        <boxGeometry args={[0.28, 1, 0.28]} />
-        <meshStandardMaterial color="#efe4cf" />
+      <Instances limit={houses.length} castShadow>
+        <boxGeometry args={[1, 1, 1]} />
+        <meshStandardMaterial roughness={0.8} />
         {houses.map((h, i) => (
-          <Instance key={i} position={[h.x, h.h / 2, h.z]} scale={[1, h.h, 1]} />
+          <Instance key={i} position={[h.x, h.h / 2, h.z]} scale={[h.w, h.h, h.d]} color={h.wall} />
         ))}
       </Instances>
-      <Instances limit={houses.length}>
-        <coneGeometry args={[0.24, 0.14, 4]} />
-        <meshStandardMaterial color={roof} />
-        {houses.map((h, i) => (
-          <Instance key={i} position={[h.x, h.h + 0.07, h.z]} rotation={[0, Math.PI / 4, 0]} />
+      <Instances limit={Math.max(1, pitched.length)}>
+        <coneGeometry args={[0.7071, 1, 4]} />
+        <meshStandardMaterial roughness={0.6} />
+        {pitched.map((h, i) => (
+          <Instance key={i} position={[h.x, h.h + 0.06, h.z]} scale={[h.w * 1.1, 0.13, h.d * 1.1]} rotation={[0, Math.PI / 4, 0]} color={h.roof} />
         ))}
       </Instances>
     </>
@@ -513,7 +523,7 @@ export function WorldMap() {
         <directionalLight position={[10, 20, 6]} intensity={1.3} castShadow shadow-mapSize={[2048, 2048]} shadow-camera-left={-25} shadow-camera-right={25} shadow-camera-top={25} shadow-camera-bottom={-25} />
         <LabelSync anchors={anchors} />
 
-        <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow onPointerDown={() => { setSelected(null); setBoard(null); }}>
+        <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow onClick={(e) => { if (e.delta > 8) return; setSelected(null); setBoard(null); }}>
           <planeGeometry args={[400, 400]} />
           <meshStandardMaterial color="#86ad5f" />
         </mesh>
@@ -550,7 +560,7 @@ export function WorldMap() {
         <Estate cx={W(110, 70)[0]} cz={W(110, 70)[1]} cols={5} rows={4} roof="#a33b2b" seed={10} />
 
         {spots.map((s) => (
-          <group key={s.id} onPointerDown={(e) => { e.stopPropagation(); setSelected(s.id); setBoard(null); }}>
+          <group key={s.id} onClick={(e) => { e.stopPropagation(); if (e.delta > 8) return; setSelected(s.id); setBoard(null); }}>
             <Landmark s={s} />
           </group>
         ))}

@@ -77,8 +77,9 @@ function Board({ b, ad, onTap }: { b: BoardSlot; ad?: Ad; onTap: (slot: number) 
     <group
       position={[b.x, 0, b.z]}
       rotation={[0, Math.PI / 4, 0]}
-      onPointerDown={(e) => {
+      onClick={(e) => {
         e.stopPropagation();
+        if (e.delta > 8) return;
         onTap(b.slot);
       }}
     >

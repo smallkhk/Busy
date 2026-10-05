@@ -4,12 +4,14 @@ import { useGame } from '../../store/game';
 /** Walkable ground plane: tapping it walks the player there. */
 export function Ground({ color, size = [80, 80], pos = [0, -0.02, 0] }: { color: string; size?: [number, number]; pos?: [number, number, number] }) {
   const walkTo = useGame((s) => s.walkTo);
-  const onDown = (e: ThreeEvent<PointerEvent>) => {
+  const onDown = (e: ThreeEvent<MouseEvent>) => {
     e.stopPropagation();
+    // A drag moves the camera; only a tap counts
+    if (e.delta > 8) return;
     walkTo(e.point.x, e.point.z);
   };
   return (
-    <mesh rotation={[-Math.PI / 2, 0, 0]} position={pos} receiveShadow onPointerDown={onDown}>
+    <mesh rotation={[-Math.PI / 2, 0, 0]} position={pos} receiveShadow onClick={onDown}>
       <planeGeometry args={size} />
       <meshStandardMaterial color={color} />
     </mesh>

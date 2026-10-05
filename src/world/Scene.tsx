@@ -1,4 +1,6 @@
-import { OrthographicCamera } from '@react-three/drei';
+import { MapControls, OrthographicCamera } from '@react-three/drei';
+import type { MapControls as MapControlsImpl } from 'three-stdlib';
+import { Neighborhood, type Rect } from './Neighborhood';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { useEffect, useMemo, useRef, type ReactElement } from 'react';
 import { Color, Object3D, Vector3, type AmbientLight, type InstancedMesh } from 'three';
@@ -36,6 +38,19 @@ const CENTERS: Record<Place, [number, number, number]> = {
   mararaba: [-0.4, 0, -0.6],
   park: [-0.4, 0, -0.6],
   stadium: [-0.4, 0, -0.6],
+};
+
+/** Each place gets its own neighbourhood layout. */
+const SEEDS = Object.fromEntries(Object.keys(CENTERS).map((p, i) => [p, 11 + i * 37])) as Record<Place, number>;
+
+/** Spots the filler houses must avoid in each scene (big props, lakes, the road). */
+const CLEAR: Partial<Record<Place, Rect[]>> = {
+  home: [[-5, -4.5, 9, 7]],
+  street: [[-12, -6, 8.6, 4.6], [-15, -19, 10, -14]],
+  jabi: [[-8.6, -8, 8.6, 4.6], [-5, -16, 15, -3]],
+  stadium: [[-8.6, -8, 8.6, 4.6], [-9, -13, 5, -1]],
+  airport: [[-8.6, -8, 8.6, 4.6], [-15, -10.5, 18, -5.5]],
+  lounge: [[-8.6, -8, 8.6, 4.6]],
 };
 
 const SCENES: Record<Place, () => ReactElement> = {
@@ -81,20 +96,60 @@ function LabelSync() {
   return null;
 }
 
+/** Iso camera you fit drag around and pinch to zoom. It follows you when you waka off screen. */
 function IsoCamera({ place }: { place: Place }) {
-  const { size } = useThree();
+  const { size, camera } = useThree();
+  const controls = useRef<MapControlsImpl>(null);
   const CENTER = CENTERS[place];
   const span = place === 'home' ? 10.5 : 12.5;
   const zoom = Math.min(size.width / span, size.height / 9);
+  const reach = place === 'home' ? 5 : 13;
+
+  // Keep the view near the action: clamp how far you fit pan
+  const clamp = () => {
+    const c = controls.current;
+    if (!c) return;
+    const t = c.target;
+    const cx = Math.max(CENTER[0] - reach, Math.min(CENTER[0] + reach, t.x));
+    const cz = Math.max(CENTER[2] - reach * 0.75, Math.min(CENTER[2] + reach * 0.75, t.z));
+    if (cx !== t.x || cz !== t.z) {
+      camera.position.x += cx - t.x;
+      camera.position.z += cz - t.z;
+      t.set(cx, t.y, cz);
+    }
+  };
+
+  // Follow the player when they walk near the edge of the screen
+  useFrame(() => {
+    const c = controls.current;
+    if (!c || !useGame.getState().target) return;
+    tmp.copy(avatarLabelPos).project(camera);
+    if (Math.abs(tmp.x) < 0.6 && Math.abs(tmp.y) < 0.55) return;
+    const dx = (avatarLabelPos.x - c.target.x) * 0.04;
+    const dz = (avatarLabelPos.z - c.target.z) * 0.04;
+    c.target.x += dx;
+    c.target.z += dz;
+    camera.position.x += dx;
+    camera.position.z += dz;
+    clamp();
+    c.update();
+  });
+
   return (
-    <OrthographicCamera
-      makeDefault
-      zoom={zoom}
-      position={[CENTER[0] + 12, 11, CENTER[2] + 12]}
-      onUpdate={(c) => c.lookAt(...CENTER)}
-      near={-50}
-      far={100}
-    />
+    <>
+      <OrthographicCamera makeDefault zoom={zoom} position={[CENTER[0] + 12, 11, CENTER[2] + 12]} near={-50} far={120} />
+      <MapControls
+        ref={controls}
+        target={CENTER}
+        enableRotate={false}
+        enableDamping
+        dampingFactor={0.12}
+        screenSpacePanning={false}
+        minZoom={zoom * 0.5}
+        maxZoom={zoom * 2.2}
+        onChange={clamp}
+      />
+    </>
   );
 }
 
@@ -212,6 +267,7 @@ export function Scene() {
       <GameLoop />
       <LabelSync />
       <PlaceScene />
+      <Neighborhood key={place} seed={SEEDS[place]} clear={CLEAR[place] ?? [[-8.6, -8, 8.6, 4.6]]} near={place === 'home' ? -4.6 : -5.5} />
       <Avatar />
       <RemotePlayers />
       <Npcs />
