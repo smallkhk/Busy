@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { cleanText } from './filter';
 import { setPlayerId } from './multiplayer';
 import { getClient } from './supabase';
+import { startPhoneLine } from './phoneLine';
 
 export type Profile = { id: string; name: string; shirt: string };
 export type Msg = { id: number; sender: string; recipient: string; body: string; created_at: string; read_at: string | null; voice_path?: string | null; voice_ms?: number | null };
@@ -101,6 +102,7 @@ export async function initSocial(name: string, shirt: string) {
   const friends = (fr ?? []).filter((f) => f.user_id === uid).map((f) => f.friend_id as string);
   const addedMe = (fr ?? []).filter((f) => f.friend_id === uid).map((f) => f.user_id as string);
   useSocial.setState({ friends, addedMe, status: 'ready' });
+  startPhoneLine(uid, cleanText(name, 16) || 'Abuja Hustler');
   void claimCash();
   void cleanupOldVoice(uid);
   addMessages((msgs ?? []) as Msg[]);

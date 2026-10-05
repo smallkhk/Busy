@@ -4,6 +4,7 @@ import { ChatBar } from './net/ChatBar';
 import { NetDirector } from './net/NetDirector';
 import { EventModal } from './ui/EventModal';
 import { NearbyMenu } from './ui/GistApp';
+import { CallOverlay } from './ui/CallOverlay';
 import { NpcSheet } from './ui/NpcSheet';
 import { CloudOffer } from './ui/CloudApps';
 import { MiniGame } from './ui/MiniGame';
@@ -77,6 +78,7 @@ export default function App() {
           <EventModal />
           <MiniGame />
           <CloudOffer />
+          <CallOverlay />
         </>
       ) : (
         <Start />
