@@ -1,5 +1,7 @@
 import { ActionMenu, ActiveBanner, NeedsPanel, Toasts, TopBar } from './ui/Hud';
 import { AudioDirector } from './audio/AudioDirector';
+import { ChatBar } from './net/ChatBar';
+import { NetDirector } from './net/NetDirector';
 import { EventModal } from './ui/EventModal';
 import { QuestPill } from './ui/Goals';
 import { Labels } from './ui/Labels';
@@ -39,6 +41,7 @@ export default function App() {
       {!mapOpen && <Scene />}
       {started ? (
         <>
+          <NetDirector />
           <Labels />
           <div className="hud-top">
             <TopBar />
@@ -48,7 +51,7 @@ export default function App() {
           </div>
           <div className="hud-bottom">
             <ActiveBanner />
-            <div className="hint muted small">Tap the floor to waka · Tap things to use am</div>
+            <ChatBar />
             <BottomNav />
           </div>
           <ActionMenu />

@@ -14,6 +14,7 @@ import { Secretariat } from './places/Secretariat';
 import { WuseMarket } from './places/WuseMarket';
 import { INTERACTABLES, type Place } from '../content/activities';
 import { avatarLabelPos, labelEls } from './labels';
+import { RemotePlayers, remoteLabelPos } from '../net/RemotePlayers';
 
 const CENTERS: Record<Place, [number, number, number]> = {
   home: [1.4, 0, 0.4],
@@ -48,7 +49,7 @@ const tmp = new Vector3();
 function LabelSync() {
   useFrame(({ camera, size }) => {
     for (const [key, el] of labelEls) {
-      const world = key === 'avatar' ? avatarLabelPos : LABEL_POS.get(key);
+      const world = key === 'avatar' ? avatarLabelPos : key.startsWith('p:') ? remoteLabelPos.get(key.slice(2)) : LABEL_POS.get(key);
       if (!world) continue;
       tmp.copy(world).project(camera);
       const x = ((tmp.x + 1) / 2) * size.width;
@@ -130,6 +131,7 @@ export function Scene() {
       <LabelSync />
       <PlaceScene />
       <Avatar />
+      <RemotePlayers />
     </Canvas>
   );
 }
