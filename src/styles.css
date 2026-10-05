@@ -149,7 +149,17 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
 .empty { text-align: center; padding: 40px 10px; }
 
 /* ---------- Start ---------- */
-.start { position: absolute; inset: 0; display: grid; place-items: center; padding: 16px; background: rgba(5, 18, 14, 0.55); z-index: 30; }
+.start { position: absolute; inset: 0; display: grid; place-items: center; padding: 16px; background: rgba(5, 18, 14, 0.55); z-index: 30; overflow-y: auto; }
+.choices { display: flex; flex-wrap: wrap; gap: 6px; }
+.choice { padding: 8px 10px; border-radius: 12px; border: 1px solid var(--line); background: rgba(255, 255, 255, 0.05); color: var(--text); font-size: 13px; text-align: left; }
+.choice.on { border-color: var(--gold); background: rgba(232, 176, 75, 0.18); }
+.primary:disabled { opacity: 0.5; }
+.born { text-align: center; }
+.born-emoji { font-size: 56px; line-height: 1; }
+.born-title { font-size: 18px; font-weight: 800; text-align: center; }
+.born-title b { color: var(--gold); }
+.born-facts { display: flex; flex-direction: column; gap: 6px; text-align: left; font-size: 14px; }
+.born-facts span { display: inline-block; width: 26px; }
 .start-card { width: 100%; max-width: 400px; padding: 22px; display: flex; flex-direction: column; gap: 14px; background: var(--card-solid); }
 .logo { font-size: 34px; font-weight: 900; letter-spacing: 2px; text-align: center; }
 .logo span { color: var(--gold); margin-left: 6px; }

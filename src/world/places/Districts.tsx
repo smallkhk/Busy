@@ -99,7 +99,9 @@ function Stall({ x, z, c }: { x: number; z: number; c: string }) {
 // ---------------- Maitama ----------------
 const MAITAMA_WALKERS: Walker[] = [
   { from: -6, to: 4, z: 1.4, speed: 0.4, shirt: '#2c3e50' },
-  { from: 3, to: -5, z: 2.4, speed: 0.35, shirt: '#ecf0f1' },
+  // Alhaji with that kind money, in starched white agbada
+  { from: 3, to: -5, z: 2.4, speed: 0.35, shirt: '#ecf0f1', outfit: 'agbada', woman: false },
+  { from: -4, to: 5, z: 3.1, speed: 0.3, shirt: '#6e4a2a', trousers: '#6e4a2a', woman: false, hat: { type: 'hula', color: '#8b1e3f', band: '#e2b84a' } },
 ];
 
 export function Maitama() {
@@ -166,8 +168,9 @@ export function Maitama() {
 
 // ---------------- Asokoro ----------------
 const ASOKORO_WALKERS: Walker[] = [
-  { from: -5, to: 5, z: 1.6, speed: 0.4, shirt: '#ecf0f1' },
-  { from: 4, to: -3, z: 2.6, speed: 0.5, shirt: '#118a4c' },
+  { from: -5, to: 5, z: 1.6, speed: 0.4, shirt: '#ecf0f1', outfit: 'agbada', woman: false },
+  { from: 4, to: -3, z: 2.6, speed: 0.5, shirt: '#118a4c', trousers: '#118a4c', woman: false, hat: { type: 'hula', color: '#f4f1ec', band: '#118a4c' } },
+  { from: -3, to: 4, z: 3.2, speed: 0.35, shirt: '#5b2a6e', woman: true, hat: { type: 'gele', color: '#c9a23a', band: '#5b2a6e' } },
 ];
 
 export function Asokoro() {
@@ -213,7 +216,7 @@ export function Asokoro() {
           <meshStandardMaterial color="#ff7a2f" emissive="#ff5a00" emissiveIntensity={0.8} />
         </mesh>
         <group position={[2.8, 0, -3.0]}>
-          <Person shirt="#ecf0f1" trousers="#ecf0f1" />
+          <Person shirt="#ecf0f1" trousers="#ecf0f1" outfit="agbada" />
         </group>
       </Tappable>
 
