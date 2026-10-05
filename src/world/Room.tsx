@@ -3,6 +3,7 @@ import { useState, type ReactNode } from 'react';
 import { AREAS } from '../content/housing';
 import { useGame } from '../store/game';
 import { Person } from './Avatar';
+import { Mansion } from './Mansion';
 import { BoxGeometry, type BufferGeometry } from 'three';
 import { RoundedBoxGeometry } from 'three-stdlib';
 
@@ -68,29 +69,16 @@ export function Tappable({ id, children }: { id: string; children: ReactNode }) 
   );
 }
 
-export function Room() {
-  const walkTo = useGame((s) => s.walkTo);
+/** One-room flat: self-con, room and parlour, mini flat. Furniture improves with the area and what you buy. */
+function SelfCon({ onFloor }: { onFloor: (e: ThreeEvent<MouseEvent>) => void }) {
   const power = useGame((s) => s.power);
   const area = useGame((s) => s.area);
   const theme = AREAS[area].theme;
   const upgraded = area !== 'kubwa';
   const ups = useGame((s) => s.homeUps ?? []);
   const has = (id: string) => ups.includes(id);
-
-  const onFloor = (e: ThreeEvent<MouseEvent>) => {
-    e.stopPropagation();
-    // A drag moves the camera; only a tap counts
-    if (e.delta > 8) return;
-    walkTo(e.point.x, e.point.z);
-  };
-
   return (
     <group>
-      {/* Ground: compound sand + tiled room floor */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[2, -0.02, 0.5]} receiveShadow onClick={onFloor}>
-        <planeGeometry args={[60, 60]} />
-        <meshStandardMaterial color="#b98f5e" />
-      </mesh>
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow onClick={onFloor}>
         <planeGeometry args={[8, 6]} />
         <meshStandardMaterial color={theme.floor} />
@@ -100,12 +88,6 @@ export function Room() {
         <planeGeometry args={[2, 1.6]} />
         <meshStandardMaterial color="#9ec3cf" />
       </mesh>
-      {/* Concrete compound slab outside the door */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[5.2, 0.004, 1.2]} receiveShadow onClick={onFloor}>
-        <planeGeometry args={[2.4, 5]} />
-        <meshStandardMaterial color="#a7a39a" />
-      </mesh>
-
       {/* Back walls (cream paint, with the classic skirting) */}
       <Box p={[0, 1.4, -3.05]} s={[8, 2.8, 0.1]} c={theme.wall} />
       <Box p={[-4.05, 1.4, 0]} s={[0.1, 2.8, 6.2]} c={theme.wall2} />
@@ -277,6 +259,37 @@ export function Room() {
       <Box p={[4.05, 1.0, 1.85]} s={[0.06, 2, 0.05]} c="#5b3a21" />
       <Box p={[4.5, 1.0, 1.35]} s={[0.9, 2, 0.06]} c="#7a4e2a" r={[0, -0.6, 0]} />
 
+    </group>
+  );
+}
+
+export function Room() {
+  const walkTo = useGame((s) => s.walkTo);
+  const area = useGame((s) => s.area);
+  const mansion = !!AREAS[area].mansion;
+
+  const onFloor = (e: ThreeEvent<MouseEvent>) => {
+    e.stopPropagation();
+    // A drag moves the camera; only a tap counts
+    if (e.delta > 8) return;
+    walkTo(e.point.x, e.point.z);
+  };
+
+  return (
+    <group>
+      {/* Ground: compound sand + tiled room floor */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[2, -0.02, 0.5]} receiveShadow onClick={onFloor}>
+        <planeGeometry args={[60, 60]} />
+        <meshStandardMaterial color={mansion ? '#6f9a52' : '#b98f5e'} />
+      </mesh>
+      {/* Concrete compound slab outside the door */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[5.2, 0.004, 1.2]} receiveShadow onClick={onFloor}>
+        <planeGeometry args={[2.4, 5]} />
+        <meshStandardMaterial color="#a7a39a" />
+      </mesh>
+
+      {mansion ? <Mansion onFloor={onFloor} /> : <SelfCon onFloor={onFloor} />}
+
       <Tappable id="bench">
         <Box p={[3.6, 0.35, 3.3]} s={[1.6, 0.08, 0.4]} c="#8a6a45" />
         <Box p={[3.0, 0.17, 3.3]} s={[0.08, 0.34, 0.35]} c="#6b4f32" />
@@ -340,7 +353,7 @@ export function Room() {
       </Tappable>
 
       {/* Compound fence */}
-      <Box p={[2, 0.8, -4.1]} s={[11, 1.6, 0.15]} c="#cbbd9d" />
+      <Box p={mansion ? [-1, 0.8, -4.1] : [2, 0.8, -4.1]} s={[mansion ? 17 : 11, 1.6, 0.15]} c="#cbbd9d" />
     </group>
   );
 }

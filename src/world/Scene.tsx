@@ -19,6 +19,7 @@ import { WuseMarket } from './places/WuseMarket';
 import { Airport, Asokoro, Garki, Maitama, Mararaba, Nyanya, Utako } from './places/Districts';
 import { Park, Stadium } from './places/Landmarks';
 import { INTERACTABLES, type Place } from '../content/activities';
+import { AREAS } from '../content/housing';
 import { avatarLabelPos, labelEls } from './labels';
 import { RemotePlayers, remoteLabelPos } from '../net/RemotePlayers';
 import { Npcs, npcLabelPos } from './Npcs';
@@ -102,10 +103,11 @@ function LabelSync() {
 function IsoCamera({ place }: { place: Place }) {
   const { size, camera } = useThree();
   const controls = useRef<MapControlsImpl>(null);
-  const CENTER = CENTERS[place];
-  const span = place === 'home' ? 10.5 : 12.5;
+  const mansion = useGame((s) => place === 'home' && !!AREAS[s.area].mansion);
+  const CENTER: [number, number, number] = mansion ? [-2.0, 0, 0.0] : CENTERS[place];
+  const span = mansion ? 12.5 : place === 'home' ? 10.5 : 12.5;
   const zoom = Math.min(size.width / span, size.height / 9);
-  const reach = place === 'home' ? 5 : 13;
+  const reach = mansion ? 6.5 : place === 'home' ? 5 : 13;
 
   // Keep the view near the action: clamp how far you fit pan
   const clamp = () => {
@@ -300,14 +302,15 @@ export function Scene() {
   const weather = useGame((s) => s.weather ?? 'sunny');
   const wet = weather === 'rain' || weather === 'storm';
   const PlaceScene = SCENES[place];
+  const mansion = useGame((s) => place === 'home' && !!AREAS[s.area].mansion);
   return (
     <Canvas key={low ? 'low' : 'high'} shadows={low ? true : 'soft'} dpr={low ? 1 : [1, 2]} gl={{ antialias: !low, powerPreference: 'high-performance' }} className="scene">
-      <IsoCamera key={place} place={place} />
+      <IsoCamera key={`${place}${mansion}`} place={place} />
       <Lights place={place} />
       <GameLoop />
       <LabelSync />
       <PlaceScene />
-      <Neighborhood key={place} extent={low ? 15 : 26} far={low ? -13 : -19} frontFar={low ? 11 : 17} seed={SEEDS[place]} clear={CLEAR[place] ?? [[-8.6, -8, 8.6, 4.6]]} near={place === 'home' ? -4.6 : -5.5} />
+      <Neighborhood key={`${place}${mansion}`} extent={low ? 15 : 26} far={low ? -13 : -19} frontFar={low ? 11 : 17} seed={SEEDS[place]} clear={mansion ? [[-10, -4.5, 9, 7]] : CLEAR[place] ?? [[-8.6, -8, 8.6, 4.6]]} near={place === 'home' ? -4.6 : -5.5} />
       <Avatar />
       <RemotePlayers />
       {fest && fest.decor.length > 0 && place !== 'home' && <FestivalDecor colors={fest.decor} night={night} />}

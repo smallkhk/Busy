@@ -1655,7 +1655,8 @@ export const useGame = create<GameState>()(
         walkTo: (x, z) => {
           const { active, place } = get();
           if (active) return;
-          const b = BOUNDS[place];
+          // Mansions stretch west: dining room and garage
+          const b = place === 'home' && AREAS[get().area].mansion ? { ...BOUNDS.home, minX: -8.2 } : BOUNDS[place];
           set({
             target: [Math.min(b.maxX, Math.max(b.minX, x)), Math.min(b.maxZ, Math.max(b.minZ, z))],
             pending: null,
