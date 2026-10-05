@@ -1,9 +1,11 @@
 import type { ThreeEvent } from '@react-three/fiber';
 import { useState, type ReactNode } from 'react';
-import { AREAS } from '../content/housing';
+import { AREAS, homeTier } from '../content/housing';
 import { useGame } from '../store/game';
 import { Person } from './Avatar';
 import { Mansion } from './Mansion';
+import { Flat } from './Flat';
+import { cementFloor, Floor, marble, paint } from './Interior';
 import { BoxGeometry, type BufferGeometry } from 'three';
 import { RoundedBoxGeometry } from 'three-stdlib';
 
@@ -74,15 +76,38 @@ function SelfCon({ onFloor }: { onFloor: (e: ThreeEvent<MouseEvent>) => void }) 
   const power = useGame((s) => s.power);
   const area = useGame((s) => s.area);
   const theme = AREAS[area].theme;
-  const upgraded = area !== 'kubwa';
+  // One-room life: plastic chairs until you buy sofa
+  const upgraded = false;
   const ups = useGame((s) => s.homeUps ?? []);
   const has = (id: string) => ups.includes(id);
+  // Kubwa get cheap tiles; Nyanya and Mararaba na bare cement
+  const cement = area !== 'kubwa';
+  const floorTex = cement ? paint('cement-floor', cementFloor) : paint(`cheap-tile-${theme.floor}`, marble(theme.floor, '#ffffff', '#00000040'));
+  // Face-me-I-face-you: mattress for floor, no bed frame
+  const floorBed = area === 'mararaba';
   return (
     <group>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow onClick={onFloor}>
-        <planeGeometry args={[8, 6]} />
-        <meshStandardMaterial color={theme.floor} />
-      </mesh>
+      <Floor x0={-4} z0={-3} x1={4} z1={3} tex={floorTex} tile={cement ? 3 : 1.2} y={0} rough={0.85} onFloor={onFloor} />
+      {/* Clothes line with wash hanging */}
+      <Cyl p={[-3.9, 1.0, 2.7]} r={0.02} h={2.0} c="#555" />
+      <Cyl p={[-1.2, 1.0, 2.7]} r={0.02} h={2.0} c="#555" />
+      <Box p={[-2.55, 1.95, 2.7]} s={[2.7, 0.01, 0.01]} c="#ddd" />
+      {[['-3.4', '#e74c3c'], ['-2.8', '#2f7fd6'], ['-2.2', '#f1c40f'], ['-1.7', '#ecf0f1']].map(([x, c]) => (
+        <Box key={x} p={[Number(x), 1.7, 2.7]} s={[0.4, 0.5, 0.02]} c={c} />
+      ))}
+      {/* Calendar and a wall clock */}
+      <Box p={[0.2, 1.8, -2.98]} s={[0.45, 0.6, 0.02]} c="#f4f4f4" />
+      <Box p={[0.2, 1.95, -2.97]} s={[0.4, 0.15, 0.02]} c="#c0392b" />
+      <Cyl p={[-3.98, 2.1, -1.0]} r={0.16} h={0.03} c="#f4f4f4" />
+      {/* Curtain by the window */}
+      <Box p={[-2.6, 1.7, -2.95]} s={[0.35, 1.1, 0.04]} c={theme.rug} />
+      {cement && (
+        <>
+          {/* Wall stains: rain don leak small */}
+          <Box p={[2.6, 2.3, -2.99]} s={[0.9, 0.5, 0.01]} c="#cbb78f" />
+          <Box p={[-3.99, 0.4, 1.8]} s={[0.01, 0.5, 1.2]} c="#cdbf9e" />
+        </>
+      )}
       {/* Bathroom tiles */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[3, 0.005, -2.2]} receiveShadow onClick={onFloor}>
         <planeGeometry args={[2, 1.6]} />
@@ -118,11 +143,21 @@ function SelfCon({ onFloor }: { onFloor: (e: ThreeEvent<MouseEvent>) => void }) 
       </mesh>
 
       <Tappable id="bed">
-        <Box p={[-2.9, 0.2, -1.9]} s={[1.5, 0.4, 2.1]} c="#5b3a21" />
-        <Box p={[-2.9, 0.47, -1.85]} s={[1.4, 0.16, 2.0]} c="#e9e4f2" />
-        <Box p={[-2.9, 0.5, -1.6]} s={[1.42, 0.17, 1.3]} c={theme.bed} />
-        <Box p={[-2.9, 0.62, -2.6]} s={[0.9, 0.12, 0.4]} c="#fafafa" />
-        <Box p={[-2.9, 0.7, -2.95]} s={[1.5, 0.9, 0.08]} c="#5b3a21" />
+        {floorBed ? (
+          <>
+            <Box p={[-2.9, 0.1, -1.85]} s={[1.3, 0.2, 1.9]} c="#e2d9c8" />
+            <Box p={[-2.9, 0.16, -1.5]} s={[1.32, 0.1, 1.1]} c={theme.bed} />
+            <Box p={[-2.9, 0.24, -2.55]} s={[0.8, 0.1, 0.35]} c="#fafafa" />
+          </>
+        ) : (
+          <>
+            <Box p={[-2.9, 0.2, -1.9]} s={[1.5, 0.4, 2.1]} c="#5b3a21" />
+            <Box p={[-2.9, 0.47, -1.85]} s={[1.4, 0.16, 2.0]} c="#e9e4f2" />
+            <Box p={[-2.9, 0.5, -1.6]} s={[1.42, 0.17, 1.3]} c={theme.bed} />
+            <Box p={[-2.9, 0.62, -2.6]} s={[0.9, 0.12, 0.4]} c="#fafafa" />
+            <Box p={[-2.9, 0.7, -2.95]} s={[1.5, 0.9, 0.08]} c="#5b3a21" />
+          </>
+        )}
       </Tappable>
 
       <Tappable id="cooler">
@@ -266,7 +301,8 @@ function SelfCon({ onFloor }: { onFloor: (e: ThreeEvent<MouseEvent>) => void }) 
 export function Room() {
   const walkTo = useGame((s) => s.walkTo);
   const area = useGame((s) => s.area);
-  const mansion = !!AREAS[area].mansion;
+  const tier = homeTier(area);
+  const mansion = tier === 'mansion';
 
   const onFloor = (e: ThreeEvent<MouseEvent>) => {
     e.stopPropagation();
@@ -288,7 +324,7 @@ export function Room() {
         <meshStandardMaterial color="#a7a39a" />
       </mesh>
 
-      {mansion ? <Mansion onFloor={onFloor} /> : <SelfCon onFloor={onFloor} />}
+      {mansion ? <Mansion onFloor={onFloor} /> : tier === 'flat' ? <Flat onFloor={onFloor} /> : <SelfCon onFloor={onFloor} />}
 
       <Tappable id="bench">
         <Box p={[3.6, 0.35, 3.3]} s={[1.6, 0.08, 0.4]} c="#8a6a45" />
@@ -353,7 +389,7 @@ export function Room() {
       </Tappable>
 
       {/* Compound fence */}
-      <Box p={mansion ? [-1, 0.8, -4.1] : [2, 0.8, -4.1]} s={[mansion ? 17 : 11, 1.6, 0.15]} c="#cbbd9d" />
+      <Box p={mansion ? [-1, 0.8, -4.1] : tier === 'flat' ? [0.2, 0.8, -4.1] : [2, 0.8, -4.1]} s={[mansion ? 17 : tier === 'flat' ? 14.6 : 11, 1.6, 0.15]} c="#cbbd9d" />
     </group>
   );
 }
