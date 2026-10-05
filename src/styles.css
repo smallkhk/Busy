@@ -92,6 +92,7 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
 .labels { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
 .label { position: absolute; top: 0; left: 0; transform: translate(-999px, -999px); pointer-events: auto; will-change: transform; }
 .nametag.label { pointer-events: none; z-index: 1; }
+.nametag.label.remote { pointer-events: auto; cursor: pointer; }
 .obj-chip.label { z-index: 2; }
 .nametag {
   background: var(--gold); color: #1d1405; font-weight: 800; font-size: 12px; padding: 2px 8px; border-radius: 8px;
@@ -327,3 +328,48 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
   white-space: normal; text-align: center; background: #fff; color: #1d1d1d; font-weight: 600; font-size: 12px;
   padding: 5px 9px; border-radius: 12px; box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
 }
+
+/* ---------- GistApp (chat) ---------- */
+.app-tile { position: relative; }
+.app-badge { position: absolute; top: -4px; right: -4px; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 99px; background: #25d366; color: #fff; font-size: 11px; font-weight: 800; display: grid; place-items: center; border: 2px solid #0a1713; }
+.gist { display: flex; flex-direction: column; margin: -10px 0; }
+.gist-head { display: flex; justify-content: space-between; align-items: center; padding: 10px 4px; font-size: 20px; font-weight: 800; color: #25d366; }
+.gist-head button { font-size: 18px; width: 36px; height: 36px; border-radius: 50%; background: rgba(37, 211, 102, 0.15); }
+.gist-section { font-size: 12px; font-weight: 800; color: #25d366; margin: 10px 4px 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+.gist-row { display: flex; align-items: center; gap: 12px; padding: 10px 4px; text-align: left; width: 100%; border-bottom: 1px solid rgba(255, 255, 255, 0.06); }
+.gist-row-body { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.gist-row-body b, .gist-row-body span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.gist-row-body span { font-size: 13px; color: var(--muted); }
+.gist-row-side { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; font-size: 11px; color: var(--muted); }
+.unread-time { color: #25d366; font-weight: 700; }
+.gist-badge { min-width: 20px; height: 20px; border-radius: 99px; background: #25d366; color: #0a1713; font-size: 11px; font-weight: 800; display: grid; place-items: center; padding: 0 5px; }
+.gist-avatar { flex: none; border-radius: 50%; display: grid; place-items: center; color: #fff; font-weight: 800; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4); }
+.gist-tag { font-size: 11px; color: var(--muted); font-weight: 500; }
+.gist-small { padding: 6px 12px; border-radius: 99px; font-size: 12px; font-weight: 800; border: 1px solid #25d366; color: #25d366; }
+.gist-small.add { background: #25d366; color: #0a1713; }
+.gist-hint { text-align: center; font-size: 13px; color: var(--muted); padding: 14px 8px; }
+.gist-empty { text-align: center; padding: 40px 12px; }
+.gist-add { display: flex; flex-direction: column; gap: 4px; padding-bottom: 6px; }
+.gist-add input, .gist-input input {
+  font: inherit; font-size: 16px; padding: 10px 14px; border-radius: 99px; border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.08); color: var(--text); outline: none; min-width: 0;
+}
+.gist-convo { display: flex; flex-direction: column; height: 100%; margin: -10px 0; min-height: 0; }
+.gist-convo-head { display: flex; align-items: center; gap: 10px; padding: 8px 4px; background: #1f2c34; border-radius: 12px 12px 0 0; }
+.gist-convo-head button { font-size: 26px; padding: 0 6px; color: #25d366; }
+.gist-convo-name { font-weight: 800; }
+.gist-wall {
+  flex: 1; min-height: 220px; overflow-y: auto; padding: 10px 8px; display: flex; flex-direction: column; gap: 6px;
+  background: #0b141a radial-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px) 0 0 / 18px 18px;
+}
+.gist-bubble {
+  align-self: flex-start; max-width: 80%; background: #202c33; color: #e9edef; padding: 6px 9px 4px; border-radius: 10px 10px 10px 2px;
+  font-size: 14px; line-height: 1.35; word-wrap: break-word;
+}
+.gist-bubble.mine { align-self: flex-end; background: #005c4b; border-radius: 10px 10px 2px 10px; }
+.gist-meta { display: block; text-align: right; font-size: 10px; color: rgba(233, 237, 239, 0.6); margin-top: 2px; }
+.gist-meta .read { color: #53bdeb; }
+.gist-input { display: flex; gap: 6px; padding: 8px 2px 0; }
+.gist-input input { flex: 1; }
+.gist-input button { width: 44px; height: 44px; border-radius: 50%; background: #25d366; color: #0a1713; font-size: 18px; flex: none; }
+.gist-addback { margin-top: 8px; padding: 12px; border-radius: 12px; background: #25d366; color: #0a1713; font-weight: 800; }

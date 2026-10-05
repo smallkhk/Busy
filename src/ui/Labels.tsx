@@ -1,4 +1,5 @@
 import { activityById, INTERACTABLES } from '../content/activities';
+import { useSocial } from '../net/social';
 import { useNet } from '../net/useNet';
 import { useGame } from '../store/game';
 import { registerLabel } from '../world/labels';
@@ -38,7 +39,15 @@ export function Labels() {
         </div>
       )}
       {Object.values(players).filter((p) => !p.hidden).map((p) => (
-        <div key={p.id} ref={registerLabel(`p:${p.id}`)} className="nametag label remote">
+        <div
+          key={p.id}
+          ref={registerLabel(`p:${p.id}`)}
+          className="nametag label remote"
+          onPointerDown={(e) => {
+            e.stopPropagation();
+            useSocial.setState({ nearbyMenu: p.id });
+          }}
+        >
           {bubbles[p.id] && bubbles[p.id].until > now && <span className="bubble">{bubbles[p.id].text}</span>}
           {p.name}
         </div>
