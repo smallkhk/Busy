@@ -14,11 +14,13 @@ export function Wardrobe() {
   const wardrobe = useGame((s) => s.wardrobe ?? ['tee']);
   const shirt = useGame((s) => s.shirt);
   const money = useGame((s) => s.money);
+  const discount = useGame((s) => (s.skills ?? []).includes('tailoring') ? 0.8 : 1);
   const g = useGame.getState();
   const [outfit, setOutfit] = useState<Outfit>(look.outfit);
   const [hair, setHair] = useState<Hair>(look.hair);
   const [tab, setTab] = useState<'clothes' | 'hair' | 'colour'>('clothes');
   const o = OUTFITS.find((x) => x.id === outfit)!;
+  const price = Math.round(o.cost * discount);
   const owned = wardrobe.includes(outfit);
   const wearing = look.outfit === outfit;
 
@@ -59,7 +61,7 @@ export function Wardrobe() {
                 <button key={x.id} className={`drip-item ${outfit === x.id ? 'on' : ''}`} onClick={() => setOutfit(x.id)}>
                   <span className="drip-emoji">{x.emoji}</span>
                   <span className="small">{x.name}</span>
-                  <span className="muted small">{wardrobe.includes(x.id) ? (look.outfit === x.id ? 'Wearing' : 'Owned') : formatNaira(x.cost)}</span>
+                  <span className="muted small">{wardrobe.includes(x.id) ? (look.outfit === x.id ? 'Wearing' : 'Owned') : formatNaira(Math.round(x.cost * discount))}</span>
                 </button>
               ))}
             </div>
@@ -67,7 +69,7 @@ export function Wardrobe() {
             {owned ? (
               <button className="primary" disabled={wearing} onClick={() => g.wearOutfit(outfit)}>{wearing ? '✅ You dey wear am' : '👕 Wear am'}</button>
             ) : (
-              <button className="primary" disabled={money < o.cost} onClick={() => g.buyOutfit(outfit)}>{money < o.cost ? `Need ${formatNaira(o.cost)}` : `🛍️ Buy & wear · ${formatNaira(o.cost)}`}</button>
+              <button className="primary" disabled={money < price} onClick={() => g.buyOutfit(outfit)}>{money < price ? `Need ${formatNaira(price)}` : `🛍️ Buy & wear · ${formatNaira(price)}${discount < 1 ? ' (tailor discount)' : ''}`}</button>
             )}
           </>
         )}
