@@ -47,7 +47,7 @@ export type Activity = {
   homeLeg?: boolean;
   /** Meals of foodstuff used up when it starts. */
   usesPantry?: number;
-  requires?: { packaging?: number; cv?: number; car?: boolean; longLeg?: number; /** House upgrade you must own. */ homeItem?: string; /** Enrolled in this course. */ course?: string; /** Finished this course. */ skill?: string; /** Active gym membership. */ gym?: boolean };
+  requires?: { packaging?: number; cv?: number; car?: boolean; longLeg?: number; /** House upgrade you must own. */ homeItem?: string; /** Enrolled in this course. */ course?: string; /** Finished this course. */ skill?: string; /** Active gym membership. */ gym?: boolean; /** Only for mansion houses. */ mansion?: boolean };
   /** Applied when it finishes. */
   /** `cure` lists sicknesses it treats (all of them if true); `net` buys a mosquito net. */
   effects?: { packaging?: number; pantry?: number; cv?: number; meet?: string; cure?: true | ('malaria' | 'typhoid' | 'food')[]; net?: boolean; carFix?: number; /** Litres into your car tank. */ fuel?: number; /** Chance the fuel na adulterated and damages the engine. */ badFuel?: number; /** Fitness points. */ fitness?: number };
@@ -65,6 +65,8 @@ export type Interactable = {
   /** Label anchor in the world. */
   label: [number, number, number];
   activities: Activity[];
+  /** Only shows in a mansion. */
+  mansion?: boolean;
 };
 
 export function ride(id: string, label: string, emoji: string, to: Place, minutes: number, cost: number, spot: [number, number], homeLeg = to === 'street'): Activity {

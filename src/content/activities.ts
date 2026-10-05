@@ -115,6 +115,40 @@ const HOME_AND_STREET: Interactable[] = [
       { id: 'ps5', label: 'Play FIFA on PS5', doing: 'Scoring goals for FIFA 🎮', emoji: '🎮', minutes: 90, gains: { fun: 40, energy: -5 }, requiresPower: true, requires: { homeItem: 'ps5' }, spot: [-1.7, 1.0] },
     ],
   },
+  // ---------------- Mansion toys ----------------
+  {
+    id: 'jacuzzi',
+    place: 'home',
+    mansion: true,
+    name: 'Jacuzzi',
+    emoji: '🛁',
+    label: [3.05, 1.0, 0.2],
+    activities: [
+      { id: 'jacuzzi-soak', label: 'Relax for jacuzzi', doing: 'Soaking for jacuzzi like Alhaji 🛁', emoji: '🛁', minutes: 60, gains: { fun: 30, hygiene: 25, energy: 10 }, requires: { mansion: true }, spot: [2.1, 0.9] },
+    ],
+  },
+  {
+    id: 'piano',
+    place: 'home',
+    mansion: true,
+    name: 'Grand piano',
+    emoji: '🎹',
+    label: [1.1, 1.3, 0.4],
+    activities: [
+      { id: 'piano-play', label: 'Play piano', doing: 'Playing "Ojuelegba" for piano 🎹', emoji: '🎹', minutes: 45, gains: { fun: 25 }, requires: { mansion: true }, spot: [0.5, 1.1] },
+    ],
+  },
+  {
+    id: 'pooltable',
+    place: 'home',
+    mansion: true,
+    name: 'Pool table',
+    emoji: '🎱',
+    label: [0.6, 1.2, 2.35],
+    activities: [
+      { id: 'snooker', label: 'Play snooker', doing: 'Shooting snooker 🎱', emoji: '🎱', minutes: 45, gains: { fun: 30, social: 10, energy: -5 }, requires: { mansion: true }, spot: [-0.6, 2.6] },
+    ],
+  },
   {
     id: 'maishayi',
     place: 'home',

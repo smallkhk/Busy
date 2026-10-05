@@ -146,6 +146,11 @@ export const AREAS: Record<AreaId, Area> = {
 };
 
 /** Areas you rent (the move list); the others you must buy first. */
+export type HomeTier = 'room' | 'flat' | 'mansion';
+const FLATS: AreaId[] = ['gwarinpa', 'garki', 'wuse2', 'kuje'];
+/** How big the house is: one room, a proper flat, or a mansion. */
+export const homeTier = (area: AreaId): HomeTier => (AREAS[area].mansion ? 'mansion' : FLATS.includes(area) ? 'flat' : 'room');
+
 export const RENT_AREAS: AreaId[] = ['mararaba', 'nyanya', 'kubwa', 'gwarinpa', 'garki', 'wuse2', 'maitama', 'asokoro'];
 
 export type Property = { status: 'land' | 'building' | 'built'; boughtDay: number; readyDay?: number; spent: number; rentedOut?: boolean };

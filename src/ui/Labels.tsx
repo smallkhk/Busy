@@ -6,10 +6,12 @@ import { npcsAt } from '../content/npcs';
 import { clockParts } from '../engine/clock';
 import { useGame } from '../store/game';
 import { registerLabel } from '../world/labels';
+import { homeTier } from '../content/housing';
 
 /** Emoji chips over furniture and the player's name tag. Positioned by LabelSync in the scene. */
 export function Labels() {
   const place = useGame((s) => s.place);
+  const mansion = useGame((s) => homeTier(s.area) === 'mansion');
   const name = useGame((s) => s.name);
   const openMenu = useGame((s) => s.openMenu);
   const openNpc = useGame((s) => s.openNpc);
@@ -25,7 +27,7 @@ export function Labels() {
   const npcs = npcsAt(place, hour, day);
   return (
     <div className="labels">
-      {INTERACTABLES.filter((i) => i.place === place).map((i) => (
+      {INTERACTABLES.filter((i) => i.place === place && (!i.mansion || mansion)).map((i) => (
         <button
           key={i.id}
           ref={registerLabel(i.id)}

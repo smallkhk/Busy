@@ -9,7 +9,7 @@ import { EDUCATIONS, familyById, ORIGINS, type Birth } from '../content/birth';
 import { DEFAULT_LOOK, HAIR_COST, OUTFITS, type Hair, type Look, type Outfit } from '../content/fashion';
 import { driveWear } from '../content/minigames';
 import { areaAllows, genCostFor, homeItemById, TV_ACTIVITIES, WIFI_FREE } from '../content/homeup';
-import { AREAS, moveCost, placeLabel, PROPERTY_SELL_FEE, propertyValue, RENT_CYCLE_DAYS, RENT_GRACE_DAYS, rentOwed, type AreaId, type Property } from '../content/housing';
+import { AREAS, homeTier, moveCost, placeLabel, PROPERTY_SELL_FEE, propertyValue, RENT_CYCLE_DAYS, RENT_GRACE_DAYS, rentOwed, type AreaId, type Property } from '../content/housing';
 import { activityRealSeconds, clockParts, formatNaira, inHours, realMinutes, watMidnight } from '../engine/clock';
 import { CALL_COST, contactById, FIRST_MEET_REL, GIFT_COST, longLeg, type ContactState } from '../content/contacts';
 import { badDayChance, businessById, dailyNet, MAX_BIZ_LEVEL, MAX_STAFF, upgradeCost, wageOf, type OwnedBusiness } from '../content/business';
@@ -402,6 +402,7 @@ export function blockReason(a: Activity, s: BlockState): string | null {
   if (a.requires?.course && s.skills?.includes(a.requires.course as CourseId)) return 'You don finish this course already 🎓';
   if (a.requires?.skill && !s.skills?.includes(a.requires.skill as CourseId)) return `You need ${courseById(a.requires.skill)?.name ?? 'training'} first (📚 Learn app)`;
   if (a.requires?.gym && clockParts(s.time).day > (s.gymUntil ?? 0)) return 'Your gym membership never pay (📚 Learn app)';
+  if (a.requires?.mansion && homeTier(s.area) !== 'mansion') return 'Na only mansion get this one';
   if (a.requires?.homeItem && !s.homeUps?.includes(a.requires.homeItem)) return `Buy ${homeItemById(a.requires.homeItem)?.name ?? 'am'} first (🏠 Rent app)`;
   const cost = costAt(a, s) + (a.requiresPower && !s.power ? genCostFor(s.homeUps) : 0);
   if (cost > s.money) return `You need ${formatNaira(cost)}`;
@@ -1656,7 +1657,8 @@ export const useGame = create<GameState>()(
           const { active, place } = get();
           if (active) return;
           // Mansions stretch west: dining room and garage
-          const b = place === 'home' && AREAS[get().area].mansion ? { ...BOUNDS.home, minX: -8.2 } : BOUNDS[place];
+          const tier = homeTier(get().area);
+          const b = place === 'home' && tier !== 'room' ? { ...BOUNDS.home, minX: tier === 'mansion' ? -8.2 : -6.2 } : BOUNDS[place];
           set({
             target: [Math.min(b.maxX, Math.max(b.minX, x)), Math.min(b.maxZ, Math.max(b.minZ, z))],
             pending: null,

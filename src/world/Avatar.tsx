@@ -251,7 +251,7 @@ export function Avatar() {
     if (sleeping) {
       // Faint on the floor if not at the bed
       const atBed = useGame.getState().place === 'home' && Math.hypot(pos[0] - BED_POS[0], pos[1] - BED_POS[1]) < 2;
-      g.position.set(atBed ? BED_POS[0] : pos[0], atBed ? 0.62 : 0.15, atBed ? -1.25 : pos[1]);
+      g.position.set(atBed ? BED_POS[0] : pos[0], atBed ? (useGame.getState().area === 'mararaba' ? 0.32 : 0.62) : 0.15, atBed ? -1.25 : pos[1]);
       g.rotation.set(-Math.PI / 2, 0, 0);
       avatarLabelPos.set(g.position.x, g.position.y + 0.5, g.position.z - 0.6);
       return;
