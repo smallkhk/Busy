@@ -78,7 +78,7 @@ function Traffic() {
   );
 }
 
-export type Walker = { from: number; to: number; z: number; speed: number; shirt: string; tray?: boolean };
+export type Walker = { from: number; to: number; z: number; speed: number; shirt: string; tray?: boolean; woman?: boolean };
 
 const WALKERS: Walker[] = [
   { from: -7, to: 7, z: 2.9, speed: 0.9, shirt: '#c0392b' },
@@ -111,12 +111,13 @@ export function Walkers({ walkers }: { walkers: Walker[] }) {
     <>
       {walkers.map((w, i) => (
         <group key={i} ref={(g) => { refs.current[i] = g; }} scale={0.92}>
-          <Person shirt={w.shirt} trousers="#2d2d2d" />
+          {/* Hawkers with tray and every second passer-by na woman */}
+          <Person shirt={w.shirt} trousers={w.tray || (w.woman ?? i % 2 === 1) ? undefined : '#2d2d2d'} woman={w.tray || (w.woman ?? i % 2 === 1)} move="Walk" />
           {w.tray && (
             <>
               {/* Pure water seller with tray on head */}
-              <Cyl p={[0, 1.42, 0]} r={0.32} h={0.05} c="#c4c4c4" />
-              <Box p={[0, 1.52, 0]} s={[0.4, 0.14, 0.4]} c="#cfe8ff" />
+              <Cyl p={[0, 1.56, 0]} r={0.32} h={0.05} c="#c4c4c4" />
+              <Box p={[0, 1.66, 0]} s={[0.4, 0.14, 0.4]} c="#cfe8ff" />
             </>
           )}
         </group>
@@ -242,7 +243,8 @@ export function Street() {
           <Cyl p={[0.4, 0.62, 1.3]} r={0.18} h={0.28} c="#9b9b9b" />
           <Cyl p={[0.85, 0.6, 1.3]} r={0.16} h={0.22} c="#c0392b" />
           <group position={[-0.4, 0, 1.2]} rotation={[0, 0, 0]}>
-            <Person shirt="#e67e22" trousers="#e67e22" skin="#5a3825" />
+            {/* Mama Put in her wrapper and gele */}
+            <Person shirt="#e67e22" skin="#5a3825" woman hat={{ type: 'gele', color: '#e67e22', band: '#c0392b' }} move="Interact" />
           </group>
         </Shop>
       </Tappable>
@@ -269,11 +271,8 @@ export function Street() {
           <Box key={`${x}${z}`} p={[4.8 + x, 0.25, -2.7 + z]} s={[0.05, 0.5, 0.05]} c="#333" />
         ))}
         <group position={[4.8, 0, -3.4]}>
-          <Person shirt="#f2f2f2" trousers="#f2f2f2" skin="#4a2e1d" />
-          <mesh position={[0, 1.42, 0]}>
-            <cylinderGeometry args={[0.17, 0.17, 0.12, 16]} />
-            <meshStandardMaterial color="#1f6f4a" />
-          </mesh>
+          {/* Mallam Suya in jalabiya and hula */}
+          <Person shirt="#f2f2f2" trousers="#f2f2f2" skin="#4a2e1d" hat={{ type: 'hula', color: '#1f6f4a', band: '#f2f2f2' }} move="Interact" />
         </group>
         {night && <pointLight position={[4.8, 1.0, -2.5]} intensity={5} distance={3.5} color="#ff8c3a" />}
       </Tappable>

@@ -118,7 +118,7 @@ export function Maitama() {
         <Flag x={-5.6} z={-2.8} h={3.4} />
         {[0, 1, 2].map((i) => (
           <group key={i} position={[-3.4 + i * 0.5, 0, -1.9]} scale={0.88}>
-            <Person shirt={['#16a085', '#c0392b', '#2c3e50'][i]} trousers="#2d2d2d" />
+            <Person shirt={['#16a085', '#c0392b', '#2c3e50'][i]} trousers="#2d2d2d" woman={i === 1} />
           </group>
         ))}
       </Tappable>
@@ -261,7 +261,7 @@ export function Garki() {
         <Box p={[-0.6, 0.4, -2.2]} s={[0.9, 0.8, 0.5]} c="#1f6fb2" />
         <Box p={[-0.6, 0.85, -2.2]} s={[0.25, 0.1, 0.15]} c="#222" />
         <group position={[-0.6, 0, -2.8]}>
-          <Person shirt="#f2c230" trousers="#2d2d2d" />
+          <Person shirt="#f2c230" trousers="#2d2d2d" kind="worker" />
         </group>
       </Tappable>
 
@@ -313,7 +313,7 @@ export function Nyanya() {
           <Cyl key={x} p={[x, 0.55, -2.6]} r={0.18} h={0.25} c="#c0392b" />
         ))}
         <group position={[-4.2, 0, -3.2]}>
-          <Person shirt="#e67e22" trousers="#e67e22" />
+          <Person shirt="#e67e22" woman hat={{ type: 'gele', color: '#e67e22', band: '#c0392b' }} move="Interact" />
         </group>
       </Tappable>
 
@@ -392,7 +392,7 @@ export function Airport() {
       <Tappable id="terminal">
         <Box p={[-4.2, 2.9, -3.24]} s={[2.4, 0.4, 0.04]} c="#f2c230" />
         <group position={[-4.6, 0, -2.4]}>
-          <Person shirt="#2c3e50" trousers="#2c3e50" />
+          <Person shirt="#2c3e50" trousers="#2c3e50" kind="suit" />
         </group>
         <Box p={[-3.8, 0.3, -2.3]} s={[0.4, 0.6, 0.3]} c="#c0392b" />
         <Box p={[-3.3, 0.25, -2.3]} s={[0.35, 0.5, 0.25]} c="#2980b9" />

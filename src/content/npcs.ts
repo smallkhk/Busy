@@ -1,4 +1,6 @@
 import type { Place } from './common';
+import type { Outfit } from './fashion';
+import type { Hat, HumanKind } from '../world/HumanModel';
 
 /** Where a contact physically hangs out. `days` uses day % 7 (0 = Sunday). */
 export type NpcSpot = { place: Place; pos: [number, number]; hours: [number, number]; days?: number[] };
@@ -6,6 +8,8 @@ export type NpcSpot = { place: Place; pos: [number, number]; hours: [number, num
 export type Npc = {
   shirt: string;
   trousers?: string;
+  /** How they dress on the map. */
+  look?: { woman?: boolean; outfit?: Outfit; hat?: Hat; kind?: HumanKind };
   spots: NpcSpot[];
   /** What they say when you walk up, by how close una be. */
   lines: { stranger: string; cold: string; warm: string; close: string };
@@ -17,6 +21,7 @@ export const NPCS: Record<string, Npc> = {
   garba: {
     shirt: '#ecf0f1',
     trousers: '#ecf0f1',
+    look: { hat: { type: 'hula', color: '#f4f1ec', band: '#1f6f4a' } },
     spots: [{ place: 'secretariat', pos: [-1.2, 0.2], hours: [8, 17], days: WEEKDAYS }],
     lines: {
       stranger: '"Salaam alaikum. You dey find which office? I fit show you road."',
@@ -53,6 +58,7 @@ export const NPCS: Record<string, Npc> = {
   ade: {
     shirt: '#1b1a22',
     trousers: '#1b1a22',
+    look: { kind: 'suit' },
     spots: [
       { place: 'street', pos: [-2.0, 0.6], hours: [7, 9] },
       { place: 'street', pos: [-2.0, 0.6], hours: [18, 21] },
@@ -67,6 +73,7 @@ export const NPCS: Record<string, Npc> = {
   alhaji: {
     shirt: '#f4f1ec',
     trousers: '#f4f1ec',
+    look: { outfit: 'agbada' },
     spots: [
       { place: 'lounge', pos: [2.2, 1.0], hours: [21, 24] },
       { place: 'maitama', pos: [1.2, 0.8], hours: [13, 16] },
@@ -81,6 +88,7 @@ export const NPCS: Record<string, Npc> = {
   aisha: {
     shirt: '#16a085',
     trousers: '#2c3e50',
+    look: { woman: true, kind: 'w_suit' },
     spots: [{ place: 'maitama', pos: [-2.6, 0.6], hours: [8, 14], days: WEEKDAYS }],
     lines: {
       stranger: '"Next! Oh sorry, you no dey the queue? Me na Aisha, I dey work for embassy."',
@@ -92,6 +100,7 @@ export const NPCS: Record<string, Npc> = {
   hon: {
     shirt: '#118a4c',
     trousers: '#f4f1ec',
+    look: { outfit: 'kaftan' },
     spots: [{ place: 'asokoro', pos: [0.9, 0.6], hours: [9, 15], days: WEEKDAYS }],
     lines: {
       stranger: '"Ehen? You be my constituent? Remember me for 2027 o! Hon. Danjuma."',

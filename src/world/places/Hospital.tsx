@@ -39,7 +39,7 @@ export function Hospital() {
         <Box p={[-4.0, 0.42, -2.2]} s={[2.4, 0.08, 0.45]} c="#2f6fa8" />
         {[-4.8, -4.0, -3.2].map((x, i) => (
           <group key={x} position={[x, 0.08, -2.25]} scale={0.88}>
-            <Person shirt={['#8e44ad', '#16a085', '#c0392b'][i]} trousers="#2d2d2d" />
+            <Person shirt={['#8e44ad', '#16a085', '#c0392b'][i]} trousers="#2d2d2d" woman={i !== 1} />
           </group>
         ))}
       </Tappable>

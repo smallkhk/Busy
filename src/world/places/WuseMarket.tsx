@@ -18,7 +18,8 @@ function Stall({ x, z, tarp, trader, flip, children }: { x: number; z: number; t
       <Box p={[0, 1.95, 0]} s={[2.1, 0.05, 1.3]} c={tarp} r={[0.08, 0, 0]} />
       {trader && (
         <group position={[0, 0, -0.75]}>
-          <Person shirt={trader} trousers="#3a3a3a" />
+          {/* Market women in wrapper and headtie */}
+          <Person shirt={trader} woman hat={{ type: 'gele', color: trader }} />
         </group>
       )}
       {children}

@@ -1,6 +1,6 @@
 import { decodeLook, SKINS } from '../content/fashion';
 import { useFrame } from '@react-three/fiber';
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { Vector3, type Group } from 'three';
 import { Person } from '../world/Avatar';
 import { useNet, type Remote } from './useNet';
@@ -13,6 +13,7 @@ function RemotePlayer({ p }: { p: Remote }) {
   const legs = useRef<Group[]>([]);
   const look = decodeLook(p.look);
   const phase = useRef(0);
+  const [walking, setWalking] = useState(false);
   useFrame((_, dt) => {
     const g = ref.current;
     if (!g) return;
@@ -27,6 +28,8 @@ function RemotePlayer({ p }: { p: Remote }) {
       g.rotation.y = Math.atan2(dx, dz);
       phase.current += dt * 11;
     }
+    const moving = dist > 0.02 && dist <= 6;
+    if (moving !== walking) setWalking(moving);
     const swing = dist > 0.02 ? Math.sin(phase.current) * 0.5 : 0;
     legs.current.forEach((l, i) => l && (l.rotation.x = i === 0 ? swing : -swing));
     let v = remoteLabelPos.get(p.id);
@@ -35,7 +38,7 @@ function RemotePlayer({ p }: { p: Remote }) {
   });
   return (
     <group ref={ref} position={[p.x, 0, p.z]} visible={!p.hidden}>
-      <Person shirt={p.shirt} legs={legs} outfit={look.outfit} hair={look.hair} skin={SKINS[look.skin]} />
+      <Person shirt={p.shirt} legs={legs} outfit={look.outfit} hair={look.hair} skin={SKINS[look.skin]} move={walking ? 'Walk' : 'Idle'} />
     </group>
   );
 }

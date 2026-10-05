@@ -287,21 +287,39 @@ export function Room() {
       </Tappable>
 
       <Tappable id="maishayi">
-        {/* Kiosk table + bench + kettle + bread */}
+        {/* Mai Shayi kiosk: table, gas burner, kettle, Milo, Peak, Lipton, bread and eggs */}
         <Box p={[5.8, 0.45, 0]} s={[1.2, 0.08, 0.7]} c="#2c6e9b" />
         {[[-0.5, -0.28], [0.5, -0.28], [-0.5, 0.28], [0.5, 0.28]].map(([x, z]) => (
           <Box key={`${x}${z}`} p={[5.8 + x, 0.22, z]} s={[0.06, 0.45, 0.06]} c="#1f4f70" />
         ))}
-        <Cyl p={[5.5, 0.6, 0]} r={0.1} h={0.22} c="#c9c9c9" />
-        <Box p={[6.05, 0.55, 0.05]} s={[0.4, 0.12, 0.2]} c="#e0a94f" />
-        <Box p={[5.85, 0.52, -0.15]} s={[0.2, 0.06, 0.2]} c="#f4e3b0" />
-        <group position={[6.6, 0, 0]} rotation={[0, -Math.PI / 2, 0]}>
-          <Person shirt="#f2f2f2" trousers="#f2f2f2" skin="#4a2e1d" />
-          {/* Cap */}
-          <mesh position={[0, 1.42, 0]}>
-            <cylinderGeometry args={[0.17, 0.17, 0.12, 16]} />
-            <meshStandardMaterial color="#8b1e3f" />
+        {/* Burner and the big kettle */}
+        <Cyl p={[6.2, 0.52, -0.18]} r={0.13} h={0.06} c="#2b2b2b" />
+        <Cyl p={[6.2, 0.64, -0.18]} r={0.1} h={0.18} c="#c9c9c9" />
+        <Cyl p={[6.2, 0.75, -0.18]} r={0.05} h={0.04} c="#9a9a9a" />
+        <Box p={[6.08, 0.66, -0.18]} s={[0.12, 0.025, 0.025]} c="#9a9a9a" r={[0, 0, 0.6]} />
+        {/* Tins: Milo, Peak milk, Bournvita, and the Lipton box */}
+        <Cyl p={[5.4, 0.57, -0.22]} r={0.05} h={0.14} c="#1d7a3a" />
+        <Cyl p={[5.52, 0.57, -0.22]} r={0.05} h={0.14} c="#1f5fa8" />
+        <Cyl p={[5.52, 0.645, -0.22]} r={0.05} h={0.01} c="#f4f4f4" />
+        <Cyl p={[5.64, 0.57, -0.22]} r={0.05} h={0.14} c="#7a2a1e" />
+        <Box p={[5.8, 0.55, -0.24]} s={[0.12, 0.1, 0.08]} c="#f2c230" />
+        {/* Agege bread loaves */}
+        <Box p={[5.5, 0.54, 0.15]} s={[0.32, 0.09, 0.14]} c="#e0a94f" />
+        <Box p={[5.5, 0.62, 0.15]} s={[0.3, 0.06, 0.12]} c="#d39a45" />
+        {/* Crate of eggs */}
+        <Box p={[5.95, 0.51, 0.18]} s={[0.26, 0.03, 0.26]} c="#c9b48a" />
+        {[-0.08, 0, 0.08].flatMap((x) => [-0.08, 0, 0.08].map((z) => (
+          <mesh key={`${x}${z}`} position={[5.95 + x, 0.55, 0.18 + z]} scale={[1, 1.25, 1]}>
+            <sphereGeometry args={[0.03, 8, 6]} />
+            <meshStandardMaterial color="#f3e6cf" />
           </mesh>
+        )))}
+        {/* Cups */}
+        <Cyl p={[5.72, 0.54, 0.02]} r={0.035} h={0.07} c="#f4f4f4" />
+        <Cyl p={[5.8, 0.54, 0.02]} r={0.035} h={0.07} c="#e74c3c" />
+        <group position={[6.75, 0, 0]} rotation={[0, -Math.PI / 2, 0]}>
+          {/* Mai Shayi: Hausa man in jalabiya and embroidered zanna cap, busy making tea */}
+          <Person shirt="#6f9cc4" trousers="#6f9cc4" skin="#3d2416" hat={{ type: 'hula', color: '#8b1e3f', band: '#e2b84a' }} move="Interact" />
         </group>
         {/* Umbrella */}
         <Cyl p={[6.3, 1.1, 0.35]} r={0.03} h={2.2} c="#777" />

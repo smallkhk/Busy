@@ -48,7 +48,7 @@ function Dancers() {
       {spots.map(([x, z, shirt], i) => (
         <group key={i} position={[x, 0, z]}>
           <group ref={(g) => { refs.current[i] = g; }}>
-            <Person shirt={shirt} trousers="#1d1d1d" />
+            <Person shirt={shirt} trousers={i % 2 ? '#1d1d1d' : undefined} woman={i % 2 === 0} move="Wave" />
           </group>
         </group>
       ))}
@@ -115,7 +115,7 @@ export function Lounge() {
         <Cyl p={[2.8, 1.04, -2.9]} r={0.2} h={0.04} c="#333" />
         <Cyl p={[3.6, 1.04, -2.9]} r={0.2} h={0.04} c="#333" />
         <group position={[3.2, 0, -3.6]}>
-          <Person shirt="#ff3d7f" trousers="#1d1d1d" />
+          <Person shirt="#ff3d7f" woman />
         </group>
         {[1.8, 4.6].map((x) => (
           <group key={x}>
@@ -142,7 +142,7 @@ export function Lounge() {
       <Box p={[3.2, 1.2, 1.9]} s={[0.25, 2.4, 0.25]} c="#2b2b33" />
       <Neon p={[3.2, 2.45, 1.9]} s={[0.3, 0.06, 0.3]} c="#e8b04b" />
       <group position={[2.6, 0, 2.2]} rotation={[0, Math.PI / 4, 0]}>
-        <Person shirt="#0d0d0d" trousers="#0d0d0d" />
+        <Person shirt="#0d0d0d" trousers="#0d0d0d" kind="suit" />
       </group>
 
       <Tappable id="lounge-park">

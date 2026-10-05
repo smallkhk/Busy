@@ -91,7 +91,7 @@ export function JabiLake() {
       <Tappable id="boutique">
         <Box p={[-3.1, 2.3, -2.5]} s={[1.4, 0.3, 0.1]} c="#8e44ad" />
         <group position={[-3.1, 0, -2.2]}>
-          <Person shirt="#2c3e50" trousers="#2c3e50" />
+          <Person shirt="#2c3e50" woman />
         </group>
       </Tappable>
 

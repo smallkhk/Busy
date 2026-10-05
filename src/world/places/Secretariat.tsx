@@ -64,7 +64,7 @@ export function Secretariat() {
         <Cyl p={[-5.9, 0.62, 1.4]} r={0.2} h={0.26} c="#a0a0a0" />
         <Cyl p={[-5.3, 0.6, 1.4]} r={0.18} h={0.22} c="#c0392b" />
         <group position={[-5.6, 0, 1.95]} rotation={[0, Math.PI, 0]}>
-          <Person shirt="#e67e22" trousers="#e67e22" />
+          <Person shirt="#e67e22" woman hat={{ type: 'gele', color: '#e67e22', band: '#c0392b' }} move="Interact" />
         </group>
       </Tappable>
 
