@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-export type Remote = { id: string; name: string; shirt: string; x: number; z: number; hidden?: boolean };
+export type Remote = { id: string; name: string; shirt: string; x: number; z: number; hidden?: boolean; /** Outfit.hair.skin, see content/fashion. */ look?: string };
 export type ChatMsg = { id: string; name: string; text: string; at: number; mine?: boolean };
 
 type NetState = {

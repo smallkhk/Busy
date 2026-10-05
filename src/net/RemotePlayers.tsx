@@ -1,3 +1,4 @@
+import { decodeLook, SKINS } from '../content/fashion';
 import { useFrame } from '@react-three/fiber';
 import { useRef } from 'react';
 import { Vector3, type Group } from 'three';
@@ -10,6 +11,7 @@ export const remoteLabelPos = new Map<string, Vector3>();
 function RemotePlayer({ p }: { p: Remote }) {
   const ref = useRef<Group>(null);
   const legs = useRef<Group[]>([]);
+  const look = decodeLook(p.look);
   const phase = useRef(0);
   useFrame((_, dt) => {
     const g = ref.current;
@@ -33,7 +35,7 @@ function RemotePlayer({ p }: { p: Remote }) {
   });
   return (
     <group ref={ref} position={[p.x, 0, p.z]} visible={!p.hidden}>
-      <Person shirt={p.shirt} legs={legs} />
+      <Person shirt={p.shirt} legs={legs} outfit={look.outfit} hair={look.hair} skin={SKINS[look.skin]} />
     </group>
   );
 }

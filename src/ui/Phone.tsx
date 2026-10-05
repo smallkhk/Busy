@@ -28,6 +28,7 @@ const APPS: { id: PhoneApp; name: string; emoji: string; color: string }[] = [
   { id: 'gist', name: 'GistApp', emoji: '💬', color: '#1fa855' },
   { id: 'chat', name: 'Calls', emoji: '📞', color: '#2f7fd6' },
   { id: 'love', name: 'Abuja Love', emoji: '💕', color: '#e8336d' },
+  { id: 'style', name: 'Drip', emoji: '👗', color: '#b0408f' },
   { id: 'rankings', name: 'Rankings', emoji: '🏆', color: '#c9a24a' },
   { id: 'account', name: 'Account', emoji: '⚙️', color: '#5f6670' },
   { id: 'map', name: 'Map', emoji: '🗺️', color: '#6a4bc4' },
@@ -447,7 +448,7 @@ export function Phone() {
   const openPhone = useGame((s) => s.openPhone);
   const time = useGame((s) => Math.floor(s.time));
   const unread = useSocial(totalUnread);
-  if (!phone || phone === 'map' || phone === 'cars') return null;
+  if (!phone || phone === 'map' || phone === 'cars' || phone === 'style') return null;
   const current = APPS.find((a) => a.id === phone);
   return (
     <div className="sheet-backdrop" onPointerDown={() => openPhone(null)}>

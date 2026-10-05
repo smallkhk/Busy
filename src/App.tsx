@@ -17,6 +17,7 @@ import { Scene } from './world/Scene';
 
 // Only download the big map and the car showroom when you open them
 const WorldMap = lazy(() => import('./ui/WorldMap').then((m) => ({ default: m.WorldMap })));
+const Wardrobe = lazy(() => import('./ui/Wardrobe').then((m) => ({ default: m.Wardrobe })));
 const Showroom = lazy(() => import('./ui/Showroom').then((m) => ({ default: m.Showroom })));
 
 function BottomNav() {
@@ -44,10 +45,11 @@ export default function App() {
   // The 3D map replaces the scene while open (one WebGL canvas at a time on phones).
   const mapOpen = useGame((s) => s.phone === 'map');
   const showroomOpen = useGame((s) => s.phone === 'cars');
+  const wardrobeOpen = useGame((s) => s.phone === 'style');
   return (
     <div className="app-root">
       <AudioDirector />
-      {!mapOpen && !showroomOpen && <Scene />}
+      {!mapOpen && !showroomOpen && !wardrobeOpen && <Scene />}
       {started ? (
         <>
           <NetDirector />
@@ -68,6 +70,7 @@ export default function App() {
           <Suspense fallback={<div className="loading-screen">Loading…</div>}>
             {mapOpen && <WorldMap />}
             {showroomOpen && <Showroom />}
+            {wardrobeOpen && <Wardrobe />}
           </Suspense>
           <NearbyMenu />
           <NpcSheet />
