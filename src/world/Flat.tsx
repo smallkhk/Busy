@@ -4,6 +4,7 @@ import { clockParts, daylight } from '../engine/clock';
 import { useGame } from '../store/game';
 import { Art, Chair, Floor, marble, paint, Plant, Sconce, TRIM, WOOD } from './Interior';
 import { Box, Cyl, Tappable } from './Room';
+import { At, Shell } from './Spread';
 
 /** A proper flat (Gwarinpa, Garki, Wuse 2, your Kuje bungalow): bedroom, kitchen, bathroom, parlour, dining and a small study. */
 export function Flat({ onFloor }: { onFloor: (e: ThreeEvent<MouseEvent>) => void }) {
@@ -24,6 +25,7 @@ export function Flat({ onFloor }: { onFloor: (e: ThreeEvent<MouseEvent>) => void
 
   return (
     <group>
+      <Shell>
       {/* ---------- Floors ---------- */}
       <Floor x0={-6.6} z0={-3} x1={4} z1={2.9} tex={tile} tile={1.4} rough={0.35} onFloor={onFloor} />
       <Floor x0={-1.3} z0={-3} x1={4} z1={-0.8} tex={white} y={0.006} tile={1.2} onFloor={onFloor} />
@@ -53,7 +55,9 @@ export function Flat({ onFloor }: { onFloor: (e: ThreeEvent<MouseEvent>) => void
       <Art p={[-6.58, 1.5, 1.6]} w={0.8} h={0.6} c1={theme.rug} c2="#f4f1ec" rotY={Math.PI / 2} />
       <Art p={[-3.0, 1.85, -2.96]} w={0.8} h={0.5} c1="#2f6b4a" c2="#e8b04b" />
 
+      </Shell>
       {/* ---------- Bedroom ---------- */}
+      <At id="bed">
       <Tappable id="bed">
         <Box p={[-2.9, 0.2, -1.9]} s={[1.6, 0.4, 2.1]} c={WOOD} />
         <Box p={[-2.9, 0.46, -1.85]} s={[1.5, 0.14, 2.0]} c="#f1eee8" />
@@ -71,8 +75,10 @@ export function Flat({ onFloor }: { onFloor: (e: ThreeEvent<MouseEvent>) => void
       <Box p={[-1.75, 0.95, -2.7]} s={[0.7, 1.9, 0.55]} c="#8a6a4a" />
       <Box p={[-1.75, 0.95, -2.42]} s={[0.02, 1.8, 0.02]} c="#3a2a1c" />
       {(lux || has('ac')) && <Box p={[-2.9, 2.25, -2.92]} s={[1.0, 0.3, 0.18]} c="#f4f4f4" />}
+      </At>
 
       {/* ---------- Kitchen ---------- */}
+      <At id="cooler">
       <Tappable id="cooler">
         {has('fridge') ? (
           <>
@@ -86,6 +92,8 @@ export function Flat({ onFloor }: { onFloor: (e: ThreeEvent<MouseEvent>) => void
           </>
         )}
       </Tappable>
+      </At>
+      <At id="stove">
       <Tappable id="stove">
         <Box p={[0.8, 0.44, -2.68]} s={[1.9, 0.88, 0.6]} c="#e9e4d8" />
         <Box p={[0.8, 0.9, -2.68]} s={[1.94, 0.05, 0.64]} c="#3a3a3a" />
@@ -95,8 +103,10 @@ export function Flat({ onFloor }: { onFloor: (e: ThreeEvent<MouseEvent>) => void
         <Box p={[0.8, 1.85, -2.8]} s={[1.9, 0.55, 0.35]} c="#e9e4d8" />
         <Cyl p={[1.6, 0.3, -2.25]} r={0.16} h={0.55} c="#2f8f4e" />
       </Tappable>
+      </At>
 
       {/* ---------- Bathroom ---------- */}
+      <At id="bucket">
       <Tappable id="bucket">
         <Box p={[2.45, 0.04, -2.6]} s={[0.8, 0.08, 0.7]} c="#f4f4f4" />
         {lux ? (
@@ -110,14 +120,18 @@ export function Flat({ onFloor }: { onFloor: (e: ThreeEvent<MouseEvent>) => void
         <Cyl p={[2.45, 1.95, -2.85]} r={0.09} h={0.03} c="#c0c0c0" />
         <Cyl p={[2.95, 0.15, -2.6]} r={0.16} h={0.3} c="#2f6fd6" />
       </Tappable>
+      </At>
+      <At id="toilet">
       <Tappable id="toilet">
         <Box p={[3.55, 0.22, -2.55]} s={[0.4, 0.44, 0.55]} c="#f5f5f5" />
         <Box p={[3.55, 0.6, -2.85]} s={[0.45, 0.45, 0.2]} c="#f5f5f5" />
       </Tappable>
       <Box p={[3.55, 0.42, -1.2]} s={[0.5, 0.84, 0.38]} c={WOOD} />
       <Box p={[3.55, 0.86, -1.2]} s={[0.52, 0.05, 0.4]} c="#f4f4f4" />
+      </At>
 
       {/* ---------- Parlour ---------- */}
+      <At id="tv">
       <Tappable id="tv">
         <Box p={[-3.85, 0.3, 1.0]} s={[0.45, 0.6, 1.8]} c="#3d2a1a" />
         {has('smarttv') ? (
@@ -151,19 +165,27 @@ export function Flat({ onFloor }: { onFloor: (e: ThreeEvent<MouseEvent>) => void
         </group>
         <Box p={[-2.6, 0.25, 1.0]} s={[0.6, 0.06, 0.9]} c="#2b2b2b" />
       </Tappable>
+      </At>
       {/* Ceiling fan */}
+      <At x={-2.4} z={1.0}>
       <group position={[-2.4, 2.4, 1.0]}>
         <Cyl p={[0, 0, 0]} r={0.08} h={0.12} c="#e8e8e8" />
         <Box p={[0, -0.04, 0]} s={[1.2, 0.02, 0.14]} c="#e8e8e8" />
         <Box p={[0, -0.04, 0]} s={[0.14, 0.02, 1.2]} c="#e8e8e8" />
       </group>
+      </At>
+      <At x={-3.85} z={2.6}>
       <Plant p={[-3.85, 0, 2.6]} s={0.9} />
+      </At>
+      <At id="tv">
       {has('wifi') && (
         <group>
           <Box p={[-3.8, 0.64, 0.25]} s={[0.25, 0.06, 0.18]} c="#f4f4f4" />
           <Box p={[-3.7, 0.68, 0.25]} s={[0.03, 0.02, 0.03]} c="#2ecc71" />
         </group>
       )}
+      </At>
+      <At x={0.6} z={2.5}>
       {has('inverter') && (
         <group>
           <Box p={[0.6, 0.3, 2.5]} s={[0.4, 0.6, 0.35]} c="#2c3e50" />
@@ -171,7 +193,9 @@ export function Flat({ onFloor }: { onFloor: (e: ThreeEvent<MouseEvent>) => void
         </group>
       )}
 
+      </At>
       {/* ---------- Dining ---------- */}
+      <At x={-5.4} z={-1.4}>
       <group position={[-5.4, 0, -1.4]}>
         <Box p={[0, 0.72, 0]} s={[1.4, 0.05, 0.8]} c={WOOD} />
         {[-0.6, 0.6].flatMap((x) => [-0.32, 0.32].map((z) => <Box key={`${x}${z}`} p={[x, 0.36, z]} s={[0.06, 0.72, 0.06]} c="#3a2a1c" />))}
@@ -183,9 +207,13 @@ export function Flat({ onFloor }: { onFloor: (e: ThreeEvent<MouseEvent>) => void
         ))}
         <Cyl p={[0, 0.8, 0]} r={0.12} h={0.1} c="#f4f4f4" />
       </group>
+      </At>
+      <At x={-6.3} z={-3}>
       <Plant p={[-6.3, 0, -2.6]} s={0.8} />
+      </At>
 
       {/* ---------- Small study ---------- */}
+      <At x={-5.4} z={1.6}>
       <group position={[-5.4, 0, 1.6]}>
         <Box p={[0, 0.72, -0.6]} s={[1.2, 0.05, 0.55]} c="#8a6a4a" />
         {[-0.55, 0.55].map((x) => <Box key={x} p={[x, 0.36, -0.6]} s={[0.05, 0.72, 0.5]} c="#6b4f32" />)}
@@ -194,12 +222,17 @@ export function Flat({ onFloor }: { onFloor: (e: ThreeEvent<MouseEvent>) => void
         <Box p={[-1.05, 0.9, 0.3]} s={[0.35, 1.8, 0.8]} c="#7a5a3c" />
         {[0.5, 0.95, 1.4].map((y) => <Box key={y} p={[-0.9, y, 0.3]} s={[0.05, 0.3, 0.7]} c={y > 1 ? '#c0392b' : '#2f7fd6'} />)}
       </group>
+      </At>
 
       {/* ---------- Front door ---------- */}
+      <At x={4} z={1.85}>
       <Box p={[4.05, 1.0, 1.85]} s={[0.06, 2, 0.05]} c="#5b3a21" />
       <Box p={[4.5, 1.0, 1.35]} s={[0.9, 2, 0.06]} c="#7a4e2a" r={[0, -0.6, 0]} />
+      </At>
 
+      <Shell>
       {lit && <pointLight position={[-5.4, 2.0, -0.6]} intensity={6} distance={5} decay={1.6} color="#ffd9a0" />}
+      </Shell>
     </group>
   );
 }

@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
-import { activityById, activityPlace, ENTRY_SPOT, EXIT_SPOT, PLACE_NAMES, type Activity, type Place } from '../content/activities';
+import { activityById, activityPlace, PLACE_NAMES, type Activity, type Place } from '../content/activities';
+import { entrySpot, exitSpot, homeBounds, homeSpot } from '../content/homeLayout';
 import { AD_BIZ_BOOST } from '../content/billboards';
 import { appointChance, CAMPAIGN_DAYS, canRun, electionWon, MOVES, moveSupport, NO_POLITICS, OFFICES, startingSupport, TERM_DAYS, type CampaignMove, type Politics } from '../content/politics';
 import { courseById, GYM_DAYS, GYM_FEE, sickDodge, workEnergyFactor, type CourseId } from '../content/learning';
@@ -583,9 +584,9 @@ export const useGame = create<GameState>()(
         } else if (!a.travelTo) {
           if (!fx) get().toast(`${a.emoji} Done: ${a.label}`);
         }
-        set({ active: null, ...(a.away ? { pos: EXIT_SPOT[s.place] } : {}) });
+        set({ active: null, ...(a.away ? { pos: exitSpot(s.place, s.area) } : {}) });
         if (a.travelTo) {
-          set({ place: a.travelTo, pos: ENTRY_SPOT[a.travelTo], target: null });
+          set({ place: a.travelTo, pos: entrySpot(a.travelTo, s.area), target: null });
           get().toast(`📍 ${placeLabel(a.travelTo, s.area, PLACE_NAMES)}`);
         }
       };
@@ -1657,8 +1658,7 @@ export const useGame = create<GameState>()(
           const { active, place } = get();
           if (active) return;
           // Mansions stretch west: dining room and garage
-          const tier = homeTier(get().area);
-          const b = place === 'home' && tier !== 'room' ? { ...BOUNDS.home, minX: tier === 'mansion' ? -8.2 : -6.2 } : BOUNDS[place];
+          const b = place === 'home' ? homeBounds(get().area, BOUNDS.home) : BOUNDS[place];
           set({
             target: [Math.min(b.maxX, Math.max(b.minX, x)), Math.min(b.maxZ, Math.max(b.minZ, z))],
             pending: null,
@@ -1676,7 +1676,7 @@ export const useGame = create<GameState>()(
             get().toast(`😕 ${reason}`);
             return;
           }
-          const spot = a.spot ?? (a.away ? EXIT_SPOT[s.place] : null);
+          const spot = a.spot ? (activityPlace(a.id) === 'home' ? homeSpot(s.area, a.id, a.spot) : a.spot) : a.away ? exitSpot(s.place, s.area) : null;
           if (spot) set({ target: spot, pending: a.id });
           else startActivity(a.id);
         },
@@ -1691,7 +1691,7 @@ export const useGame = create<GameState>()(
           const s = get();
           const a = s.active && activityById(s.active.id);
           if (!a) return;
-          set({ active: null, ...(a.away ? { pos: EXIT_SPOT[s.place] } : {}) });
+          set({ active: null, ...(a.away ? { pos: exitSpot(s.place, s.area) } : {}) });
           get().toast(a.pay ? '🚶 You comot from work early. No pay o' : '✋ You stop am');
         },
 
