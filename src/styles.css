@@ -412,3 +412,16 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
 .biz-staff { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 6px 0; }
 .biz-staff-btns { display: flex; gap: 6px; }
 .biz-staff-btns button { width: 36px; padding: 4px 0; font-size: 18px; }
+
+/* Mini-games */
+.minigame { gap: 10px; }
+.mg-options, .mg-grid { display: grid; gap: 8px; }
+.mg-grid { grid-template-columns: 1fr 1fr; }
+.mg-grid .action.on { outline: 2px solid #e8b04b; background: rgba(232, 176, 75, 0.18); }
+.mg-flash { text-align: center; font-weight: 700; margin: 6px 0; }
+.mg-car { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; padding: 10px; border-radius: 14px; background: linear-gradient(#2e6fa8, #1f4f7a); }
+.mg-dirt { height: 46px; border: 0; border-radius: 10px; background: rgba(255, 255, 255, 0.12); font-size: 22px; }
+.mg-dirt.clean { background: rgba(255, 255, 255, 0.35); }
+.mg-bar { position: relative; height: 26px; border-radius: 13px; background: rgba(255, 255, 255, 0.12); overflow: hidden; margin: 8px 0; }
+.mg-zone { position: absolute; left: 40%; width: 20%; top: 0; bottom: 0; background: rgba(46, 204, 113, 0.55); }
+.mg-marker { position: absolute; top: 2px; bottom: 2px; width: 6px; margin-left: -3px; border-radius: 3px; background: #e8b04b; }

@@ -183,7 +183,7 @@ export const TRAVEL_INTERACTABLES: Interactable[] = [
     emoji: '💃',
     label: [0.4, 1.4, -0.6],
     activities: [
-      { id: 'dance', label: 'Dance like say tomorrow no dey', doing: 'Shaking body for dance floor', emoji: '🕺', minutes: 60, gains: { fun: 35, social: 15, energy: -20, hygiene: -10 }, hours: [19, 24], requires: { packaging: 25 }, spot: [0.4, -0.6] },
+      { id: 'dance', minigame: 'timing', label: 'Dance like say tomorrow no dey', doing: 'Shaking body for dance floor', emoji: '🕺', minutes: 60, gains: { fun: 35, social: 15, energy: -20, hygiene: -10 }, hours: [19, 24], requires: { packaging: 25 }, spot: [0.4, -0.6] },
     ],
   },
   {

@@ -70,8 +70,8 @@ const HOME_AND_STREET: Interactable[] = [
     label: [0.8, 1.3, -2.5],
     activities: [
       { id: 'indomie', label: 'Cook indomie & egg', doing: 'Cooking indomie', emoji: '🍜', minutes: 30, cost: 1500, gains: { food: 45, fun: 5 }, spot: [0.8, -1.6] },
-      { id: 'cookmarket', label: 'Cook with market foodstuff', doing: 'Cooking jollof rice', emoji: '🍚', minutes: 45, usesPantry: 1, gains: { food: 65, fun: 10 }, spot: [0.8, -1.6] },
-      { id: 'soup', label: 'Cook pot of soup', doing: 'Cooking egusi soup', emoji: '🥘', minutes: 120, cost: 6500, gains: { food: 85, fun: 10, energy: -8 }, spot: [0.8, -1.6] },
+      { id: 'cookmarket', minigame: 'cook', label: 'Cook with market foodstuff', doing: 'Cooking jollof rice', emoji: '🍚', minutes: 45, usesPantry: 1, gains: { food: 65, fun: 10 }, spot: [0.8, -1.6] },
+      { id: 'soup', minigame: 'cook', label: 'Cook pot of soup', doing: 'Cooking egusi soup', emoji: '🥘', minutes: 120, cost: 6500, gains: { food: 85, fun: 10, energy: -8 }, spot: [0.8, -1.6] },
     ],
   },
   {
@@ -102,7 +102,7 @@ const HOME_AND_STREET: Interactable[] = [
     label: [-3.6, 1.6, 1.0],
     activities: [
       { id: 'nollywood', label: 'Watch Nollywood', doing: 'Watching Nollywood', emoji: '🎬', minutes: 90, gains: { fun: 35 }, requiresPower: true, spot: [-1.7, 1.0] },
-      { id: 'football', label: 'Watch football', doing: 'Watching Super Eagles', emoji: '⚽', minutes: 120, gains: { fun: 45, social: 5 }, requiresPower: true, spot: [-1.7, 1.0] },
+      { id: 'football', minigame: 'predict', label: 'Watch football', doing: 'Watching Super Eagles', emoji: '⚽', minutes: 120, gains: { fun: 45, social: 5 }, requiresPower: true, spot: [-1.7, 1.0] },
       { id: 'ps5', label: 'Play FIFA on PS5', doing: 'Scoring goals for FIFA 🎮', emoji: '🎮', minutes: 90, gains: { fun: 40, energy: -5 }, requiresPower: true, requires: { homeItem: 'ps5' }, spot: [-1.7, 1.0] },
     ],
   },
@@ -175,7 +175,7 @@ const HOME_AND_STREET: Interactable[] = [
     emoji: '⚽',
     label: [1.8, 2.6, -3.4],
     activities: [
-      { id: 'epl', label: 'Watch EPL match (dem get gen)', doing: 'Shouting for viewing centre', emoji: '⚽', minutes: 120, cost: 500, gains: { fun: 45, social: 25 }, hours: [12, 23], spot: [1.8, -2.0] },
+      { id: 'epl', minigame: 'predict', label: 'Watch EPL match (dem get gen)', doing: 'Shouting for viewing centre', emoji: '⚽', minutes: 120, cost: 500, gains: { fun: 45, social: 25 }, hours: [12, 23], spot: [1.8, -2.0] },
     ],
   },
   {
@@ -222,7 +222,7 @@ export const INTERACTABLES: Interactable[] = [...HOME_AND_STREET, ...TRAVEL_INTE
 );
 
 export const JOBS: Activity[] = [
-  { id: 'pos', label: 'POS attendant for area market', doing: 'Working POS for market', emoji: '💳', minutes: 360, pay: 9000, gains: { energy: -25, fun: -10, social: 10 }, hours: [8, 15], away: true },
+  { id: 'pos', minigame: 'pos', label: 'POS attendant for area market', doing: 'Working POS for market', emoji: '💳', minutes: 360, pay: 9000, gains: { energy: -25, fun: -10, social: 10 }, hours: [8, 15], away: true },
   { id: 'delivery', label: 'Dispatch rider (borrowed bike)', doing: 'Delivering packages for Gwarinpa', emoji: '🛵', minutes: 240, pay: 7000, gains: { energy: -30, hygiene: -20 }, hours: [7, 19], away: true },
   { id: 'cyber', label: 'Typing & printing at cyber café', doing: 'Typing CVs for corpers', emoji: '🖨️', minutes: 180, pay: 4500, gains: { energy: -12, fun: -8 }, hours: [8, 18], away: true },
   HAILING_JOB,

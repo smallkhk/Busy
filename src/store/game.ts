@@ -24,7 +24,7 @@ export type Toast = { id: number; text: string };
 export type PhoneApp = 'home' | 'bank' | 'jobs' | 'chat' | 'map' | 'gram' | 'house' | 'contacts' | 'chop' | 'ride' | 'news' | 'goals' | 'biz' | 'cars' | 'gist' | 'love';
 
 /** `total` is the actual duration (rush hour makes trips longer); old saves may lack it. */
-type Active = { id: string; remaining: number; gen: boolean; total?: number; eventAt?: number };
+type Active = { id: string; remaining: number; gen: boolean; total?: number; eventAt?: number; /** Mini-game score 0–1. */ bonus?: number };
 
 export type EventResult = { emoji: string; title: string; text: string; chips: string[] };
 export type GramPost = { emoji: string; caption: string; gain: number; at: number };
@@ -93,6 +93,8 @@ type GameState = {
   toasts: Toast[];
   lowWarned: Partial<Record<NeedKey, boolean>>;
   menu: string | null;
+  /** Mini-game waiting to be played before an activity starts. */
+  minigame: { id: string; kind: NonNullable<Activity['minigame']> } | null;
   /** Contact whose talk sheet is open. */
   npcMenu: string | null;
   phone: PhoneApp | null;
@@ -131,6 +133,8 @@ type GameState = {
   brandDeal: () => void;
   callContact: (id: string) => void;
   openNpc: (id: string | null) => void;
+  /** Finish the mini-game with a score 0–1 (null = skipped). */
+  playMinigame: (score: number | null) => void;
   swipe: (id: string, like: boolean) => void;
   textLove: (id: string) => void;
   dateLove: (id: string, tier: string) => void;
@@ -245,6 +249,7 @@ const initial = () => ({
   lowWarned: {},
   menu: null,
   npcMenu: null,
+  minigame: null,
   phone: null,
   event: null as string | null,
   eventResult: null as EventResult | null,
@@ -321,7 +326,7 @@ export function blockReason(a: Activity, s: BlockState): string | null {
 export const useGame = create<GameState>()(
   persist(
     (set, get) => {
-      const startActivity = (id: string) => {
+      const startActivity = (id: string, bonus?: number) => {
         const s = get();
         const a = activityById(id);
         if (!a) return;
@@ -329,6 +334,10 @@ export const useGame = create<GameState>()(
         if (reason) {
           get().toast(`😕 ${reason}`);
           set({ pending: null });
+          return;
+        }
+        if (a.minigame && bonus === undefined) {
+          set({ minigame: { id, kind: a.minigame }, pending: null, menu: null, phone: null });
           return;
         }
         const gen = !!a.requiresPower && !s.power;
@@ -343,7 +352,7 @@ export const useGame = create<GameState>()(
         if (burn && s.car) set({ car: { ...s.car, fuel: Math.max(0, (s.car.fuel ?? START_FUEL) - burn) } });
         const eventAt = a.commute && Math.random() < COMMUTE_EVENT_CHANCE ? total * randomBetween(0.3, 0.7) : undefined;
         set({
-          active: { id, remaining: total, gen, total, eventAt },
+          active: { id, remaining: total, gen, total, eventAt, ...(bonus !== undefined ? { bonus } : {}) },
           pending: null,
           money: s.money - cost,
           pantry: s.pantry - (a.usesPantry ?? 0),
@@ -439,7 +448,18 @@ export const useGame = create<GameState>()(
             get().toast(cv >= 3 ? '📞 Dem don call you! Contract staff job don open for Secretariat' : `📄 Dem collect am. "Come back next week" 😑 (${cv}/3)`);
           }
         }
-        const pay = payFor(a, s.grade);
+        const bonus = s.active?.bonus;
+        let pay = payFor(a, s.grade);
+        if (bonus !== undefined && a.minigame) {
+          if (pay) pay = Math.round(pay * (0.7 + 0.6 * bonus));
+          const n = get().needs;
+          if (a.minigame === 'cook') set({ needs: { ...n, food: clamp(n.food + Math.round(30 * (bonus - 0.5))), fun: clamp(n.fun + Math.round(10 * bonus)) } });
+          if (a.minigame === 'timing' && !pay) set({ needs: { ...n, fun: clamp(n.fun + Math.round(30 * bonus - 10)), social: clamp(n.social + Math.round(10 * bonus)) } });
+          if (a.minigame === 'predict' && bonus !== 0.5) {
+            set({ needs: { ...n, fun: clamp(n.fun + (bonus >= 1 ? 20 : -5)), social: clamp(n.social + (bonus >= 1 ? 10 : 0)) } });
+            get().toast(bonus >= 1 ? '🎯 Your prediction correct! Everybody dey hail you 🙌🏾' : '😅 Your prediction no enter. Next match!');
+          }
+        }
         if (a.id === OFFICE_SHIFT_ID) set({ gradeShifts: s.gradeShifts + 1 });
         if (pay) {
           const label = a.id === OFFICE_SHIFT_ID ? `Salary: ${GRADES[s.grade].title}` : a.label;
@@ -790,6 +810,12 @@ export const useGame = create<GameState>()(
 
         openNpc: (id) => set({ npcMenu: id, menu: null }),
 
+        playMinigame: (score) => {
+          const mg = get().minigame;
+          set({ minigame: null });
+          if (mg) startActivity(mg.id, score === null ? 0.5 : Math.max(0, Math.min(1, score)));
+        },
+
         swipe: (id, like) => {
           const s = get();
           const m = matchById(id);
@@ -1020,7 +1046,7 @@ export const useGame = create<GameState>()(
 
         tick: (realSeconds) => {
           const s = get();
-          if (!s.started || s.event || s.eventResult) return;
+          if (!s.started || s.event || s.eventResult || s.minigame) return;
           const dtReal = Math.min(realSeconds, 0.25);
           const a = s.active ? activityById(s.active.id) : undefined;
 

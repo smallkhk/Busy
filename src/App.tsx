@@ -5,6 +5,7 @@ import { NetDirector } from './net/NetDirector';
 import { EventModal } from './ui/EventModal';
 import { NearbyMenu } from './ui/GistApp';
 import { NpcSheet } from './ui/NpcSheet';
+import { MiniGame } from './ui/MiniGame';
 import { QuestPill } from './ui/Goals';
 import { Labels } from './ui/Labels';
 import { Phone } from './ui/Phone';
@@ -62,6 +63,7 @@ export default function App() {
           <NearbyMenu />
           <NpcSheet />
           <EventModal />
+          <MiniGame />
         </>
       ) : (
         <Start />

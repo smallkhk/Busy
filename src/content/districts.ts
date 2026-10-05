@@ -137,7 +137,7 @@ export const DISTRICT_INTERACTABLES: Interactable[] = [
     emoji: '🏧',
     label: [-0.6, 2.0, -2.2],
     activities: [
-      { id: 'pos-agent', label: 'Run POS stand (5 hrs)', doing: 'Counting cash, "network no dey"', emoji: '🏧', minutes: 300, pay: 7500, gains: { energy: -15, social: 12, fun: -5 }, hours: [8, 18], spot: B },
+      { id: 'pos-agent', minigame: 'pos', label: 'Run POS stand (5 hrs)', doing: 'Counting cash, "network no dey"', emoji: '🏧', minutes: 300, pay: 7500, gains: { energy: -15, social: 12, fun: -5 }, hours: [8, 18], spot: B },
     ],
   },
   {
@@ -148,6 +148,7 @@ export const DISTRICT_INTERACTABLES: Interactable[] = [
     label: [2.8, 2.2, -2.4],
     activities: [
       { id: 'car-service', label: 'Service your car (+40 condition)', doing: 'Mechanic dey "check am well"', emoji: '🔧', minutes: 120, cost: 35000, gains: { fun: -5 }, effects: { carFix: 40 }, hours: [8, 18], requires: { car: true }, spot: C },
+      { id: 'washcars', minigame: 'wash', label: 'Wash cars for mechanic village (3 hrs)', doing: 'Washing dusty cars', emoji: '🧽', minutes: 180, pay: 5500, gains: { energy: -18, hygiene: -15 }, hours: [8, 17], spot: C },
       { id: 'apprentice', label: 'Help mechanic (6 hrs)', doing: 'Holding spanner, learning work', emoji: '🪛', minutes: 360, pay: 6000, gains: { energy: -25, hygiene: -35, social: 10 }, hours: [8, 14], away: true, spot: C },
     ],
   },
@@ -216,7 +217,7 @@ export const DISTRICT_INTERACTABLES: Interactable[] = [
     emoji: '🚌',
     label: PARK_LABEL,
     activities: [
-      { id: 'conductor', label: 'Bus conductor: "Nyanya! Mararaba!" (5 hrs)', doing: 'Hanging for bus door, shouting route', emoji: '📢', minutes: 300, pay: 6500, gains: { energy: -30, hygiene: -20, social: 10 }, hours: [5, 10], away: true, spot: PARK },
+      { id: 'conductor', minigame: 'timing', label: 'Bus conductor: "Nyanya! Mararaba!" (5 hrs)', doing: 'Hanging for bus door, shouting route', emoji: '📢', minutes: 300, pay: 6500, gains: { energy: -30, hygiene: -20, social: 10 }, hours: [5, 10], away: true, spot: PARK },
       ride('nyanya-home', 'Bus go your area (home)', '🚌', 'street', 110, 1200, PARK),
       ride('nyanya-garki', 'Bus go Garki Area 1', '🚌', 'garki', 40, 500, PARK),
       ride('nyanya-sec', 'Bus go Federal Secretariat', '🏛️', 'secretariat', 45, 500, PARK),
