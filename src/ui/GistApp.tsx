@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNet } from '../net/useNet';
 import { useGame } from '../store/game';
-import { addFriend, markRead, searchPlayers, sendMessage, tag, unreadFrom, useSocial, type Msg, type Profile } from '../net/social';
+import { addFriend, markRead, searchPlayers, sendMessage, sendVoice, tag, unreadFrom, useSocial, voiceUrl, type Msg, type Profile } from '../net/social';
+import { canRecord, formatMs, MAX_VOICE_MS, startRecording, type Recorder } from '../net/voice';
 
 function Avatar({ p, size = 42 }: { p?: Profile; size?: number }) {
   return (
@@ -13,6 +14,108 @@ function Avatar({ p, size = 42 }: { p?: Profile; size?: number }) {
 
 const NONE: Msg[] = [];
 const time = (iso: string) => new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+/** Bars that look like a waveform, fixed per message so they no jump. */
+const bars = (seed: number) => Array.from({ length: 22 }, (_, i) => 25 + ((seed * 9301 + i * 49297) % 233280) / 233280 * 75);
+
+function VoiceBubble({ m }: { m: Msg }) {
+  const audio = useRef<HTMLAudioElement | null>(null);
+  const [state, setState] = useState<'idle' | 'loading' | 'playing' | 'gone'>('idle');
+  const [progress, setProgress] = useState(0);
+  useEffect(() => () => audio.current?.pause(), []);
+  const toggle = async () => {
+    if (state === 'playing') {
+      audio.current?.pause();
+      return setState('idle');
+    }
+    if (!audio.current) {
+      setState('loading');
+      const url = await voiceUrl(m.voice_path!);
+      if (!url) return setState('gone');
+      const a = new Audio(url);
+      a.ontimeupdate = () => setProgress(a.duration && isFinite(a.duration) ? a.currentTime / a.duration : a.currentTime * 1000 / (m.voice_ms || 1));
+      a.onended = () => {
+        setState('idle');
+        setProgress(0);
+      };
+      audio.current = a;
+    }
+    try {
+      await audio.current.play();
+      setState('playing');
+    } catch {
+      setState('gone');
+    }
+  };
+  const b = bars(m.id);
+  return (
+    <span className="gist-voice">
+      <button className="gist-play" onClick={() => void toggle()} disabled={state === 'gone'} aria-label={state === 'playing' ? 'Pause' : 'Play voice note'}>
+        {state === 'playing' ? '⏸' : state === 'loading' ? '…' : '▶'}
+      </button>
+      {state === 'gone' ? (
+        <span className="small muted">Voice note don expire</span>
+      ) : (
+        <span className="gist-wave">
+          {b.map((h, i) => (
+            <i key={i} style={{ height: `${h}%`, opacity: i / b.length <= progress ? 1 : 0.45 }} />
+          ))}
+        </span>
+      )}
+      <span className="gist-dur">{formatMs(m.voice_ms ?? 0)}</span>
+    </span>
+  );
+}
+
+function RecordBar({ to, onDone }: { to: string; onDone: () => void }) {
+  const rec = useRef<Recorder | null>(null);
+  const [ms, setMs] = useState(0);
+  const [err, setErr] = useState<string | null>(null);
+  const [sending, setSending] = useState(false);
+  const send = async () => {
+    const r = rec.current;
+    if (!r || sending) return;
+    setSending(true);
+    const out = await r.stop();
+    rec.current = null;
+    const e = out ? await sendVoice(to, out) : 'Nothing record';
+    setSending(false);
+    if (e) setErr(e);
+    else onDone();
+  };
+  const sendRef = useRef(send);
+  sendRef.current = send;
+  useEffect(() => {
+    let alive = true;
+    startRecording(() => void sendRef.current())
+      .then((r) => {
+        if (!alive) return r.cancel();
+        rec.current = r;
+      })
+      .catch(() => setErr('Allow microphone for your browser to record'));
+    const t = setInterval(() => rec.current && setMs(Date.now() - rec.current.startedAt), 200);
+    return () => {
+      alive = false;
+      clearInterval(t);
+      rec.current?.cancel();
+    };
+  }, []);
+  if (err) {
+    return (
+      <div className="gist-input">
+        <span className="gist-rec-err small">{err}</span>
+        <button onClick={onDone} aria-label="Close">✕</button>
+      </div>
+    );
+  }
+  return (
+    <div className="gist-input recording">
+      <button className="gist-cancel" onClick={onDone} aria-label="Cancel">🗑️</button>
+      <span className="gist-rec"><i className="gist-dot" /> {formatMs(ms)} <span className="muted small">/ {formatMs(MAX_VOICE_MS)}</span></span>
+      <button onClick={() => void send()} disabled={sending} aria-label="Send voice note">{sending ? '…' : '➤'}</button>
+    </div>
+  );
+}
 
 function Setup() {
   const reason = useSocial((s) => s.setupReason);
@@ -36,6 +139,7 @@ function Conversation({ id }: { id: string }) {
   const msgs = thread ?? NONE;
   const isFriend = useSocial((s) => s.friends.includes(id));
   const [text, setText] = useState('');
+  const [recording, setRecording] = useState(false);
   const end = useRef<HTMLDivElement>(null);
   useEffect(() => {
     void markRead(id);
@@ -57,17 +161,23 @@ function Conversation({ id }: { id: string }) {
           const mine = m.sender === uid;
           return (
             <div key={m.id} className={`gist-bubble ${mine ? 'mine' : ''}`}>
-              {m.body}
+              {m.voice_path ? <VoiceBubble m={m} /> : m.body}
               <span className="gist-meta">{time(m.created_at)}{mine && <span className={m.read_at ? 'read' : ''}> ✓✓</span>}</span>
             </div>
           );
         })}
         <div ref={end} />
       </div>
-      {isFriend ? (
+      {isFriend && recording ? (
+        <RecordBar to={id} onDone={() => setRecording(false)} />
+      ) : isFriend ? (
         <div className="gist-input">
           <input value={text} maxLength={300} placeholder="Message" onChange={(e) => setText(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && void send()} />
-          <button onClick={() => void send()} aria-label="Send">➤</button>
+          {text.trim() || !canRecord() ? (
+            <button onClick={() => void send()} aria-label="Send">➤</button>
+          ) : (
+            <button onClick={() => setRecording(true)} aria-label="Record voice note">🎤</button>
+          )}
         </div>
       ) : (
         <button className="gist-addback" onClick={() => void addFriend(id)}>➕ Add {p?.name ?? 'them'} as friend to reply</button>
