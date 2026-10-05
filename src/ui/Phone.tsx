@@ -1,3 +1,4 @@
+import { festivalOn, nextFestival } from '../content/festivals';
 import { areaAllows, HOME_ITEMS } from '../content/homeup';
 import { newsById, WEATHER } from '../content/world';
 import { useShallow } from 'zustand/react/shallow';
@@ -84,6 +85,7 @@ function NewsApp() {
         <div className="small">🧺 Foodstuff: {pantry} meals · 📄 CVs: {Math.min(cv, 3)}/3</div>
         <div className="small">👔 Packaging: {Math.round(packaging)} · 📸 {followers.toLocaleString('en-NG')} followers</div>
       </div>
+      <FestivalLine day={day} />
       <div className="news-weather">{WEATHER[weather].emoji} Abuja weather now: <b>{WEATHER[weather].name}</b>{WEATHER[weather].trip > 1 ? ` · road trips ${Math.round((WEATHER[weather].trip - 1) * 100)}% slower` : ''}</div>
       <div className="list">
         {breaking.map(({ n, info }) => (
@@ -107,6 +109,16 @@ function RideApp() {
       <p className="muted small">Ride go carry you from your door. E cost pass bus, but e fast and you no go waka go bus stop 🚘</p>
       <ActivityList items={ridesFrom(place)} />
     </>
+  );
+}
+
+function FestivalLine({ day }: { day: number }) {
+  const today = festivalOn(day);
+  const next = nextFestival(day);
+  return (
+    <div className="news-weather">
+      {today ? <>{today.emoji} Today: <b>{today.name}</b>. {today.greeting}</> : <>📅 Next: {next.festival.emoji} <b>{next.festival.name}</b> in {next.inDays} day{next.inDays > 1 ? 's' : ''}</>}
+    </div>
   );
 }
 

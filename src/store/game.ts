@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import { activityById, activityPlace, ENTRY_SPOT, EXIT_SPOT, PLACE_NAMES, type Activity, type Place } from '../content/activities';
 import { AD_BIZ_BOOST } from '../content/billboards';
+import { festivalOn } from '../content/festivals';
 import { DEFAULT_LOOK, HAIR_COST, OUTFITS, type Hair, type Look, type Outfit } from '../content/fashion';
 import { driveWear } from '../content/minigames';
 import { areaAllows, genCostFor, homeItemById, TV_ACTIVITIES, WIFI_FREE } from '../content/homeup';
@@ -321,6 +322,7 @@ export function eventContext(s: GameState, trip?: string | null): EventContext {
     dating: Object.values(s.loves ?? {}).filter((l) => l.interest >= 55 && !l.married).length,
     fakeLife: Object.values(s.loves ?? {}).some((l) => l.fakeLife),
     homeUps: s.homeUps ?? [],
+    festival: festivalOn(day)?.id,
     landAt: Object.entries(s.properties ?? {}).filter(([, p]) => p && p.status !== 'built').map(([id]) => id),
     area: s.area,
   };
@@ -1332,7 +1334,8 @@ export const useGame = create<GameState>()(
           const prev = clockParts(s.time);
           const cur = clockParts(time);
           if (cur.day !== prev.day) {
-            now.toast(`🌅 Day ${cur.day} for Abuja. Make today count!`);
+            const fest = festivalOn(cur.day);
+            now.toast(fest ? `${fest.emoji} ${fest.greeting}` : `🌅 Day ${cur.day} for Abuja. Make today count!`);
             const fl = get().flags ?? {};
             if (fl['garba-appt'] === cur.day - 1 && fl['garba-done'] === undefined) now.toast('📌 Today: meet Garba\'s Director for Federal Secretariat before 12 noon!');
             if (fl['chinedu-meet'] === cur.day - 1 && fl['chinedu-meet-done'] === undefined) now.toast('📌 Today: meet Chinedu for Federal Secretariat before 3pm!');

@@ -1,3 +1,4 @@
+import { festivalOn } from '../content/festivals';
 import { WEATHER } from '../content/world';
 import { heatLevel } from '../engine/events';
 import { useState } from 'react';
@@ -28,7 +29,7 @@ export function TopBar() {
     <div className="topbar">
       <div className="pill">
         <span className="big">{formatClock(time)}</span>
-        <span className="muted">Day {day} · {placeLabel(place, area, PLACE_NAMES)}</span>
+        <span className="muted">{festivalOn(day) ? `${festivalOn(day)!.emoji} ` : ''}Day {day} · {placeLabel(place, area, PLACE_NAMES)}</span>
       </div>
       <div className="pill pair" title={power ? 'Light dey' : 'No light'}>
         <span title={WEATHER[weather].name}>{WEATHER[weather].emoji}</span>
