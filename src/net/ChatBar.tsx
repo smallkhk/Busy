@@ -3,6 +3,9 @@ import { multiplayerEnabled } from './config';
 import { sendChat } from './multiplayer';
 import { useNet } from './useNet';
 
+const ROOM_NAMES: Record<string, string> = { wuse: 'Wuse Market', jabi: 'Jabi Lake', secretariat: 'Secretariat', lounge: 'the lounge', hospital: 'hospital' };
+const roomName = (r: string) => (r.startsWith('street-') ? `${r.slice(7).replace('wuse2', 'Wuse 2').replace(/^./, (c) => c.toUpperCase())} street` : ROOM_NAMES[r] ?? r);
+
 /** Online count, recent messages and a chat box for the place you dey. */
 export function ChatBar() {
   const connected = useNet((s) => s.connected);
@@ -19,7 +22,7 @@ export function ChatBar() {
     <div className="chatbar card">
       <div className="chat-head small">
         <span className={`dot ${connected ? 'on' : ''}`} /> {connected ? `${online.toLocaleString('en-NG')} online` : 'Connecting…'}
-        {room && <span className="muted"> · {here} other{here === 1 ? '' : 's'} here</span>}
+        {room && <span className="muted"> · {here} other{here === 1 ? '' : 's'} for {roomName(room)}</span>}
       </div>
       {room && chat.length > 0 && (
         <div className="chat-log">
