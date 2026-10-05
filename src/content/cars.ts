@@ -49,6 +49,7 @@ export const DRIVES: Activity[] = RIDE_PLACES.flatMap((from) =>
       commute: true,
       homeLeg: ride.homeLeg,
       requires: { car: true },
+      minigame: 'drive',
     };
   }),
 );
