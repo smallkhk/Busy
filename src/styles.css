@@ -482,3 +482,9 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
 .rank-row.me { outline: 2px solid #e8b04b; }
 .rank-pos { width: 26px; text-align: center; font-weight: 800; }
 .rank-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gist-cash-btn { margin-left: auto; background: transparent; border: 0; font-size: 20px; }
+.gist-pay { display: flex; flex-direction: column; gap: 8px; padding: 10px; background: #1f2c33; border-bottom: 1px solid rgba(255, 255, 255, 0.08); }
+.gist-pay-chips { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.gist-pay-chips button { padding: 6px 0; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.15); background: transparent; color: inherit; font-size: 12px; }
+.gist-pay-chips button.on { background: #1fa855; border-color: #1fa855; color: #fff; }
+.gist-pay input { padding: 8px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.15); background: rgba(0, 0, 0, 0.25); color: inherit; }

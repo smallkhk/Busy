@@ -101,6 +101,7 @@ export async function initSocial(name: string, shirt: string) {
   const friends = (fr ?? []).filter((f) => f.user_id === uid).map((f) => f.friend_id as string);
   const addedMe = (fr ?? []).filter((f) => f.friend_id === uid).map((f) => f.user_id as string);
   useSocial.setState({ friends, addedMe, status: 'ready' });
+  void claimCash();
   void cleanupOldVoice(uid);
   addMessages((msgs ?? []) as Msg[]);
   await loadProfiles([...friends, ...addedMe, ...((msgs ?? []) as Msg[]).map((m) => other(m, uid))]);
@@ -114,6 +115,7 @@ export async function initSocial(name: string, shirt: string) {
       else void markRead(msg.sender);
     })
     .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages', filter: `sender=eq.${uid}` }, ({ new: m }) => addMessages([m as Msg]))
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'transfers', filter: `recipient=eq.${uid}` }, () => void claimCash())
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'friends', filter: `friend_id=eq.${uid}` }, async ({ new: f }) => {
       const id = (f as { user_id: string }).user_id;
       await loadProfiles([id]);
@@ -206,6 +208,39 @@ async function cleanupOldVoice(uid: string) {
     const { data: files } = await c.storage.from('voice').list(`${uid}/${f.name}`, { limit: 100, sortBy: { column: 'created_at', order: 'asc' } });
     const old = (files ?? []).filter((x) => x.created_at && Date.parse(x.created_at) < cutoff).map((x) => `${uid}/${f.name}/${x.name}`);
     if (old.length) await c.storage.from('voice').remove(old);
+  }
+}
+
+// ---------------- Sending money ----------------
+export type Transfer = { id: number; sender: string; recipient: string; amount: number; note: string | null; claimed: boolean };
+
+let onCash: ((from: Profile | undefined, amount: number, note: string | null) => void) | null = null;
+/** Lets the game add the money when a friend sends you some. */
+export const setCashHandler = (fn: typeof onCash) => (onCash = fn);
+
+/** Sends money to a friend. The caller takes it from your balance when this returns null. */
+export async function sendCash(to: string, amount: number, note: string): Promise<string | null> {
+  const c = getClient();
+  const { uid, friends } = useSocial.getState();
+  if (!c || !uid) return 'You need internet';
+  if (!friends.includes(to)) return 'Add am as friend first';
+  if (amount < 100 || amount > 500000) return 'Between ₦100 and ₦500,000 per transfer';
+  const { error } = await c.from('transfers').insert({ recipient: to, amount: Math.round(amount), note: cleanText(note, 60) || null });
+  if (error) return /relation|does not exist|schema cache/i.test(error.message) ? 'Transfers never set up. Game owner: run supabase/cloud.sql' : 'Transfer fail. Try again';
+  return null;
+}
+
+/** Collects every transfer waiting for you (each one only once). */
+export async function claimCash() {
+  const c = getClient();
+  const { uid } = useSocial.getState();
+  if (!c || !uid) return;
+  const { data } = await c.from('transfers').select('*').eq('recipient', uid).eq('claimed', false).limit(50);
+  for (const t of (data ?? []) as Transfer[]) {
+    const { data: done } = await c.from('transfers').update({ claimed: true }).eq('id', t.id).eq('claimed', false).select('id');
+    if (!done?.length) continue;
+    await loadProfiles([t.sender]);
+    onCash?.(useSocial.getState().profiles[t.sender], t.amount, t.note);
   }
 }
 

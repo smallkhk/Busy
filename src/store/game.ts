@@ -16,7 +16,7 @@ import { ALL_GOALS } from '../content/goals';
 import { LOAN_DAYS, LOAN_FEE, LOAN_MAX, SAVINGS_DAILY_RATE, TOKEN_COST } from '../content/phoneapps';
 import { BRAND_COOLDOWN_DAYS, BRAND_MIN_FOLLOWERS, brandPay, followersGain, packagingGap, POST_COOLDOWN_MIN, postById } from '../content/gram';
 import { TALK_MINUTES, TALK_REL } from '../content/npcs';
-import { ASK_OUT_AT, DAILY_COOL, DATE_TIERS, dateInterest, matchById, matchChance, officialPartner, PROPOSE_AFTER_DAYS, RING_COST, TEXT_INTEREST, WEDDING_COST, WEDDING_PACKAGING, type Love } from '../content/dating';
+import { LOVE_GIFT_COST, ASK_OUT_AT, DAILY_COOL, DATE_TIERS, dateInterest, matchById, matchChance, officialPartner, PROPOSE_AFTER_DAYS, RING_COST, TEXT_INTEREST, WEDDING_COST, WEDDING_PACKAGING, type Love } from '../content/dating';
 import { combinedMods, nextWeather, priceOf, tripFactor, weatherSpell, WORLD_NEWS, type ActiveNews, type Weather } from '../content/world';
 import { effectChips, pickEvent, resolveChoice, type EventContext } from '../engine/events';
 import { clamp, fullNeeds, LOW_NEED, NEED_KEYS, NEED_META, tickNeeds, type NeedKey, type Needs } from '../engine/needs';
@@ -137,6 +137,9 @@ export type GameState = {
   takeLoan: (amount: number) => void;
   repayLoan: () => void;
   sendMoney: (to: string, amount: number) => void;
+  /** Money in or out from outside the game (friend transfers). */
+  adjustMoney: (delta: number, label: string) => void;
+  giftLove: (id: string) => void;
   buyToken: () => void;
   post: (id: string) => void;
   brandDeal: () => void;
@@ -319,6 +322,10 @@ function applyPartnerLove(loves: Record<string, Love>, delta: number): Record<st
   return { ...loves, [id]: { ...loves[id], interest: clamp(loves[id].interest + delta), ...(delta < 0 ? { fakeLife: false } : {}) } };
 }
 
+let companionCheck: (() => string | undefined) | null = null;
+/** Lets multiplayer tell the game which friend (if any) is in the same place. */
+export const setCompanionCheck = (fn: typeof companionCheck) => (companionCheck = fn);
+
 export function blockReason(a: Activity, s: BlockState): string | null {
   if (a.locked) return a.locked;
   if (s.rentLocked && activityPlace(a.id) === 'home' && !a.travelTo) return 'Landlord don lock your door 🔒 Pay rent for phone';
@@ -409,6 +416,12 @@ export const useGame = create<GameState>()(
         const fx = a.effects;
         const keys: string[] = [];
         if ((a.gains.food ?? 0) > 0) keys.push('meals');
+        // Doing things with a real friend nearby feels better
+        const buddy = !a.travelTo && !a.away ? companionCheck?.() : undefined;
+        if (buddy) {
+          set({ needs: { ...get().needs, social: clamp(get().needs.social + 10), fun: clamp(get().needs.fun + 6) } });
+          get().toast(`👯 You and ${buddy} dey together! +10 💬 +6 🎉`);
+        }
         // House upgrades: better sleep and better TV
         const ups = s.homeUps ?? [];
         if (a.sleep && a.minutes >= 480 && (ups.includes('mattress') || ups.includes('ac'))) {
@@ -788,6 +801,27 @@ export const useGame = create<GameState>()(
             txns: [{ at: s.time, label: 'Ego Loan repayment', amount: -s.loan.owed }, ...s.txns].slice(0, 40),
           });
           get().toast('✅ Loan cleared. Your name don comot for their list');
+        },
+
+        adjustMoney: (delta, label) => {
+          const s = get();
+          set({ money: s.money + delta, txns: [{ at: s.time, label, amount: delta }, ...s.txns].slice(0, 40) });
+        },
+
+        giftLove: (id) => {
+          const s = get();
+          const l = s.loves?.[id];
+          const m = matchById(id);
+          if (!l || !m) return;
+          const { day } = clockParts(s.time);
+          if (l.lastGiftDay !== undefined && day - l.lastGiftDay < 2) return get().toast('🎁 You just give gift. No spoil am 😅');
+          if (s.money < LOVE_GIFT_COST) return get().toast(`😕 Gift na ${formatNaira(LOVE_GIFT_COST)}`);
+          set({
+            money: s.money - LOVE_GIFT_COST,
+            loves: { ...s.loves, [id]: { ...l, interest: clamp(l.interest + 8), lastGiftDay: day } },
+            txns: [{ at: s.time, label: `Gift for ${m.name}`, amount: -LOVE_GIFT_COST }, ...s.txns].slice(0, 40),
+          });
+          get().toast(`🎁 ${m.name} love the flowers & perfume! 💕 +8`);
         },
 
         sendMoney: (to, amount) => {
