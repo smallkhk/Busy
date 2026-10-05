@@ -1,3 +1,4 @@
+import { canRun, MOVES, moveSupport, NO_POLITICS, OFFICES } from '../content/politics';
 import { CLASS_ACTIVITIES, COURSES, fitnessLevel, GYM_FEE, GYM_DAYS, GYM_WORKOUT } from '../content/learning';
 import { festivalOn, nextFestival } from '../content/festivals';
 import { areaAllows, HOME_ITEMS } from '../content/homeup';
@@ -32,6 +33,7 @@ const APPS: { id: PhoneApp; name: string; emoji: string; color: string }[] = [
   { id: 'love', name: 'Abuja Love', emoji: '💕', color: '#e8336d' },
   { id: 'style', name: 'Drip', emoji: '👗', color: '#b0408f' },
   { id: 'learn', name: 'Learn & Gym', emoji: '📚', color: '#2f6b4a' },
+  { id: 'politics', name: 'Politics', emoji: '🗳️', color: '#118a4c' },
   { id: 'rankings', name: 'Rankings', emoji: '🏆', color: '#c9a24a' },
   { id: 'account', name: 'Account', emoji: '⚙️', color: '#5f6670' },
   { id: 'map', name: 'Map', emoji: '🗺️', color: '#6a4bc4' },
@@ -170,6 +172,78 @@ function LearnApp() {
                 <button className="ghost" disabled={money < c.fee} onClick={() => g.enroll(c.id)}>📝 Enroll · {formatNaira(c.fee)}</button>
               ) : (
                 <ActivityList items={CLASS_ACTIVITIES.filter((a) => a.id === `class-${c.id}`)} />
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </>
+  );
+}
+
+function PoliticsApp() {
+  const p = useGame((s) => s.politics ?? NO_POLITICS);
+  const money = useGame((s) => s.money);
+  const packaging = useGame((s) => s.packaging);
+  const contacts = useGame((s) => s.contacts);
+  const day = useGame((s) => clockParts(s.time).day);
+  const adOn = useGame((s) => Date.now() < (s.adBoostUntil ?? 0));
+  const g = useGame.getState();
+  const leg = longLeg(contacts);
+  const current = p.office >= 0 ? OFFICES[p.office] : undefined;
+  const c = p.campaign;
+  return (
+    <>
+      <div className="balance">
+        <div className="muted small">🗳️ Your political career</div>
+        <div className="balance-amt" style={{ fontSize: 20 }}>{current ? `${current.emoji} ${current.name}` : 'Ordinary citizen'}</div>
+        {current && <div className="small">Allowance {formatNaira(current.allowance)}/day · term ends Day {p.termEnds}</div>}
+        <div className="muted small">🦵 Long Leg {leg} · 👔 Packaging {Math.round(packaging)}</div>
+      </div>
+      {c && (
+        <div className="balance">
+          <div className="muted small">Campaign for {OFFICES[c.target].name} · election Day {c.electionDay} ({Math.max(0, c.electionDay - day)} day{c.electionDay - day === 1 ? '' : 's'})</div>
+          <div className="balance-amt" style={{ fontSize: 22 }}>{c.support}% support</div>
+          <div className="bar thin"><div className={`fill ${c.support > 55 ? 'good' : c.support > 45 ? 'mid' : 'bad'}`} style={{ width: `${c.support}%` }} /></div>
+          <div className="muted small">You need more than 50% (with small luck) to win.{adOn ? ' 📢 Your billboard dey add +2% every day.' : ' Tip: rent billboard for the Map make +2% every day.'}</div>
+        </div>
+      )}
+      {c && (
+        <div className="list">
+          {MOVES.map((m) => {
+            const cost = m.cost(c.target);
+            const doneToday = c.done[m.id] === day;
+            return (
+              <button key={m.id} className="action" disabled={doneToday || money < cost} onClick={() => g.campaign(m.id)}>
+                <span className="action-emoji">{m.emoji}</span>
+                <span className="action-body">
+                  <span>{m.label}</span>
+                  <span className="muted small">{doneToday ? 'Done today' : `${cost ? formatNaira(cost) : 'Free'} · ${Math.round(m.minutes / 60)}h · +${moveSupport(m.id, { packaging, longLeg: leg })}%`} · {m.blurb}</span>
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+      <div className="love-section">🏛️ Offices</div>
+      <div className="list">
+        {OFFICES.map((o, i) => {
+          const reason = canRun(i, p, { longLeg: leg, packaging, money });
+          const held = p.office === i;
+          return (
+            <div key={o.name} className={`contact ${held ? 'owned' : ''}`}>
+              <div className="contact-head">
+                <span className="contact-emoji">{o.emoji}</span>
+                <span className="action-body">
+                  <span>{o.name}{held ? ' ✅' : ''}</span>
+                  <span className="muted small">Needs 🦵 {o.longLeg} · 👔 {o.packaging} · {o.appointed ? 'appointed by the President' : `form ${formatNaira(o.form)}`}</span>
+                  <span className="small">Allowance {formatNaira(o.allowance)}/day</span>
+                </span>
+              </div>
+              {(i === p.office + 1 || (i === p.office && !c)) && (
+                <button className="ghost" disabled={!!reason} onClick={() => g.declare(i)}>
+                  {reason ?? (o.appointed ? `🙏🏾 Lobby the President · ${formatNaira(o.form)}` : `🗳️ ${held ? 'Run for re-election' : 'Declare'} · ${formatNaira(o.form)}`)}
+                </button>
               )}
             </div>
           );
@@ -487,6 +561,8 @@ function AppBody({ app }: { app: PhoneApp }) {
       return <LoveApp />;
     case 'learn':
       return <LearnApp />;
+    case 'politics':
+      return <PoliticsApp />;
     case 'account':
       return <AccountApp />;
     case 'rankings':
