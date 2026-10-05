@@ -4,7 +4,7 @@ import { activityById, activityPlace, ENTRY_SPOT, EXIT_SPOT, GEN_COST, PLACE_NAM
 import { AREAS, moveCost, placeLabel, RENT_CYCLE_DAYS, RENT_GRACE_DAYS, rentOwed, type AreaId } from '../content/housing';
 import { clockParts, formatNaira, inHours } from '../engine/clock';
 import { CALL_COST, contactById, FIRST_MEET_REL, GIFT_COST, longLeg, type ContactState } from '../content/contacts';
-import { businessById, dailyProfit, MAX_BIZ_LEVEL, upgradeCost, type OwnedBusiness } from '../content/business';
+import { badDayChance, businessById, dailyNet, MAX_BIZ_LEVEL, MAX_STAFF, upgradeCost, wageOf, type OwnedBusiness } from '../content/business';
 import { GRADES, OFFICE_SHIFT_ID, payFor, promotionBlock } from '../content/career';
 import { carById, litresFor, repairCost, RESALE, START_FUEL, TANK } from '../content/cars';
 import { EVENTS } from '../content/events';
@@ -115,6 +115,8 @@ type GameState = {
   promote: () => void;
   buyBusiness: (id: string) => void;
   upgradeBusiness: (id: string) => void;
+  /** Hire (+1) or sack (-1) a worker. */
+  setStaff: (id: string, delta: number) => void;
   saveMoney: (amount: number) => void;
   withdrawSavings: (amount: number) => void;
   takeLoan: (amount: number) => void;
@@ -626,6 +628,17 @@ export const useGame = create<GameState>()(
           get().toast(`📈 ${b.name} don grow to level ${owned.level + 1}!`);
         },
 
+        setStaff: (id, delta) => {
+          const s = get();
+          const b = businessById(id);
+          const owned = s.businesses[id];
+          if (!b || !owned) return;
+          const staff = Math.max(0, Math.min(MAX_STAFF[b.tier], (owned.staff ?? 0) + delta));
+          if (staff === (owned.staff ?? 0)) return;
+          set({ businesses: { ...s.businesses, [id]: { ...owned, staff } } });
+          get().toast(delta > 0 ? `🧑🏾‍🍳 You don hire one more worker for ${b.name} (${formatNaira(wageOf(b))}/day)` : `👋🏾 You don sack one worker for ${b.name}`);
+        },
+
         saveMoney: (amount) => {
           const s = get();
           if (amount <= 0 || amount > s.money) return get().toast('😕 You no get that much for main balance');
@@ -1126,13 +1139,16 @@ export const useGame = create<GameState>()(
               const b = businessById(id);
               if (!b || (owned.closedUntil !== undefined && cur.day < owned.closedUntil)) continue;
               const wet = bz.weather === 'rain' || bz.weather === 'storm' ? 0.8 : 1;
-              const p = Math.round(dailyProfit(b, owned.level, Math.random()) * wet);
+              const bad = Math.random() < badDayChance(owned.staff ?? 0);
+              const net = dailyNet(b, owned, Math.random(), bad);
+              const p = net > 0 ? Math.round(net * wet) : net;
               income += p;
               lines.push(b.name);
+              if (bad) now.toast(`😩 Bad day for ${b.name}: ${formatNaira(-p)} loss (theft, NEPA or slow market)`);
             }
-            if (income > 0) {
-              set({ money: bz.money + income, txns: [{ at: time, label: `Business income: ${lines.join(', ')}`, amount: income }, ...bz.txns].slice(0, 40) });
-              now.toast(`🏪 Business don bring ${formatNaira(income)} today`);
+            if (lines.length && income !== 0) {
+              set({ money: bz.money + income, txns: [{ at: time, label: `Business ${income > 0 ? 'income' : 'loss'}: ${lines.join(', ')}`, amount: income }, ...bz.txns].slice(0, 40) });
+              if (income > 0) now.toast(`🏪 Business don bring ${formatNaira(income)} today`);
             }
             // Ego Save interest, paid daily into savings
             const sv = get();
