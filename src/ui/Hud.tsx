@@ -1,3 +1,4 @@
+import { WEATHER } from '../content/world';
 import { heatLevel } from '../engine/events';
 import { useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
@@ -20,6 +21,7 @@ export function TopBar() {
   const area = useGame((s) => s.area);
   const sick = useGame((s) => s.sick);
   const heat = useGame((s) => s.heat ?? 0);
+  const weather = useGame((s) => s.weather ?? 'sunny');
   const [soundOff, setSoundOff] = useState(isMuted());
   const { day } = clockParts(time);
   return (
@@ -29,6 +31,7 @@ export function TopBar() {
         <span className="muted">Day {day} · {placeLabel(place, area, PLACE_NAMES)}</span>
       </div>
       <div className="pill pair" title={power ? 'Light dey' : 'No light'}>
+        <span title={WEATHER[weather].name}>{WEATHER[weather].emoji}</span>
         <span>{power ? '💡' : '🕯️'}</span>
         <span title={sick ? SICKNESS[sick].name : 'Mood'}>{sick ? '🤒' : moodFace(mood(needs))}</span>
         {heat >= 20 && <span title={`Police: ${heatLevel(heat).name} (${Math.round(heat)})`}>{heatLevel(heat).emoji}</span>}
@@ -89,7 +92,7 @@ export function ActionMenu() {
   const menu = useGame((s) => s.menu);
   const openMenu = useGame((s) => s.openMenu);
   const choose = useGame((s) => s.choose);
-  const state = useGame(useShallow((s) => ({ time: s.time, money: s.money, power: s.power, active: s.active, packaging: s.packaging, pantry: s.pantry, cv: s.cv, area: s.area, rentLocked: s.rentLocked, unlocks: s.unlocks, grade: s.grade, hasCar: !!s.car, sick: s.sick, contacts: s.contacts })));
+  const state = useGame(useShallow((s) => ({ time: s.time, money: s.money, power: s.power, active: s.active, packaging: s.packaging, pantry: s.pantry, cv: s.cv, area: s.area, rentLocked: s.rentLocked, unlocks: s.unlocks, grade: s.grade, hasCar: !!s.car, sick: s.sick, contacts: s.contacts, weather: s.weather, news: s.news })));
   const item = INTERACTABLES.find((i) => i.id === menu);
   if (!item) return null;
   return (
