@@ -1,3 +1,4 @@
+import { EVENTS } from '../content/events';
 import { useEffect } from 'react';
 import { clockParts } from '../engine/clock';
 import { useGame } from '../store/game';
@@ -41,7 +42,7 @@ export function AudioDirector() {
       if (s.place !== prev.place || hourChanged) setAmbience(s.phone === 'map' ? 'none' : ambienceFor(s.place, s.time));
       if (s.phone !== prev.phone && (s.phone === 'map' || prev.phone === 'map')) setAmbience(s.phone === 'map' ? 'none' : ambienceFor(s.place, s.time));
       if (s.money - prev.money >= 1000) sfx.cash();
-      if (s.event && s.event !== prev.event) (s.event.startsWith('accident') ? sfx.crash : sfx.alert)();
+      if (s.event && s.event !== prev.event) (s.event.startsWith('accident') ? sfx.crash : EVENTS.find((e) => e.id === s.event)?.caller ? sfx.ring : sfx.alert)();
       if (s.eventResult && s.eventResult !== prev.eventResult && /🎉|don help you|Promotion/.test(s.eventResult.title + s.eventResult.emoji)) sfx.fanfare();
       if (s.toasts.length > prev.toasts.length && s.money === prev.money) sfx.pop();
     });

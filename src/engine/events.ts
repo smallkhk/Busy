@@ -89,6 +89,8 @@ export type GameEvent = {
   emoji: string;
   title: string;
   text: string;
+  /** Shows as an incoming phone call from this person. */
+  caller?: string;
   /** 'idle' fires while you dey free; 'commute' fires in the middle of a road trip. */
   trigger: 'idle' | 'commute';
   weight: number;

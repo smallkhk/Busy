@@ -55,3 +55,17 @@ describe('people in the world', () => {
     expect(npcsAt('secretariat', 10, 7).map((n) => n.id)).not.toContain('garba'); // day 7 = Sunday
   });
 });
+
+describe('phone calls', () => {
+  it('call events show who is calling, and every call has a free answer', () => {
+    const calls = EVENTS.filter((e) => e.caller);
+    expect(calls.length).toBeGreaterThanOrEqual(15);
+    for (const e of calls) expect(e.choices.some((c) => !c.cost), e.id).toBe(true);
+  });
+
+  it('Chinedu mission pays off only if you show up next day', () => {
+    const show = EVENTS.find((e) => e.id === 'chinedu-meet-show')!;
+    expect(show.when!({ ...ctx, place: 'secretariat', flags: { 'chinedu-meet': 9 } })).toBe(true);
+    expect(show.when!({ ...ctx, place: 'secretariat', flags: { 'chinedu-meet': 8 } })).toBe(false);
+  });
+});

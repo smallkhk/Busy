@@ -125,6 +125,15 @@ export const sfx = {
     burst(t, 0.8, 900, 0.6, master, 'lowpass');
     burst(t + 0.05, 0.4, 3500, 0.3);
   },
+  ring() {
+    if (!ctx) return;
+    const t = ctx.currentTime;
+    // Old Nokia-style double ring, twice
+    [0, 0.25, 1.0, 1.25].forEach((d) => {
+      tone(1046, t + d, 0.18, 'square', 0.07);
+      tone(1318, t + d + 0.09, 0.12, 'square', 0.05);
+    });
+  },
   fanfare() {
     if (!ctx) return;
     const t = ctx.currentTime;
