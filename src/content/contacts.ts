@@ -89,7 +89,7 @@ export const CONTACTS: Contact[] = [
 
 export const contactById = (id: string) => CONTACTS.find((c) => c.id === id);
 
-export type ContactState = { rel: number; lastFavourDay?: number; lastCallDay?: number; lastGiftDay?: number };
+export type ContactState = { rel: number; lastFavourDay?: number; lastCallDay?: number; lastGiftDay?: number; lastTalkDay?: number };
 
 export const FIRST_MEET_REL = 30;
 export const CALL_COST = 200;

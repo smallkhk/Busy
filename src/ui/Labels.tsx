@@ -1,6 +1,9 @@
 import { activityById, INTERACTABLES } from '../content/activities';
 import { useSocial } from '../net/social';
 import { useNet } from '../net/useNet';
+import { contactById } from '../content/contacts';
+import { npcsAt } from '../content/npcs';
+import { clockParts } from '../engine/clock';
 import { useGame } from '../store/game';
 import { registerLabel } from '../world/labels';
 
@@ -9,6 +12,8 @@ export function Labels() {
   const place = useGame((s) => s.place);
   const name = useGame((s) => s.name);
   const openMenu = useGame((s) => s.openMenu);
+  const openNpc = useGame((s) => s.openNpc);
+  const contacts = useGame((s) => s.contacts);
   const active = useGame((s) => s.active);
   const activity = active ? activityById(active.id) : undefined;
   const players = useNet((s) => s.players);
@@ -16,6 +21,8 @@ export function Labels() {
   // Re-render each game tick so chat bubbles expire on time
   useGame((s) => Math.floor(s.time));
   const now = Date.now();
+  const { hour, day } = clockParts(useGame.getState().time);
+  const npcs = npcsAt(place, hour, day);
   return (
     <div className="labels">
       {INTERACTABLES.filter((i) => i.place === place).map((i) => (
@@ -32,6 +39,23 @@ export function Labels() {
           {i.emoji}
         </button>
       ))}
+      {npcs.map(({ id }) => {
+        const c = contactById(id);
+        const known = !!contacts[id];
+        return (
+          <div
+            key={id}
+            ref={registerLabel(`n:${id}`)}
+            className={`nametag label npc ${known ? '' : 'stranger'}`}
+            onPointerDown={(e) => {
+              e.stopPropagation();
+              openNpc(id);
+            }}
+          >
+            {known ? `${c?.emoji} ${c?.name}` : '❓ Stranger'}
+          </div>
+        );
+      })}
       {!activity?.away && (
         <div ref={registerLabel('avatar')} className="nametag label">
           {bubbles.me && bubbles.me.until > now && <span className="bubble">{bubbles.me.text}</span>}

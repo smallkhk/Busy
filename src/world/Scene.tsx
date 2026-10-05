@@ -16,6 +16,7 @@ import { Airport, Asokoro, Garki, Maitama, Nyanya } from './places/Districts';
 import { INTERACTABLES, type Place } from '../content/activities';
 import { avatarLabelPos, labelEls } from './labels';
 import { RemotePlayers, remoteLabelPos } from '../net/RemotePlayers';
+import { Npcs, npcLabelPos } from './Npcs';
 
 const CENTERS: Record<Place, [number, number, number]> = {
   home: [1.4, 0, 0.4],
@@ -60,7 +61,7 @@ const tmp = new Vector3();
 function LabelSync() {
   useFrame(({ camera, size }) => {
     for (const [key, el] of labelEls) {
-      const world = key === 'avatar' ? avatarLabelPos : key.startsWith('p:') ? remoteLabelPos.get(key.slice(2)) : LABEL_POS.get(key);
+      const world = key === 'avatar' ? avatarLabelPos : key.startsWith('p:') ? remoteLabelPos.get(key.slice(2)) : key.startsWith('n:') ? npcLabelPos.get(key.slice(2)) : LABEL_POS.get(key);
       if (!world) continue;
       tmp.copy(world).project(camera);
       const x = ((tmp.x + 1) / 2) * size.width;
@@ -194,6 +195,7 @@ export function Scene() {
       <PlaceScene />
       <Avatar />
       <RemotePlayers />
+      <Npcs />
       {wet && place !== 'home' && <Rain storm={weather === 'storm'} />}
       {weather === 'storm' && <Lightning />}
     </Canvas>

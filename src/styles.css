@@ -391,3 +391,10 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
 @keyframes gist-blink { 50% { opacity: 0.2; } }
 .gist-cancel { background: transparent !important; }
 .gist-rec-err { flex: 1; color: #f5b7b1; }
+
+/* Contacts standing in the world */
+.nametag.label.npc { pointer-events: auto; background: rgba(232, 176, 75, 0.95); color: #1b1a22; cursor: pointer; }
+.nametag.label.npc.stranger { background: rgba(255, 255, 255, 0.9); }
+.npc-face { font-size: 30px; margin-right: 8px; }
+.npc-sheet .sheet-title { display: flex; align-items: center; }
+.npc-line { font-style: italic; margin: 6px 0 10px; }

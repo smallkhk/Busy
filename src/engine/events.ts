@@ -30,6 +30,8 @@ export type EventContext = {
   longLeg?: number;
   packaging?: number;
   weather?: 'sunny' | 'cloudy' | 'rain' | 'storm';
+  /** Story flags, with the day each was set. */
+  flags?: Record<string, number>;
 };
 
 export type Effect = {
@@ -61,6 +63,8 @@ export type Effect = {
   heat?: number;
   /** Damage to your car condition. */
   carWear?: number;
+  /** Story flags to set (remembered with today's day). */
+  flag?: string | string[];
 };
 
 /** Weight can depend on who you be: Long Leg, Packaging, police heat… */

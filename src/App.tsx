@@ -4,6 +4,7 @@ import { ChatBar } from './net/ChatBar';
 import { NetDirector } from './net/NetDirector';
 import { EventModal } from './ui/EventModal';
 import { NearbyMenu } from './ui/GistApp';
+import { NpcSheet } from './ui/NpcSheet';
 import { QuestPill } from './ui/Goals';
 import { Labels } from './ui/Labels';
 import { Phone } from './ui/Phone';
@@ -59,6 +60,7 @@ export default function App() {
           <Phone />
           {mapOpen && <WorldMap />}
           <NearbyMenu />
+          <NpcSheet />
           <EventModal />
         </>
       ) : (
