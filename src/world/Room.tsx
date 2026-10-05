@@ -1,5 +1,6 @@
 import type { ThreeEvent } from '@react-three/fiber';
-import { useState, type ReactNode } from 'react';
+import { useContext, useState, type ReactNode } from 'react';
+import { CellCtx } from './origin';
 import { AREAS, homeTier, type HomeTier } from '../content/housing';
 import { useGame } from '../store/game';
 import { Person } from './Avatar';
@@ -49,11 +50,16 @@ export function Cyl({ p, r, h, c }: { p: V3; r: number; h: number; c: string }) 
 export function Tappable({ id, children }: { id: string; children: ReactNode }) {
   const [hover, setHover] = useState(false);
   const openMenu = useGame((s) => s.openMenu);
+  const walkTo = useGame((s) => s.walkTo);
+  // A place down the road: tapping it walks you there instead of opening its menu
+  const cell = useContext(CellCtx);
+  const far = cell ? !cell.current : false;
   const onDown = (e: ThreeEvent<MouseEvent>) => {
     e.stopPropagation();
     // A drag moves the camera; only a tap counts
     if (e.delta > 8) return;
-    openMenu(id);
+    if (far) walkTo(e.point.x, e.point.z);
+    else openMenu(id);
   };
   return (
     <group

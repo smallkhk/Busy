@@ -66,13 +66,13 @@ const BLOCK_PAINTS: Paint[] = [{}, { wall: '#f1e3c8' }, { wall: '#e9d2c2' }, { w
 export type KenneyLot = { kit: 'suburban' | 'commercial'; name: string; paint: number; x: number; z: number; rot: number; s: number };
 
 /** Builds one lot's house from parts. Every house rolls its own type, size and colours. */
-function house(x: number, z: number, r: () => number, box: BoxPart[], cone: ConePart[], cyl: CylPart[], glass: BoxPart[], trees: TreePart[], style: HoodStyle = 'mixed', kenney?: KenneyLot[]) {
+function house(x: number, z: number, r: () => number, box: BoxPart[], cone: ConePart[], cyl: CylPart[], glass: BoxPart[], trees: TreePart[], style: HoodStyle = 'mixed', kenney?: KenneyLot[], roadZ = 0) {
   const pick = <T,>(a: T[]) => a[Math.floor(r() * a.length)];
   const wall = pick(WALLS);
   const roof = pick(ROOFS);
   // Back rows face the road (+z), the rows across the road face back at it.
-  const rot = z < 0 ? 0 : Math.PI;
-  const front = z > 0;
+  const rot = z < roadZ ? 0 : Math.PI;
+  const front = z > roadZ;
   if (kenney) {
     const roll = r();
     const odds = { poor: [0.45, 0.45, 0.45], mixed: [0.68, 0.68, 0.68], rich: [0.92, 0.92, 0.92], city: [0.12, 0.82, 0.82] }[style];
@@ -81,7 +81,7 @@ function house(x: number, z: number, r: () => number, box: BoxPart[], cone: Cone
     if (style === 'city' && roll >= odds[0] && roll < odds[1]) {
       kit = 'commercial';
       // Towers stand at the back so they never block your view
-      const pool = !front && z < -9 && r() < 0.45 ? TOWERS : BLOCKS.filter((k) => !front || COMMERCIAL[k][1] < 1.4);
+      const pool = !front && z < roadZ - 9 && r() < 0.45 ? TOWERS : BLOCKS.filter((k) => !front || COMMERCIAL[k][1] < 1.4);
       name = pick(pool);
     } else if (roll < odds[0]) {
       name = style === 'poor' ? pick(r() < 0.7 ? BUNGALOWS : DUPLEXES) : style === 'rich' ? pick(DUPLEXES) : pick(r() < 0.4 ? BUNGALOWS : DUPLEXES);
@@ -203,7 +203,7 @@ const roundedUnit = new RoundedBoxGeometry(1, 1, 1, 2, 0.06);
  * Filler neighbourhood around a scene: varied houses, flats, shop rows and
  * uncompleted buildings, plus trees. All drawn with a handful of instanced meshes.
  */
-export function Neighborhood({ seed, clear = [], extent = 26, near = -5.5, far = -19, front = 6.2, frontFar = 17, style = 'mixed' }: { seed: number; clear?: Rect[]; extent?: number; near?: number; far?: number; front?: number; frontFar?: number; style?: HoodStyle }) {
+export function Neighborhood({ seed, clear = [], extent = 26, near = -5.5, far = -19, front = 6.2, frontFar = 17, style = 'mixed', roadZ = 0 }: { seed: number; clear?: Rect[]; extent?: number; near?: number; far?: number; front?: number; frontFar?: number; style?: HoodStyle; /** z of the road the houses face. */ roadZ?: number }) {
   const parts = useMemo(() => {
     const r = rng(seed * 7919 + 13);
     const box: BoxPart[] = [], cone: ConePart[] = [], cyl: CylPart[] = [], glass: BoxPart[] = [], trees: TreePart[] = [];
@@ -222,11 +222,11 @@ export function Neighborhood({ seed, clear = [], extent = 26, near = -5.5, far =
         box.push({ p: [x, 1.0, z + 1.2], s: [0.9, 0.4, 0.04], c: '#f4f4f4' });
         continue;
       }
-      house(x, z, r, box, cone, cyl, glass, trees, style, kenney);
+      house(x, z, r, box, cone, cyl, glass, trees, style, kenney, roadZ);
     }
     return { box, cone, cyl, glass, trees, kenney };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [seed, style]);
+  }, [seed, style, roadZ]);
 
   return (
     <group>

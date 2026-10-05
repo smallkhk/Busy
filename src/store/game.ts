@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import { activityById, activityPlace, PLACE_NAMES, type Activity, type Place } from '../content/activities';
 import { entrySpot, exitSpot, homeBounds, homeSpot } from '../content/homeLayout';
+import { CELL_X, CELL_Z, currentCell, inGrid, placeAt, ROAD_HALF, ROAD_Z, route, type Cell } from '../content/worldmap';
 import { AD_BIZ_BOOST } from '../content/billboards';
 import { appointChance, CAMPAIGN_DAYS, canRun, electionWon, MOVES, moveSupport, NO_POLITICS, OFFICES, startingSupport, TERM_DAYS, type CampaignMove, type Politics } from '../content/politics';
 import { courseById, GYM_DAYS, GYM_FEE, sickDodge, workEnergyFactor, type CourseId } from '../content/learning';
@@ -123,6 +124,12 @@ export type GameState = {
   nextPowerChange: number;
   pos: [number, number];
   target: [number, number] | null;
+  /** Waypoints still to walk after `target` (local to the block you are in). */
+  route: [number, number][];
+  /** Grid block you are in when you are out on the road between places. */
+  cell?: Cell | null;
+  /** The last place you were at before you stepped onto the road. */
+  near?: Place;
   pending: string | null;
   active: Active | null;
   txns: Txn[];
@@ -154,6 +161,8 @@ export type GameState = {
   /** Real-time clock: move old saves over, and catch up on time spent away. */
   syncClock: () => void;
   walkTo: (x: number, z: number) => void;
+  /** You walked across a block edge: move the origin to the next block. */
+  shiftCell: (dc: number, dr: number) => void;
   choose: (activityId: string) => void;
   arrive: (pos: [number, number]) => void;
   cancel: () => void;
@@ -234,7 +243,27 @@ const BOUNDS: Record<Place, { minX: number; maxX: number; minZ: number; maxZ: nu
   mararaba: { minX: -13, maxX: 13, minZ: -1.8, maxZ: 3.6 },
   park: { minX: -13, maxX: 13, minZ: -1.8, maxZ: 3.6 },
   stadium: { minX: -13, maxX: 13, minZ: -1.8, maxZ: 3.6 },
+  road: { minX: -CELL_X / 2, maxX: CELL_X / 2, minZ: ROAD_Z - ROAD_HALF, maxZ: ROAD_Z + ROAD_HALF },
 };
+
+/** Where you can stand inside a place's block (the road grid is added by worldmap). */
+const plazaOf = (p: Place) => (p === 'home' || p === 'road' ? null : BOUNDS[p]);
+
+/** Plan a walk along the roads from where you stand to (x, z), all in local block coordinates. */
+function planWalk(s: { place: Place; area: AreaId; cell?: Cell | null; pos: [number, number] }, x: number, z: number): [number, number][] | null {
+  const c = currentCell(s);
+  if (!c) return null;
+  const ox = c[0] * CELL_X;
+  const oz = c[1] * CELL_Z;
+  const from = live.pos ?? s.pos;
+  return route([from[0] + ox, from[1] + oz], [x + ox, z + oz], s.area, plazaOf).map(([wx, wz]) => [wx - ox, wz - oz]);
+}
+
+/** Where your avatar is right now while walking (pos only updates when you reach a waypoint). */
+export const live: { pos: [number, number] | null } = { pos: null };
+
+/** Ride apps and the map treat the road as the place you were last near. */
+export const ridePlace = (s: { place: Place; near?: Place }): Place => (s.place === 'road' ? (s.near ?? 'street') : s.place);
 
 /** Chance per idle game hour that something happens. */
 const IDLE_EVENT_CHANCE = 0.3;
@@ -315,6 +344,8 @@ const initial = () => ({
   nextPowerChange: START_TIME + 180,
   pos: START_POS,
   target: null,
+  route: [] as [number, number][],
+  cell: null as Cell | null,
   pending: null,
   active: null,
   txns: [{ at: START_TIME, label: 'Money wey you carry land Abuja', amount: START_MONEY }],
@@ -586,7 +617,7 @@ export const useGame = create<GameState>()(
         }
         set({ active: null, ...(a.away ? { pos: exitSpot(s.place, s.area) } : {}) });
         if (a.travelTo) {
-          set({ place: a.travelTo, pos: entrySpot(a.travelTo, s.area), target: null });
+          set({ place: a.travelTo, pos: entrySpot(a.travelTo, s.area), target: null, route: [], cell: null });
           get().toast(`📍 ${placeLabel(a.travelTo, s.area, PLACE_NAMES)}`);
         }
       };
@@ -1655,15 +1686,44 @@ export const useGame = create<GameState>()(
         },
 
         walkTo: (x, z) => {
-          const { active, place } = get();
-          if (active) return;
+          const s = get();
+          if (s.active) return;
+          // Out in Abuja: follow the roads, even to the next place
+          const path = planWalk(s, x, z);
+          if (path && path.length) {
+            set({ target: path[0], route: path.slice(1), pending: null, menu: null });
+            return;
+          }
           // Mansions stretch west: dining room and garage
-          const b = place === 'home' ? homeBounds(get().area, BOUNDS.home) : BOUNDS[place];
+          const b = s.place === 'home' ? homeBounds(s.area, BOUNDS.home) : BOUNDS[s.place];
           set({
             target: [Math.min(b.maxX, Math.max(b.minX, x)), Math.min(b.maxZ, Math.max(b.minZ, z))],
+            route: [],
             pending: null,
             menu: null,
           });
+        },
+
+        shiftCell: (dc, dr) => {
+          const s = get();
+          const c = currentCell(s);
+          if (!c) return;
+          const next: Cell = [c[0] + dc, c[1] + dr];
+          if (!inGrid(next)) return;
+          const dx = dc * CELL_X;
+          const dz = dr * CELL_Z;
+          const mv = (p: [number, number]): [number, number] => [p[0] - dx, p[1] - dz];
+          const here = placeAt(next, s.area);
+          set({
+            place: here ?? 'road',
+            cell: here ? null : next,
+            near: s.place === 'road' ? s.near : s.place,
+            pos: mv(s.pos),
+            target: s.target && mv(s.target),
+            route: s.route.map(mv),
+            menu: null,
+          });
+          if (here && here !== s.place) get().toast(`📍 ${placeLabel(here, s.area, PLACE_NAMES)}`);
         },
 
         choose: (activityId) => {
@@ -1677,12 +1737,21 @@ export const useGame = create<GameState>()(
             return;
           }
           const spot = a.spot ? (activityPlace(a.id) === 'home' ? homeSpot(s.area, a.id, a.spot) : a.spot) : a.away ? exitSpot(s.place, s.area) : null;
-          if (spot) set({ target: spot, pending: a.id });
+          if (spot) {
+            const path = planWalk(s, spot[0], spot[1]);
+            if (path && path.length) set({ target: path[0], route: path.slice(1), pending: a.id });
+            else set({ target: spot, route: [], pending: a.id });
+          }
           else startActivity(a.id);
         },
 
         arrive: (pos) => {
-          const { pending } = get();
+          const { pending, route: rest } = get();
+          // More road to walk
+          if (rest.length) {
+            set({ pos, target: rest[0], route: rest.slice(1) });
+            return;
+          }
           set({ pos, target: null });
           if (pending) startActivity(pending);
         },
@@ -1721,6 +1790,8 @@ export const useGame = create<GameState>()(
         time: s.time,
         money: s.money,
         place: s.place,
+        cell: s.cell,
+        near: s.near,
         needs: s.needs,
         packaging: s.packaging,
         pantry: s.pantry,

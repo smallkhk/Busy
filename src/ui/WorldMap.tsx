@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Vector3, type Group } from 'three';
 import { HOME_XY, ROADS, type MapSpot } from '../content/map';
 import { fromPlace } from '../content/phoneapps';
-import { useGame } from '../store/game';
+import { ridePlace, useGame } from '../store/game';
 import { TravelSheet, useMapSpots } from './MapView';
 import { AdBoards, AdSheet } from './AdBoards';
 import { loadAds } from '../net/billboards';
@@ -494,7 +494,7 @@ function YouPin({ at }: { at: [number, number] }) {
 
 export function WorldMap() {
   const openPhone = useGame((s) => s.openPhone);
-  const place = useGame((s) => s.place);
+  const place = useGame(ridePlace);
   const spots = useMapSpots();
   const [selected, setSelected] = useState<string | null>(null);
   const [board, setBoard] = useState<number | null>(null);

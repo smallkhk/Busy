@@ -15,7 +15,7 @@ describe('districts', () => {
 
   it('every away-from-home place has a public route back home', () => {
     for (const place of Object.keys(PLACE_NAMES) as Place[]) {
-      if (place === 'home' || place === 'street') continue;
+      if (place === 'home' || place === 'street' || place === 'road') continue;
       const home = INTERACTABLES.filter((i) => i.place === place).flatMap((i) => i.activities).some((a) => a.travelTo === 'street');
       expect(home, place).toBe(true);
     }

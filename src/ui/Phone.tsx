@@ -10,7 +10,7 @@ import { CALL_COST, CONTACTS, GIFT_COST, longLeg } from '../content/contacts';
 import { BRAND_COOLDOWN_DAYS, BRAND_MIN_FOLLOWERS, brandPay, GAP_DANGER, POST_COOLDOWN_MIN, POSTS, realWealth } from '../content/gram';
 import { AREAS, moveCost, PROPERTY_SELL_FEE, propertyValue, RENT_AREAS, rentOwed, type AreaId } from '../content/housing';
 import { CHOP_ITEMS, HEADLINES, ridesFrom } from '../content/phoneapps';
-import { blockReason, useGame, type PhoneApp } from '../store/game';
+import { blockReason, ridePlace, useGame, type PhoneApp } from '../store/game';
 import { activityDetail } from './detail';
 import { EgoBank } from './EgoBank';
 import { BusinessApp, CareerCard } from './Career';
@@ -115,7 +115,7 @@ function NewsApp() {
 }
 
 function RideApp() {
-  const place = useGame((s) => s.place);
+  const place = useGame(ridePlace);
   return (
     <>
       <p className="muted small">Ride go carry you from your door. E cost pass bus, but e fast and you no go waka go bus stop 🚘</p>

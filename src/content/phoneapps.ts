@@ -99,8 +99,8 @@ export const TREKS: Activity[] = RIDE_PLACES.flatMap((from) =>
   }),
 );
 
-/** Normalise home to its street: you leave from your gate either way. */
-export const fromPlace = (place: Place): Place => (place === 'home' ? 'street' : place);
+/** Normalise home to its street: you leave from your gate either way. On the road, pass the place you were near. */
+export const fromPlace = (place: Place): Place => (place === 'home' || place === 'road' ? 'street' : place);
 
 export const trekBetween = (from: Place, to: Place) => TREKS.find((t) => t.id === `trek-${fromPlace(from)}-${to}`);
 export const rideBetween = (from: Place, to: Place) => RIDES.find((r) => r.id === `hail-${fromPlace(from)}-${to}`);

@@ -1,5 +1,6 @@
 import { useFrame, type ThreeEvent } from '@react-three/fiber';
-import { Suspense, useRef } from 'react';
+import { Suspense, useContext, useRef } from 'react';
+import { CellCtx } from './origin';
 import type { Group } from 'three';
 import { clockParts, daylight } from '../engine/clock';
 import { carById } from '../content/cars';
@@ -271,6 +272,9 @@ export function Street() {
   const rich = useGame((s) => !!AREAS[s.area].lux);
   const night = useGame((s) => daylight(clockParts(Math.floor(s.time / 10) * 10).minuteOfDay) < 0.3);
 
+  // In the connected city the street fills one block and its road runs to the cross roads
+  const cell = useContext(CellCtx);
+  const len = cell ? cell.ground[0] : 60;
   const onGround = (e: ThreeEvent<MouseEvent>) => {
     e.stopPropagation();
     // A drag moves the camera; only a tap counts
@@ -282,12 +286,12 @@ export function Street() {
     <group>
       {/* Red Abuja laterite ground */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.02, 0]} receiveShadow onClick={onGround}>
-        <planeGeometry args={[80, 80]} />
+        <planeGeometry args={cell ? cell.ground : [80, 80]} />
         <meshStandardMaterial color={rich ? '#6f9a52' : '#b0703f'} />
       </mesh>
       {/* Road */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0.4]} receiveShadow onClick={onGround}>
-        <planeGeometry args={[60, 2.6]} />
+        <planeGeometry args={[len, 2.6]} />
         <meshStandardMaterial color="#3a3d42" />
       </mesh>
       {Array.from({ length: 16 }, (_, i) => (
@@ -298,11 +302,11 @@ export function Street() {
       ))}
       {/* Sidewalks */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.03, -1.9]} receiveShadow onClick={onGround}>
-        <planeGeometry args={[60, 2.0]} />
+        <planeGeometry args={[len, 2.0]} />
         <meshStandardMaterial color="#bdb6a8" />
       </mesh>
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.03, 2.6]} receiveShadow onClick={onGround}>
-        <planeGeometry args={[60, 1.8]} />
+        <planeGeometry args={[len, 1.8]} />
         <meshStandardMaterial color="#bdb6a8" />
       </mesh>
       {/* Black & yellow painted kerbs, very Abuja */}

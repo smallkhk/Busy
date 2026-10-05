@@ -2,9 +2,11 @@ import { useFrame } from '@react-three/fiber';
 import { Suspense, useRef } from 'react';
 import type { Group } from 'three';
 import { activityById } from '../content/activities';
-import { useGame } from '../store/game';
+import { live, useGame } from '../store/game';
 import { SKINS, type Hair, type Outfit } from '../content/fashion';
 import { avatarLabelPos } from './labels';
+import { CELL_X, CELL_Z, currentCell } from '../content/worldmap';
+import { shiftOrigin } from './origin';
 import { homePoint } from '../content/homeLayout';
 import { HumanModel, type Hat, type HumanKind, type Move } from './HumanModel';
 import { dressFor } from './dress';
@@ -282,6 +284,25 @@ export function Avatar() {
       // Snap to saved position (e.g. after load or coming back from work)
       if (Math.hypot(g.position.x - pos[0], g.position.z - pos[1]) > 0.05) g.position.set(pos[0], 0, pos[1]);
       walkPhase.current = 0;
+    }
+
+    live.pos = target ? [g.position.x, g.position.z] : null;
+
+    // Walked across a block edge: the next block becomes the origin
+    const s = useGame.getState();
+    if (s.place !== 'home') {
+      const dc = g.position.x > CELL_X / 2 + 1.5 ? 1 : g.position.x < -CELL_X / 2 - 1.5 ? -1 : 0;
+      const dr = g.position.z > CELL_Z / 2 + 1.5 ? 1 : g.position.z < -CELL_Z / 2 - 1.5 ? -1 : 0;
+      if (dc || dr) {
+        const before = currentCell(s);
+        s.shiftCell(dc, dr);
+        const after = currentCell(useGame.getState());
+        if (before && after && (before[0] !== after[0] || before[1] !== after[1])) {
+          g.position.x -= dc * CELL_X;
+          g.position.z -= dr * CELL_Z;
+          shiftOrigin(dc * CELL_X, dr * CELL_Z);
+        }
+      }
     }
 
     const swing = target ? Math.sin(walkPhase.current) * 0.5 : 0;
