@@ -178,6 +178,51 @@ export const STORIES: GameEvent[] = [
     ],
   },
 
+  // ---------------- Love ----------------
+  {
+    id: 'babe-hair',
+    emoji: '🥺',
+    title: 'Babe dey call',
+    text: '"Babe, I need ₦20k for small something before Sunday. You know say I love you 🥺"',
+    trigger: 'idle',
+    weight: 4,
+    cooldownHours: 120,
+    when: (c) => !!c.partner && free(c),
+    choices: [
+      { label: 'Send ₦20,000', cost: 20000, outcomes: [{ text: '"You be the best! 😍" E send you 10 kiss emoji.', effect: { partnerLove: 10 } }] },
+      { label: '"Next week, babe"', outcomes: [{ text: '"Okay o." The "o" long 😐', effect: { partnerLove: -6 } }] },
+      { label: '"Na ATM I be?"', outcomes: [{ text: 'E block you for 2 hours. Wahala 😤', effect: { partnerLove: -18, needs: { fun: -5 } } }] },
+    ],
+  },
+  {
+    id: 'love-jealous',
+    emoji: '😱',
+    title: 'Two of them don meet',
+    text: 'You dey date two people at once… and dem just see each other for Jabi Lake Mall. Both of dem dey call you now.',
+    trigger: 'idle',
+    weight: 6,
+    cooldownHours: 96,
+    when: (c) => (c.dating ?? 0) >= 2 && free(c),
+    choices: [
+      { label: 'Tell the truth', outcomes: [{ text: 'One of dem respect your honesty. The other one don block you everywhere.', effect: { partnerLove: -10, needs: { social: -10 } } }] },
+      { label: '"Na my cousin!"', outcomes: [{ weight: 1, text: 'E work… for now 😅', effect: { needs: { fun: -5 } } }, { weight: 2, text: 'Your "cousin" post screenshot for AbujaGram 💀', effect: { partnerLove: -25, followersPct: -5, needs: { social: -15 } } }] },
+    ],
+  },
+  {
+    id: 'fake-exposed',
+    emoji: '🫣',
+    title: 'Your fake life don burst',
+    text: '"So the money wey you dey spend for VIP, na borrow? My friend see your account balance for POS." 😶',
+    trigger: 'idle',
+    weight: 8,
+    cooldownHours: 96,
+    when: (c) => !!c.fakeLife && (c.gap ?? 0) > 30 && free(c),
+    choices: [
+      { label: 'Confess everything', outcomes: [{ weight: 1, text: '"At least you honest." E go take time but e forgive you.', effect: { partnerLove: -10 } }, { weight: 1, text: '"I no fit date liar." E don waka 💔', effect: { partnerLove: -40, needs: { fun: -15 } } }] },
+      { label: 'Form more big man', outcomes: [{ text: 'You transfer money you no get to prove point. Now you broke AND e still no believe you 😭', effect: { money: -20000, partnerLove: -20 } }] },
+    ],
+  },
+
   // ---------------- Scam call ----------------
   {
     id: 'scam-call',
