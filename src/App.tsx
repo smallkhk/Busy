@@ -4,6 +4,7 @@ import { QuestPill } from './ui/Goals';
 import { Labels } from './ui/Labels';
 import { Phone } from './ui/Phone';
 import { Start } from './ui/Start';
+import { WorldMap } from './ui/WorldMap';
 import { useGame } from './store/game';
 import { Scene } from './world/Scene';
 
@@ -29,9 +30,11 @@ function BottomNav() {
 
 export default function App() {
   const started = useGame((s) => s.started);
+  // The 3D map replaces the scene while open (one WebGL canvas at a time on phones).
+  const mapOpen = useGame((s) => s.phone === 'map');
   return (
     <div className="app-root">
-      <Scene />
+      {!mapOpen && <Scene />}
       {started ? (
         <>
           <Labels />
@@ -48,6 +51,7 @@ export default function App() {
           </div>
           <ActionMenu />
           <Phone />
+          {mapOpen && <WorldMap />}
           <EventModal />
         </>
       ) : (
