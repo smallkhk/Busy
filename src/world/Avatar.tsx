@@ -8,50 +8,90 @@ import { avatarLabelPos } from './labels';
 const SPEED = 2.6; // world units per second
 const BED_POS: [number, number] = [-2.9, -1.9];
 
+/** Rounded little human: capsule limbs, round head, hair, hands and shoes. */
 export function Person({ shirt, skin = '#5a3825', trousers = '#24324a', legs }: {
   shirt: string;
   skin?: string;
   trousers?: string;
+  /** Filled with [left leg, right leg, right arm, left arm] so walking can swing them. */
   legs?: React.RefObject<Group[]>;
 }) {
+  const reg = (i: number) => (g: Group | null) => {
+    if (legs?.current && g) legs.current[i] = g;
+  };
   return (
     <group>
-      {[-0.11, 0.11].map((x, i) => (
-        <group key={x} position={[x, 0.42, 0]} ref={(g) => { if (legs?.current && g) legs.current[i] = g; }}>
-          <mesh position={[0, -0.21, 0]} castShadow>
-            <boxGeometry args={[0.16, 0.42, 0.18]} />
-            <meshStandardMaterial color={trousers} />
+      {/* Legs pivot at the hip */}
+      {[-0.1, 0.1].map((x, i) => (
+        <group key={x} position={[x, 0.46, 0]} ref={reg(i)}>
+          <mesh position={[0, -0.2, 0]} castShadow>
+            <capsuleGeometry args={[0.075, 0.28, 4, 8]} />
+            <meshStandardMaterial color={trousers} roughness={0.85} />
           </mesh>
-          <mesh position={[0, -0.4, 0.04]} castShadow>
-            <boxGeometry args={[0.17, 0.06, 0.26]} />
-            <meshStandardMaterial color="#1a1a1a" />
+          <mesh position={[0, -0.42, 0.04]} castShadow scale={[1, 0.55, 1.5]}>
+            <sphereGeometry args={[0.085, 10, 8]} />
+            <meshStandardMaterial color="#1a1a1a" roughness={0.5} />
           </mesh>
         </group>
       ))}
-      <mesh position={[0, 0.7, 0]} castShadow>
-        <boxGeometry args={[0.44, 0.56, 0.26]} />
-        <meshStandardMaterial color={shirt} />
+      {/* Body: shirt with rounded shoulders */}
+      <mesh position={[0, 0.74, 0]} castShadow scale={[1, 1, 0.62]}>
+        <capsuleGeometry args={[0.2, 0.26, 4, 12]} />
+        <meshStandardMaterial color={shirt} roughness={0.8} />
       </mesh>
-      {[-0.28, 0.28].map((x) => (
-        <mesh key={x} position={[x, 0.68, 0]} castShadow>
-          <boxGeometry args={[0.11, 0.5, 0.14]} />
-          <meshStandardMaterial color={skin} />
+      {/* Arms pivot at the shoulder */}
+      {[0.27, -0.27].map((x, i) => (
+        <group key={x} position={[x, 0.92, 0]} ref={reg(2 + i)}>
+          <mesh position={[0, -0.1, 0]} castShadow>
+            <capsuleGeometry args={[0.065, 0.12, 4, 8]} />
+            <meshStandardMaterial color={shirt} roughness={0.8} />
+          </mesh>
+          <mesh position={[0, -0.27, 0]} castShadow>
+            <capsuleGeometry args={[0.052, 0.16, 4, 8]} />
+            <meshStandardMaterial color={skin} roughness={0.6} />
+          </mesh>
+          <mesh position={[0, -0.39, 0]}>
+            <sphereGeometry args={[0.058, 8, 6]} />
+            <meshStandardMaterial color={skin} roughness={0.6} />
+          </mesh>
+        </group>
+      ))}
+      {/* Neck, head, ears, hair */}
+      <mesh position={[0, 1.04, 0]}>
+        <cylinderGeometry args={[0.06, 0.07, 0.1, 10]} />
+        <meshStandardMaterial color={skin} roughness={0.6} />
+      </mesh>
+      <mesh position={[0, 1.22, 0]} castShadow scale={[1, 1.08, 1]}>
+        <sphereGeometry args={[0.17, 16, 14]} />
+        <meshStandardMaterial color={skin} roughness={0.55} />
+      </mesh>
+      {[-0.17, 0.17].map((x) => (
+        <mesh key={x} position={[x, 1.21, 0]} scale={[0.5, 1, 0.8]}>
+          <sphereGeometry args={[0.045, 8, 6]} />
+          <meshStandardMaterial color={skin} roughness={0.6} />
         </mesh>
       ))}
-      <mesh position={[0, 1.17, 0]} castShadow>
-        <boxGeometry args={[0.32, 0.34, 0.3]} />
-        <meshStandardMaterial color={skin} />
+      <mesh position={[0, 1.27, -0.012]} scale={[1.04, 0.9, 1.04]}>
+        <sphereGeometry args={[0.172, 16, 10, 0, Math.PI * 2, 0, Math.PI / 2.1]} />
+        <meshStandardMaterial color="#111" roughness={0.95} />
       </mesh>
-      <mesh position={[0, 1.36, -0.01]}>
-        <boxGeometry args={[0.34, 0.08, 0.32]} />
-        <meshStandardMaterial color="#111" />
-      </mesh>
-      {[-0.07, 0.07].map((x) => (
-        <mesh key={x} position={[x, 1.2, 0.152]}>
-          <boxGeometry args={[0.05, 0.05, 0.01]} />
-          <meshStandardMaterial color="#fff" />
-        </mesh>
+      {/* Eyes and a small smile */}
+      {[-0.06, 0.06].map((x) => (
+        <group key={x} position={[x, 1.24, 0.152]}>
+          <mesh>
+            <sphereGeometry args={[0.03, 8, 6]} />
+            <meshStandardMaterial color="#ffffff" roughness={0.3} />
+          </mesh>
+          <mesh position={[0, 0, 0.02]}>
+            <sphereGeometry args={[0.016, 6, 5]} />
+            <meshStandardMaterial color="#1a0f08" />
+          </mesh>
+        </group>
       ))}
+      <mesh position={[0, 1.15, 0.158]} rotation={[0, 0, Math.PI]}>
+        <torusGeometry args={[0.035, 0.008, 4, 10, Math.PI]} />
+        <meshStandardMaterial color="#3a1a10" />
+      </mesh>
     </group>
   );
 }
@@ -105,7 +145,7 @@ export function Avatar() {
     }
 
     const swing = target ? Math.sin(walkPhase.current) * 0.5 : 0;
-    legs.current.forEach((l, i) => l && (l.rotation.x = i === 0 ? swing : -swing));
+    legs.current.forEach((l, i) => l && (l.rotation.x = i % 2 === 0 ? swing : -swing));
     g.position.y = target ? Math.abs(Math.sin(walkPhase.current)) * 0.04 : 0;
     avatarLabelPos.set(g.position.x, 1.75, g.position.z);
   });

@@ -10,19 +10,18 @@ import { Box, Cyl, Tappable, type V3 } from './Room';
 
 const LOOP = 30; // vehicles wrap between -15 and +15
 
-export function Car({ body, roof, stripe }: { body: string; roof: string; stripe?: string }) {
+/** Street car: the detailed showroom model. Taxis get the green Abuja stripe. */
+export function Car({ body, stripe, kind = 'sedan' }: { body: string; roof?: string; stripe?: string; kind?: 'sedan' | 'suv' | 'gwagon' }) {
   return (
-    <group>
-      <Box p={[0, 0.38, 0]} s={[1.9, 0.45, 0.9]} c={body} />
-      <Box p={[-0.1, 0.78, 0]} s={[1.0, 0.38, 0.82]} c={roof} />
-      {stripe && <Box p={[0, 0.42, 0]} s={[1.92, 0.12, 0.92]} c={stripe} />}
-      <Box p={[0.41, 0.78, 0]} s={[0.02, 0.3, 0.74]} c="#9ad0ec" />
-      {[[-0.6, 0.45], [0.6, 0.45], [-0.6, -0.45], [0.6, -0.45]].map(([x, z]) => (
-        <mesh key={`${x}${z}`} position={[x, 0.17, z]} rotation={[Math.PI / 2, 0, 0]}>
-          <cylinderGeometry args={[0.17, 0.17, 0.12, 12]} />
-          <meshStandardMaterial color="#111" />
-        </mesh>
-      ))}
+    <group scale={0.95}>
+      <CarModel kind={kind} paint={body} />
+      {stripe &&
+        [-0.453, 0.453].map((z) => (
+          <mesh key={z} position={[0, 0.4, z]}>
+            <boxGeometry args={[1.98, 0.1, 0.01]} />
+            <meshStandardMaterial color={stripe} />
+          </mesh>
+        ))}
     </group>
   );
 }
@@ -45,7 +44,7 @@ export function Keke() {
   );
 }
 
-type Mover = { kind: 'taxi' | 'keke' | 'car'; lane: number; dir: 1 | -1; speed: number; offset: number; color?: string };
+type Mover = { kind: 'taxi' | 'keke' | 'car' | 'suv'; lane: number; dir: 1 | -1; speed: number; offset: number; color?: string };
 
 // Abuja taxis are green and white.
 const TRAFFIC: Mover[] = [
@@ -53,7 +52,7 @@ const TRAFFIC: Mover[] = [
   { kind: 'car', lane: 1.0, dir: 1, speed: 3.2, offset: 13, color: '#b9bcc2' },
   { kind: 'keke', lane: -0.2, dir: -1, speed: 2.2, offset: 4 },
   { kind: 'taxi', lane: -0.2, dir: -1, speed: 2.2, offset: 17 },
-  { kind: 'car', lane: -0.2, dir: -1, speed: 2.2, offset: 25, color: '#20232a' },
+  { kind: 'suv', lane: -0.2, dir: -1, speed: 2.2, offset: 25, color: '#20232a' },
 ];
 
 function Traffic() {
@@ -72,7 +71,7 @@ function Traffic() {
     <>
       {TRAFFIC.map((m, i) => (
         <group key={i} ref={(g) => { refs.current[i] = g; }}>
-          {m.kind === 'keke' ? <Keke /> : m.kind === 'taxi' ? <Car body="#f4f4f4" roof="#f4f4f4" stripe="#1f8a4c" /> : <Car body={m.color!} roof={m.color!} />}
+          {m.kind === 'keke' ? <Keke /> : m.kind === 'taxi' ? <Car body="#f4f4f4" roof="#f4f4f4" stripe="#1f8a4c" /> : <Car body={m.color!} kind={m.kind === 'suv' ? 'suv' : 'sedan'} />}
         </group>
       ))}
     </>
@@ -158,15 +157,22 @@ export function Lamp({ p, on }: { p: V3; on: boolean }) {
 export function Tree({ p, s = 1 }: { p: V3; s?: number }) {
   return (
     <group position={p} scale={s}>
-      <Cyl p={[0, 0.8, 0]} r={0.14} h={1.6} c="#6b4a2b" />
-      <mesh position={[0, 2.0, 0]} castShadow>
-        <dodecahedronGeometry args={[0.9, 0]} />
-        <meshStandardMaterial color="#3f7d3a" flatShading />
+      <mesh position={[0, 0.8, 0]} castShadow>
+        <cylinderGeometry args={[0.1, 0.17, 1.6, 10]} />
+        <meshStandardMaterial color="#6b4a2b" roughness={0.9} />
       </mesh>
-      <mesh position={[0.5, 1.7, 0.3]} castShadow>
-        <dodecahedronGeometry args={[0.6, 0]} />
-        <meshStandardMaterial color="#4c8f45" flatShading />
-      </mesh>
+      {/* Leafy canopy: a few soft clumps */}
+      {[
+        [0, 2.05, 0, 0.85, '#3f7d3a'],
+        [0.5, 1.75, 0.3, 0.58, '#4c8f45'],
+        [-0.45, 1.8, -0.2, 0.55, '#468a3f'],
+        [0.1, 2.55, -0.15, 0.5, '#529a4a'],
+      ].map(([x, y, z, r, c]) => (
+        <mesh key={`${x}${y}`} position={[x as number, y as number, z as number]} castShadow receiveShadow>
+          <icosahedronGeometry args={[r as number, 1]} />
+          <meshStandardMaterial color={c as string} roughness={0.95} />
+        </mesh>
+      ))}
     </group>
   );
 }
