@@ -7,6 +7,7 @@ import { useGame } from '../store/game';
 import { Avatar } from './Avatar';
 import { Room } from './Room';
 import { Street } from './Street';
+import { Hospital } from './places/Hospital';
 import { JabiLake } from './places/JabiLake';
 import { Lounge } from './places/Lounge';
 import { Secretariat } from './places/Secretariat';
@@ -21,6 +22,7 @@ const CENTERS: Record<Place, [number, number, number]> = {
   jabi: [-0.6, 0, -0.8],
   secretariat: [0, 0, -0.6],
   lounge: [-0.2, 0, -0.6],
+  hospital: [-0.4, 0, -0.6],
 };
 
 const SCENES: Record<Place, () => ReactElement> = {
@@ -30,6 +32,7 @@ const SCENES: Record<Place, () => ReactElement> = {
   jabi: JabiLake,
   secretariat: Secretariat,
   lounge: Lounge,
+  hospital: Hospital,
 };
 
 function GameLoop() {

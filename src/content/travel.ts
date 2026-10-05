@@ -11,6 +11,7 @@ export const TRAVEL_INTERACTABLES: Interactable[] = [
     label: [-3.2, 2.5, -2.6],
     activities: [
       { id: 'foodstuff-big', label: 'Buy foodstuff (6 meals)', doing: 'Pricing rice, beans & pepper', emoji: '🧺', minutes: 30, cost: 9000, gains: { social: 8 }, effects: { pantry: 6 }, hours: [7, 18], spot: [-3.2, -1.4] },
+      { id: 'net', label: 'Treated mosquito net', doing: 'Buying mosquito net', emoji: '🦟', minutes: 10, cost: 4000, gains: {}, effects: { net: true }, hours: [7, 18], spot: [-3.2, -1.4] },
       { id: 'foodstuff-small', label: 'Buy small foodstuff (2 meals)', doing: 'Buying small small', emoji: '🍅', minutes: 15, cost: 3500, gains: { social: 4 }, effects: { pantry: 2 }, hours: [7, 18], spot: [-3.2, -1.4] },
     ],
   },
@@ -204,6 +205,41 @@ export const TRAVEL_INTERACTABLES: Interactable[] = [
     activities: [
       ride('lounge-home', 'Taxi go your area (home)', '🚕', 'street', 40, 4500, [4.6, 2.6]),
       ride('lounge-jabi', 'Taxi go Jabi Lake Mall', '🚕', 'jabi', 15, 2000, [4.6, 2.6]),
+    ],
+  },
+
+  // ---------------- General Hospital ----------------
+  {
+    id: 'doctor',
+    place: 'hospital',
+    name: 'Consulting room',
+    emoji: '🩺',
+    label: [-1.5, 3.4, -2.6],
+    activities: [
+      { id: 'see-doctor', label: 'See doctor', doing: 'Waiting in queue to see doctor', emoji: '🩺', minutes: 150, cost: 15000, gains: { energy: 10, fun: -5 }, effects: { cure: true }, hours: [8, 16], spot: [-1.5, -1.0] },
+      { id: 'checkup', label: 'Full checkup & lab test', doing: 'Doing lab tests', emoji: '🧪', minutes: 240, cost: 30000, gains: { energy: 30, fun: 5 }, effects: { cure: true }, hours: [8, 14], spot: [-1.5, -1.0] },
+    ],
+  },
+  {
+    id: 'emergency',
+    place: 'hospital',
+    name: 'Emergency',
+    emoji: '🚑',
+    label: [3.0, 2.6, -2.4],
+    activities: [
+      { id: 'emergency', label: 'Emergency treatment (24 hrs)', doing: 'Doctors dey work on you', emoji: '🚑', minutes: 120, cost: 35000, gains: { energy: 40 }, effects: { cure: true }, spot: [3.0, -1.2] },
+    ],
+  },
+  {
+    id: 'hospital-park',
+    place: 'hospital',
+    name: 'Bus stop',
+    emoji: '🚌',
+    label: [5.0, 2.2, 3.0],
+    activities: [
+      ride('hosp-home', 'Bus go your area (home)', '🚌', 'street', 80, 1000, [4.4, 2.6]),
+      ride('hosp-sec', 'Taxi go Federal Secretariat', '🚕', 'secretariat', 10, 1000, [4.4, 2.6]),
+      ride('hosp-wuse', 'Taxi go Wuse Market', '🚕', 'wuse', 15, 1500, [4.4, 2.6]),
     ],
   },
 ];

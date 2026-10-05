@@ -1,6 +1,6 @@
 import type { Needs } from '../engine/needs';
 
-export type Place = 'home' | 'street' | 'wuse' | 'jabi' | 'secretariat' | 'lounge';
+export type Place = 'home' | 'street' | 'wuse' | 'jabi' | 'secretariat' | 'lounge' | 'hospital';
 
 export const PLACE_NAMES: Record<Place, string> = {
   home: 'Your compound',
@@ -9,6 +9,7 @@ export const PLACE_NAMES: Record<Place, string> = {
   jabi: 'Jabi Lake Mall',
   secretariat: 'Federal Secretariat',
   lounge: 'Wuse 2 lounge',
+  hospital: 'General Hospital',
 };
 
 export type Activity = {
@@ -39,7 +40,8 @@ export type Activity = {
   usesPantry?: number;
   requires?: { packaging?: number; cv?: number; car?: boolean };
   /** Applied when it finishes. */
-  effects?: { packaging?: number; pantry?: number; cv?: number; meet?: string };
+  /** `cure` lists sicknesses it treats (all of them if true); `net` buys a mosquito net. */
+  effects?: { packaging?: number; pantry?: number; cv?: number; meet?: string; cure?: true | ('malaria' | 'typhoid' | 'food')[]; net?: boolean };
   /** Shown instead of running, for content that isn't built yet. */
   locked?: string;
 };

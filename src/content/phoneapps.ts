@@ -10,7 +10,7 @@ export const CHOP_ITEMS: Activity[] = [
 ];
 
 // ---------------- Ride app: door to door ----------------
-export const RIDE_PLACES: Place[] = ['street', 'wuse', 'jabi', 'secretariat', 'lounge'];
+export const RIDE_PLACES: Place[] = ['street', 'wuse', 'jabi', 'secretariat', 'lounge', 'hospital'];
 
 /** Rough road distance in km. 'street' is your area, measured from Kubwa (closer areas scale it down). */
 const KM: Record<string, number> = {
@@ -24,6 +24,11 @@ const KM: Record<string, number> = {
   'jabi-secretariat': 7,
   'jabi-lounge': 5,
   'secretariat-lounge': 5,
+  'street-hospital': 26,
+  'wuse-hospital': 5,
+  'jabi-hospital': 8,
+  'secretariat-hospital': 3,
+  'lounge-hospital': 6,
 };
 
 export const rideKm = (a: Place, b: Place) => KM[`${a}-${b}`] ?? KM[`${b}-${a}`] ?? 10;

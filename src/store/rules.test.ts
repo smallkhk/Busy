@@ -2,12 +2,13 @@ import { describe, expect, it } from 'vitest';
 import { activityById, INTERACTABLES } from '../content/activities';
 import { CONTACTS, longLeg } from '../content/contacts';
 import { EVENTS } from '../content/events';
+import { rollSickness } from '../content/health';
 import { BUSINESSES, dailyProfit, upgradeCost } from '../content/business';
 import { payFor, promotionBlock } from '../content/career';
 import { ACHIEVEMENTS, TUTORIAL } from '../content/goals';
 import { followersGain, packagingGap, POSTS, realWealth } from '../content/gram';
 import { moveCost, rentOwed } from '../content/housing';
-import { CHOP_ITEMS, ridesFrom } from '../content/phoneapps';
+import { CHOP_ITEMS, RIDE_PLACES, ridesFrom } from '../content/phoneapps';
 import { blockReason, durationAt, type BlockState } from './game';
 
 const base: BlockState = { time: 12 * 60, money: 100000, power: true, active: null, packaging: 5, pantry: 0, cv: 0, area: 'kubwa', rentLocked: false };
@@ -115,9 +116,9 @@ describe('abujagram', () => {
 
 describe('phone apps', () => {
   it('every ride goes somewhere else and costs more than the bus', () => {
-    for (const p of ['street', 'wuse', 'jabi', 'secretariat', 'lounge'] as const) {
+    for (const p of RIDE_PLACES) {
       const rides = ridesFrom(p);
-      expect(rides.length).toBe(4);
+      expect(rides.length).toBe(RIDE_PLACES.length - 1);
       expect(rides.every((r) => r.travelTo !== p)).toBe(true);
     }
     expect(act('hail-street-wuse').cost!).toBeGreaterThan(act('to-wuse').cost!);
@@ -196,5 +197,21 @@ describe('cars', () => {
 
   it('ride-app job needs a car', () => {
     expect(blockReason(act('hailing'), base)).toMatch(/car/);
+  });
+});
+
+describe('health', () => {
+  const healthy = { food: 80, energy: 80, fun: 80, social: 80, hygiene: 80, bladder: 80 };
+  it('a net cuts malaria risk', () => {
+    expect(rollSickness(healthy, false, () => 0.05)).toBe('malaria');
+    expect(rollSickness(healthy, true, () => 0.05)).toBeNull();
+  });
+  it('dirty and hungry people catch typhoid or food poisoning', () => {
+    expect(rollSickness({ ...healthy, hygiene: 10 }, true, () => 0.1)).toBe('typhoid');
+    expect(rollSickness({ ...healthy, food: 10 }, true, () => 0.1)).toBe('food');
+  });
+  it('sick people no fit work', () => {
+    expect(blockReason(act('pos'), { ...base, time: 10 * 60, sick: 'malaria' })).toMatch(/sick/);
+    expect(blockReason(act('malaria-drugs'), { ...base, time: 10 * 60, sick: 'malaria' })).toBeNull();
   });
 });

@@ -15,6 +15,7 @@ export const EXIT_SPOT: Record<Place, [number, number]> = {
   jabi: [4.4, 2.4],
   secretariat: [4.6, 2.6],
   lounge: [4.6, 2.6],
+  hospital: [4.4, 2.6],
 };
 /** Where you appear when you arrive at a place. */
 export const ENTRY_SPOT: Record<Place, [number, number]> = {
@@ -24,6 +25,7 @@ export const ENTRY_SPOT: Record<Place, [number, number]> = {
   jabi: [3.8, 1.8],
   secretariat: [4.0, 2.0],
   lounge: [4.0, 1.8],
+  hospital: [3.8, 2.0],
 };
 
 const HOME_AND_STREET: Interactable[] = [
@@ -176,6 +178,18 @@ const HOME_AND_STREET: Interactable[] = [
     ],
   },
   {
+    id: 'chemist',
+    place: 'street',
+    name: 'Chemist',
+    emoji: '💊',
+    label: [6.4, 2.2, 3.0],
+    activities: [
+      { id: 'malaria-drugs', label: 'Malaria drugs (ACT)', doing: 'Buying drugs from chemist', emoji: '💊', minutes: 15, cost: 3500, gains: {}, effects: { cure: ['malaria'] }, hours: [7, 22], spot: [5.8, 2.4] },
+      { id: 'antibiotics', label: 'Antibiotics & ORS', doing: 'Buying drugs from chemist', emoji: '💉', minutes: 15, cost: 5000, gains: {}, effects: { cure: ['typhoid', 'food'] }, hours: [7, 22], spot: [5.8, 2.4] },
+      { id: 'vitamins', label: 'Vitamin C & paracetamol', doing: 'Buying drugs from chemist', emoji: '🍊', minutes: 10, cost: 1200, gains: { energy: 8 }, hours: [7, 22], spot: [5.8, 2.4] },
+    ],
+  },
+  {
     id: 'busstop',
     place: 'street',
     name: 'Bus stop',
@@ -186,6 +200,7 @@ const HOME_AND_STREET: Interactable[] = [
       ride('to-jabi', 'Taxi go Jabi Lake Mall', '🚕', 'jabi', 45, 3500, [1.0, 2.6], true),
       ride('to-sec', 'Bus go Federal Secretariat', '🏛️', 'secretariat', 75, 900, [1.0, 2.6], true),
       ride('to-lounge', 'Taxi go Wuse 2 lounge', '🍾', 'lounge', 50, 4500, [1.0, 2.6], true),
+      ride('to-hospital', 'Bus go General Hospital', '🏥', 'hospital', 80, 1000, [1.0, 2.6], true),
     ],
   },
 ];
