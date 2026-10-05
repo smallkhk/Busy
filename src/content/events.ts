@@ -573,6 +573,20 @@ const BASE_EVENTS: GameEvent[] = [
       { label: 'Go court', outcomes: [{ text: 'Case go take months. Site don close small 😩', effect: { money: -200000, needs: { fun: -20 } } }] },
     ],
   },
+  {
+    id: 'burglary',
+    emoji: '🦹🏾',
+    title: 'Thief don enter your house!',
+    text: 'Your neighbour call: "Your door dey open! Somebody carry things comot from your room."',
+    trigger: 'idle',
+    weight: 3,
+    cooldownHours: 336,
+    when: (c) => c.place !== 'home' && c.place !== 'street' && c.hour >= 10 && c.hour < 17 && !c.homeUps?.includes('cctv') && (c.homeUps?.length ?? 0) >= 2,
+    choices: [
+      { label: 'Rush go house', outcomes: [{ text: 'Dem carry your phone charger, small cash and your perfume 😭 ₦35,000 loss.', effect: { money: -35000, minutes: 60, needs: { fun: -25 } } }] },
+      { label: 'Call police', outcomes: [{ weight: 1, text: 'Police come with "investigation fee" ₦5,000. Dem never find anything.', effect: { money: -40000, needs: { fun: -20 } } }, { weight: 1, text: 'Police catch the thief for junction! Dem return your things 🙌🏾', effect: { needs: { fun: 10 }, heat: -3 } }] },
+    ],
+  },
   // ---------------- Hospital ----------------
   {
     id: 'doctors-strike',

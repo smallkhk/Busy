@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
-import { activityById, activityPlace, ENTRY_SPOT, EXIT_SPOT, GEN_COST, PLACE_NAMES, type Activity, type Place } from '../content/activities';
+import { activityById, activityPlace, ENTRY_SPOT, EXIT_SPOT, PLACE_NAMES, type Activity, type Place } from '../content/activities';
+import { areaAllows, genCostFor, homeItemById, TV_ACTIVITIES, WIFI_FREE } from '../content/homeup';
 import { AREAS, moveCost, placeLabel, RENT_CYCLE_DAYS, RENT_GRACE_DAYS, rentOwed, type AreaId } from '../content/housing';
 import { clockParts, formatNaira, inHours } from '../engine/clock';
 import { CALL_COST, contactById, FIRST_MEET_REL, GIFT_COST, longLeg, type ContactState } from '../content/contacts';
@@ -57,6 +58,8 @@ type GameState = {
   sick: Sickness | null;
   /** Police suspicion 0–100. Goes down small small every day. */
   heat: number;
+  /** Things you don buy for your house. */
+  homeUps: string[];
   /** Abuja Love: people you matched with. */
   loves: Record<string, Love>;
   /** Profiles you don swipe already. */
@@ -117,6 +120,7 @@ type GameState = {
   upgradeBusiness: (id: string) => void;
   /** Hire (+1) or sack (-1) a worker. */
   setStaff: (id: string, delta: number) => void;
+  buyHomeItem: (id: string) => void;
   saveMoney: (amount: number) => void;
   withdrawSavings: (amount: number) => void;
   takeLoan: (amount: number) => void;
@@ -183,7 +187,8 @@ export function durationAt(a: Activity, time: number, area: AreaId = 'kubwa', wo
 }
 
 /** What an activity costs right now, after today's news. */
-export const costAt = (a: Activity, s: { time: number; news?: ActiveNews[] }) => priceOf(a, combinedMods(s.news, clockParts(s.time).day));
+export const costAt = (a: Activity, s: { time: number; news?: ActiveNews[]; homeUps?: string[] }) =>
+  WIFI_FREE.includes(a.id) && s.homeUps?.includes('wifi') ? 0 : priceOf(a, combinedMods(s.news, clockParts(s.time).day));
 
 let toastId = 0;
 
@@ -214,6 +219,7 @@ const initial = () => ({
   heat: 0,
   flags: {} as Record<string, number>,
   loves: {} as Record<string, Love>,
+  homeUps: [] as string[],
   swiped: [] as string[],
   weather: 'sunny' as Weather,
   nextWeatherChange: START_TIME + 240,
@@ -247,7 +253,7 @@ const initial = () => ({
 });
 
 /** Why an activity can't start right now, or null if it can. */
-export type BlockState = Pick<GameState, 'time' | 'money' | 'power' | 'active' | 'packaging' | 'pantry' | 'cv' | 'area' | 'rentLocked'> & { unlocks?: string[]; grade?: number; hasCar?: boolean; car?: { id: string; fuel?: number; condition?: number } | null; carId?: string; carFuel?: number; sick?: Sickness | null; contacts?: Record<string, ContactState>; weather?: Weather; news?: ActiveNews[] };
+export type BlockState = Pick<GameState, 'time' | 'money' | 'power' | 'active' | 'packaging' | 'pantry' | 'cv' | 'area' | 'rentLocked'> & { unlocks?: string[]; grade?: number; hasCar?: boolean; car?: { id: string; fuel?: number; condition?: number } | null; carId?: string; carFuel?: number; sick?: Sickness | null; contacts?: Record<string, ContactState>; weather?: Weather; news?: ActiveNews[]; homeUps?: string[] };
 
 /** Everything events look at to decide if and how they happen. */
 export function eventContext(s: GameState, trip?: string | null): EventContext {
@@ -275,6 +281,8 @@ export function eventContext(s: GameState, trip?: string | null): EventContext {
     partner: officialPartner(s.loves ?? {}),
     dating: Object.values(s.loves ?? {}).filter((l) => l.interest >= 55 && !l.married).length,
     fakeLife: Object.values(s.loves ?? {}).some((l) => l.fakeLife),
+    homeUps: s.homeUps ?? [],
+    area: s.area,
   };
 }
 
@@ -304,7 +312,8 @@ export function blockReason(a: Activity, s: BlockState): string | null {
   if (a.effects?.fuel && !(s.hasCar ?? !!s.car)) return 'You no get car to put fuel';
   if (s.sick && (a.pay || a.id === OFFICE_SHIFT_ID)) return `You dey sick (${SICKNESS[s.sick].name}). Treat am first 🤒`;
   if (a.usesPantry && s.pantry < a.usesPantry) return 'No foodstuff. Buy for Wuse Market';
-  const cost = costAt(a, s) + (a.requiresPower && !s.power ? GEN_COST : 0);
+  if (a.requires?.homeItem && !s.homeUps?.includes(a.requires.homeItem)) return `Buy ${homeItemById(a.requires.homeItem)?.name ?? 'am'} first (🏠 Rent app)`;
+  const cost = costAt(a, s) + (a.requiresPower && !s.power ? genCostFor(s.homeUps) : 0);
   if (cost > s.money) return `You need ${formatNaira(cost)}`;
   return null;
 }
@@ -324,10 +333,11 @@ export const useGame = create<GameState>()(
         }
         const gen = !!a.requiresPower && !s.power;
         const price = costAt(a, s);
-        const cost = price + (gen ? GEN_COST : 0);
+        const genFee = gen ? genCostFor(s.homeUps) : 0;
+        const cost = price + genFee;
         const txns = [...s.txns];
         if (price) txns.unshift({ at: s.time, label: a.label, amount: -price });
-        if (gen) txns.unshift({ at: s.time, label: 'Fuel for gen', amount: -GEN_COST });
+        if (genFee) txns.unshift({ at: s.time, label: 'Fuel for gen', amount: -genFee });
         const total = durationAt(a, s.time, s.area, s);
         const burn = litresFor(a, s.car?.id);
         if (burn && s.car) set({ car: { ...s.car, fuel: Math.max(0, (s.car.fuel ?? START_FUEL) - burn) } });
@@ -369,6 +379,17 @@ export const useGame = create<GameState>()(
         const fx = a.effects;
         const keys: string[] = [];
         if ((a.gains.food ?? 0) > 0) keys.push('meals');
+        // House upgrades: better sleep and better TV
+        const ups = s.homeUps ?? [];
+        if (a.sleep && a.minutes >= 480 && (ups.includes('mattress') || ups.includes('ac'))) {
+          const fun = (ups.includes('mattress') ? 8 : 0) + (ups.includes('ac') ? 12 : 0);
+          set({ needs: { ...get().needs, fun: clamp(get().needs.fun + fun), hygiene: clamp(get().needs.hygiene + (ups.includes('ac') ? 5 : 0)) } });
+          get().toast(`😌 You sleep like baby${ups.includes('ac') ? ' for AC' : ' for your new mattress'}. +${fun} 🎉`);
+        }
+        if (TV_ACTIVITIES.includes(a.id)) {
+          const fun = (ups.includes('smarttv') ? 10 : 0) + (ups.includes('sofa') ? 5 : 0);
+          if (fun) set({ needs: { ...get().needs, fun: clamp(get().needs.fun + fun) } });
+        }
         if (a.pay) keys.push('jobs');
         if (a.travelTo) keys.push(`visit-${a.travelTo}`);
         if (a.commute || a.id.startsWith('trek-')) keys.push('trips');
@@ -408,7 +429,7 @@ export const useGame = create<GameState>()(
         if (fx) {
           set({
             packaging: Math.min(100, s.packaging + (fx.packaging ?? 0)),
-            pantry: s.pantry + (fx.pantry ?? 0),
+            pantry: s.pantry + (fx.pantry ? fx.pantry + (s.homeUps?.includes('fridge') ? 1 : 0) : 0),
             cv: s.cv + (fx.cv ? fx.cv + (combinedMods(s.news, clockParts(s.time).day).cvBonus ?? 0) : 0),
           });
           if (fx.packaging) get().toast(`👔 Packaging +${fx.packaging}. You don dey look clean!`);
@@ -637,6 +658,21 @@ export const useGame = create<GameState>()(
           if (staff === (owned.staff ?? 0)) return;
           set({ businesses: { ...s.businesses, [id]: { ...owned, staff } } });
           get().toast(delta > 0 ? `🧑🏾‍🍳 You don hire one more worker for ${b.name} (${formatNaira(wageOf(b))}/day)` : `👋🏾 You don sack one worker for ${b.name}`);
+        },
+
+        buyHomeItem: (id) => {
+          const s = get();
+          const item = homeItemById(id);
+          if (!item || s.homeUps?.includes(id)) return;
+          if (!areaAllows(s.area, item)) return get().toast('🏠 Your house too small for this one. Move go better area first');
+          if (s.money < item.cost) return get().toast(`😕 You need ${formatNaira(item.cost)}`);
+          set({
+            money: s.money - item.cost,
+            homeUps: [...(s.homeUps ?? []), id],
+            packaging: clamp(s.packaging + item.packaging),
+            txns: [{ at: s.time, label: `Bought ${item.name}`, amount: -item.cost }, ...s.txns].slice(0, 40),
+          });
+          get().toast(`${item.emoji} ${item.name} don land your house! 👔 +${item.packaging}`);
         },
 
         saveMoney: (amount) => {
@@ -1251,6 +1287,7 @@ export const useGame = create<GameState>()(
         heat: s.heat,
         flags: s.flags,
         loves: s.loves,
+        homeUps: s.homeUps,
         swiped: s.swiped,
         weather: s.weather,
         nextWeatherChange: s.nextWeatherChange,

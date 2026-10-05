@@ -19,7 +19,7 @@ function publicRoute(place: Place, to: Place): Activity | undefined {
 
 function Option({ a, title, note }: { a?: Activity; title: string; note?: string }) {
   const choose = useGame((s) => s.choose);
-  const state = useGame(useShallow((s) => ({ time: s.time, money: s.money, power: s.power, active: s.active, packaging: s.packaging, pantry: s.pantry, cv: s.cv, area: s.area, rentLocked: s.rentLocked, unlocks: s.unlocks, grade: s.grade, hasCar: !!s.car, carId: s.car?.id, carFuel: s.car?.fuel, sick: s.sick, contacts: s.contacts, weather: s.weather, news: s.news })));
+  const state = useGame(useShallow((s) => ({ time: s.time, money: s.money, power: s.power, active: s.active, packaging: s.packaging, pantry: s.pantry, cv: s.cv, area: s.area, rentLocked: s.rentLocked, unlocks: s.unlocks, grade: s.grade, hasCar: !!s.car, carId: s.car?.id, carFuel: s.car?.fuel, sick: s.sick, contacts: s.contacts, weather: s.weather, news: s.news, homeUps: s.homeUps })));
   const reason = note ?? (a ? blockReason(a, state) : 'No route from here');
   return (
     <button className="action" disabled={!a || !!reason} onClick={() => a && choose(a.id)}>

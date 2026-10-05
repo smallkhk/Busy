@@ -6,7 +6,6 @@ import { DISTRICT_INTERACTABLES, NEW_ROUTES } from './districts';
 
 export * from './common';
 
-export const GEN_COST = 1000;
 
 /** Where away activities (jobs) leave from and come back to. */
 export const EXIT_SPOT: Record<Place, [number, number]> = {
@@ -104,6 +103,7 @@ const HOME_AND_STREET: Interactable[] = [
     activities: [
       { id: 'nollywood', label: 'Watch Nollywood', doing: 'Watching Nollywood', emoji: '🎬', minutes: 90, gains: { fun: 35 }, requiresPower: true, spot: [-1.7, 1.0] },
       { id: 'football', label: 'Watch football', doing: 'Watching Super Eagles', emoji: '⚽', minutes: 120, gains: { fun: 45, social: 5 }, requiresPower: true, spot: [-1.7, 1.0] },
+      { id: 'ps5', label: 'Play FIFA on PS5', doing: 'Scoring goals for FIFA 🎮', emoji: '🎮', minutes: 90, gains: { fun: 40, energy: -5 }, requiresPower: true, requires: { homeItem: 'ps5' }, spot: [-1.7, 1.0] },
     ],
   },
   {

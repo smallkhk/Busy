@@ -57,6 +57,8 @@ export function Room() {
   const area = useGame((s) => s.area);
   const theme = AREAS[area].theme;
   const upgraded = area !== 'kubwa';
+  const ups = useGame((s) => s.homeUps ?? []);
+  const has = (id: string) => ups.includes(id);
 
   const onFloor = (e: ThreeEvent<PointerEvent>) => {
     e.stopPropagation();
@@ -157,7 +159,7 @@ export function Room() {
           <meshStandardMaterial color={power ? '#4aa3df' : '#0b0b0b'} emissive={power ? '#1d6fa5' : '#000'} emissiveIntensity={power ? 0.8 : 0} />
         </mesh>
         {/* Sofa in better areas, red plastic chairs in Kubwa */}
-        {upgraded && (
+        {(upgraded || has('sofa')) && (
           <group position={[-1.6, 0, 1.0]}>
             <Box p={[0, 0.3, 0]} s={[0.8, 0.4, 1.8]} c={area === 'wuse2' ? '#3d4a5c' : '#6b4f3a'} />
             <Box p={[0.32, 0.7, 0]} s={[0.18, 0.6, 1.8]} c={area === 'wuse2' ? '#3d4a5c' : '#6b4f3a'} />
@@ -165,7 +167,7 @@ export function Room() {
             <Box p={[0, 0.55, 0.85]} s={[0.8, 0.3, 0.14]} c={area === 'wuse2' ? '#2c3646' : '#5a412f'} />
           </group>
         )}
-        {!upgraded && [0.6, 1.4].map((z) => (
+        {!upgraded && !has('sofa') && [0.6, 1.4].map((z) => (
           <group key={z} position={[-1.7, 0, z]}>
             <Box p={[0, 0.42, 0]} s={[0.45, 0.06, 0.45]} c="#d62f2f" />
             <Box p={[0.2, 0.72, 0]} s={[0.06, 0.6, 0.45]} c="#d62f2f" />
@@ -176,11 +178,15 @@ export function Room() {
         ))}
       </Tappable>
 
-      {upgraded && (
+      {(upgraded || has('ac')) && (
         <>
           {/* Split AC on the wall */}
           <Box p={[1.0, 2.35, -2.95]} s={[1.1, 0.32, 0.18]} c="#f4f4f4" />
           <Box p={[1.0, 2.22, -2.85]} s={[1.0, 0.03, 0.02]} c="#bbb" />
+        </>
+      )}
+      {(upgraded || has('art')) && (
+        <>
           {/* Wall art */}
           <Box p={[-3.98, 1.7, -0.6]} s={[0.03, 0.8, 1.1]} c="#2b2b2b" />
           <Box p={[-3.96, 1.7, -0.6]} s={[0.02, 0.66, 0.96]} c={area === 'wuse2' ? '#e8b04b' : '#3ccf8e'} />
@@ -196,6 +202,49 @@ export function Room() {
           </mesh>
           <Box p={[-2.6, 0.25, 1.0]} s={[0.6, 0.06, 0.9]} c="#1f1f1f" />
         </>
+      )}
+
+      {/* House upgrades you don buy */}
+      {has('mattress') && <Box p={[-2.9, 0.63, -1.85]} s={[1.42, 0.12, 2.0]} c="#f6f2ea" />}
+      {has('smarttv') && (
+        <group>
+          <Box p={[-3.68, 1.15, 1]} s={[0.06, 0.95, 1.7]} c="#0d0d0d" />
+          <mesh position={[-3.64, 1.15, 1]} rotation={[0, Math.PI / 2, 0]}>
+            <planeGeometry args={[1.6, 0.86]} />
+            <meshStandardMaterial color={power || has('inverter') ? '#3fb27f' : '#0b0b0b'} emissive={power || has('inverter') ? '#1d8a5a' : '#000'} emissiveIntensity={0.7} />
+          </mesh>
+        </group>
+      )}
+      {has('fridge') && (
+        <group>
+          <Box p={[-3.6, 0.75, -0.35]} s={[0.6, 1.5, 0.6]} c="#d9dde0" />
+          <Box p={[-3.29, 1.0, -0.2]} s={[0.02, 0.4, 0.04]} c="#888" />
+        </group>
+      )}
+      {has('wifi') && (
+        <group>
+          <Box p={[-3.55, 0.64, 0.45]} s={[0.25, 0.06, 0.18]} c="#f4f4f4" />
+          <Box p={[-3.45, 0.68, 0.45]} s={[0.03, 0.02, 0.03]} c="#2ecc71" />
+        </group>
+      )}
+      {has('ps5') && <Box p={[-3.55, 0.78, 1.6]} s={[0.12, 0.36, 0.26]} c="#f4f4f4" />}
+      {has('inverter') && (
+        <group>
+          <Box p={[-3.6, 0.3, 2.35]} s={[0.4, 0.6, 0.35]} c="#2c3e50" />
+          <Box p={[-3.39, 0.45, 2.35]} s={[0.02, 0.06, 0.06]} c="#2ecc71" />
+        </group>
+      )}
+      {has('generator') && (
+        <group position={[5.0, 0, 2.9]}>
+          <Box p={[0, 0.28, 0]} s={[0.75, 0.5, 0.48]} c="#e2b13c" />
+          <Box p={[0, 0.03, 0]} s={[0.8, 0.06, 0.52]} c="#333" />
+        </group>
+      )}
+      {has('cctv') && (
+        <group position={[6.95, 1.95, 1.95]}>
+          <Box p={[0, 0.05, 0]} s={[0.12, 0.12, 0.3]} c="#f4f4f4" />
+          <Box p={[0, 0.05, -0.17]} s={[0.04, 0.04, 0.02]} c="#e74c3c" />
+        </group>
       )}
 
       {/* Standing fan */}
