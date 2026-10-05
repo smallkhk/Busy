@@ -21,6 +21,8 @@ export const EXIT_SPOT: Record<Place, [number, number]> = {
   garki: [4.4, 2.6],
   nyanya: [4.4, 2.6],
   airport: [4.4, 2.6],
+  utako: [4.4, 2.6],
+  mararaba: [4.4, 2.6],
 };
 /** Where you appear when you arrive at a place. */
 export const ENTRY_SPOT: Record<Place, [number, number]> = {
@@ -36,6 +38,8 @@ export const ENTRY_SPOT: Record<Place, [number, number]> = {
   garki: [3.8, 2.0],
   nyanya: [3.8, 2.0],
   airport: [3.8, 2.0],
+  utako: [3.8, 2.0],
+  mararaba: [3.8, 2.0],
 };
 
 const HOME_AND_STREET: Interactable[] = [
@@ -213,6 +217,7 @@ const HOME_AND_STREET: Interactable[] = [
       ride('to-lounge', 'Taxi go Wuse 2 lounge', '🍾', 'lounge', 50, 4500, [1.0, 2.6], true),
       ride('to-hospital', 'Bus go General Hospital', '🏥', 'hospital', 80, 1000, [1.0, 2.6], true),
       ride('to-garki', 'Bus go Garki Area 1', '🚌', 'garki', 75, 900, [1.0, 2.6], true),
+      ride('to-utako', 'Bus go Utako', '🚍', 'utako', 45, 600, [1.0, 2.6], true),
     ],
   },
 ];

@@ -271,11 +271,108 @@ export const DISTRICT_INTERACTABLES: Interactable[] = [
       ride('air-sec', 'Taxi go Federal Secretariat', '🏛️', 'secretariat', 55, 9000, PARK),
     ],
   },
+
+  // ---------------- Utako: interstate park and tech ----------------
+  {
+    id: 'utako-market',
+    place: 'utako',
+    name: 'Electronics market',
+    emoji: '🔌',
+    label: [-4.2, 2.6, -2.6],
+    activities: [
+      { id: 'laptop', label: 'Buy tokunbo laptop (look serious)', doing: 'Testing keyboard and battery', emoji: '💻', minutes: 45, cost: 280000, gains: { fun: 10 }, effects: { packaging: 6 }, hours: [9, 18], spot: A },
+      { id: 'phone-repair', label: 'Fix phones for the stand (5 hrs)', doing: 'Changing screen with small screwdriver', emoji: '📱', minutes: 300, pay: 8500, gains: { energy: -15, fun: -5, social: 8 }, hours: [9, 17], spot: A },
+    ],
+  },
+  {
+    id: 'hub',
+    place: 'utako',
+    name: 'Tech hub',
+    emoji: '💻',
+    label: [-0.6, 3.2, -2.8],
+    activities: [
+      { id: 'freelance', label: 'Freelance gig for foreign client (6 hrs)', doing: 'Coding with hub WiFi', emoji: '💻', minutes: 360, pay: 26000, gains: { energy: -25, fun: -5, social: 5 }, hours: [8, 20], requires: { packaging: 20 }, spot: B },
+      { id: 'meetup', label: 'Tech meetup (free pizza 🍕)', doing: 'Networking with founders', emoji: '🍕', minutes: 120, gains: { food: 25, fun: 15, social: 25 }, effects: { packaging: 1 }, hours: [17, 21], spot: B },
+    ],
+  },
+  {
+    id: 'utako-food',
+    place: 'utako',
+    name: 'Bole & fish spot',
+    emoji: '🐟',
+    label: [2.8, 2.2, -2.4],
+    activities: [
+      { id: 'bole', label: 'Bole & fish with pepper sauce', doing: 'Enjoying roasted plantain', emoji: '🐟', minutes: 25, cost: 2500, gains: { food: 45, fun: 12 }, hours: [11, 22], spot: C },
+    ],
+  },
+  {
+    id: 'utako-park',
+    place: 'utako',
+    name: 'Utako interstate park',
+    emoji: '🚍',
+    label: PARK_LABEL,
+    activities: [
+      { id: 'village', label: 'Travel go village for weekend (2 days)', doing: 'Enjoying village life 🌴', emoji: '🌴', minutes: 2880, cost: 30000, gains: { fun: 70, social: 60, energy: 30, food: 50 }, hours: [6, 12], away: true, spot: PARK },
+      { id: 'loader', label: 'Load luggage for interstate buses (4 hrs)', doing: 'Lifting bags onto bus roof', emoji: '🧳', minutes: 240, pay: 6000, gains: { energy: -28, hygiene: -15, social: 5 }, hours: [5, 12], away: true, spot: PARK },
+      ride('utako-home', 'Bus go your area (home)', '🚌', 'street', 45, 600, PARK),
+      ride('utako-wuse', 'Taxi go Wuse Market', '🚕', 'wuse', 12, 1000, PARK),
+      ride('utako-jabi', 'Taxi go Jabi Lake Mall', '🚕', 'jabi', 10, 1000, PARK),
+      ride('utako-sec', 'Bus go Federal Secretariat', '🏛️', 'secretariat', 25, 300, PARK),
+    ],
+  },
+
+  // ---------------- Mararaba: across the border in Nasarawa ----------------
+  {
+    id: 'mararaba-market',
+    place: 'mararaba',
+    name: 'Mararaba market',
+    emoji: '🧺',
+    label: [-4.2, 2.4, -2.6],
+    activities: [
+      { id: 'mr-foodstuff', label: 'Buy foodstuff (6 meals), cheapest for town', doing: 'Pricing for Mararaba market', emoji: '🧺', minutes: 50, cost: 6000, gains: { social: 10 }, effects: { pantry: 6 }, hours: [7, 18], spot: A },
+      { id: 'mr-trader', label: 'Help trader sell (5 hrs)', doing: 'Shouting "Buy am, e cheap!"', emoji: '📣', minutes: 300, pay: 5000, gains: { energy: -20, social: 15 }, hours: [7, 13], spot: A },
+    ],
+  },
+  {
+    id: 'peppersoup',
+    place: 'mararaba',
+    name: 'Pepper soup joint',
+    emoji: '🍲',
+    label: [-0.6, 2.4, -2.6],
+    activities: [
+      { id: 'peppersoup', label: 'Goat meat pepper soup & cold drink', doing: 'Sweating from pepper soup 🥵', emoji: '🍲', minutes: 40, cost: 1800, gains: { food: 40, fun: 18, social: 10 }, hours: [12, 24], spot: B },
+    ],
+  },
+  {
+    id: 'okada-stand',
+    place: 'mararaba',
+    name: 'Okada stand',
+    emoji: '🏍️',
+    label: [2.8, 2.2, -2.4],
+    activities: [
+      { id: 'okada', label: 'Ride okada (banned for FCT, allowed here) (5 hrs)', doing: 'Carrying passengers on okada', emoji: '🏍️', minutes: 300, pay: 7500, gains: { energy: -25, hygiene: -15, fun: 5 }, hours: [6, 19], away: true, spot: C },
+    ],
+  },
+  {
+    id: 'mararaba-park',
+    place: 'mararaba',
+    name: 'Mararaba park',
+    emoji: '🚌',
+    label: PARK_LABEL,
+    activities: [
+      ride('mr-nyanya', 'Bus go Nyanya', '🚌', 'nyanya', 15, 200, PARK),
+      ride('mr-garki', 'Bus go Garki Area 1', '🚌', 'garki', 50, 600, PARK),
+      ride('mr-home', 'Bus go your area (home)', '🚌', 'street', 120, 1300, PARK),
+    ],
+  },
 ];
 
 /** Extra public routes from the older parks to the new districts. */
 export const NEW_ROUTES: Record<string, ReturnType<typeof ride>[]> = {
+  'nyanya-park': [ride('nyanya-mr', 'Bus go Mararaba', '🚌', 'mararaba', 15, 200, [4.4, 2.6])],
+  'jabi-park': [ride('jabi-utako', 'Taxi go Utako', '🚕', 'utako', 10, 1000, [4.4, 2.4])],
   'wuse-park': [
+    ride('wuse-utako', 'Taxi go Utako', '🚕', 'utako', 12, 1000, [-5.0, 2.2]),
     ride('wuse-mai', 'Taxi go Maitama', '🚕', 'maitama', 15, 1500, [-5.0, 2.2]),
     ride('wuse-garki', 'Bus go Garki Area 1', '🚌', 'garki', 20, 300, [-5.0, 2.2]),
   ],
