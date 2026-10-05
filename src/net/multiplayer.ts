@@ -47,13 +47,31 @@ function syncPlayers() {
   useNet.setState({ online: Object.keys(state).length, players });
 }
 
-export function startMultiplayer(name: string, shirt: string) {
-  if (!multiplayerEnabled() || client) return;
-  me = { ...me, id: playerId(), name: cleanText(name, 16) || 'Abuja Hustler', shirt };
-  client = createClient(SUPABASE_URL, SUPABASE_KEY, { realtime: { params: { eventsPerSecond: 10 } } });
-  channel = client.channel('abuja-lobby', { config: { presence: { key: me.id }, broadcast: { self: false } } });
-  channel
-    .on('presence', { event: 'sync' }, syncPlayers)
+/** Show "reconnecting" only if the link stays down this long (phones blink a lot). */
+const LOST_GRACE_MS = 4000;
+/** Rebuild the channel if it stays down this long. */
+const REBUILD_AFTER_MS = 8000;
+let lostAt = 0;
+let lostTimer: ReturnType<typeof setTimeout> | 0 = 0;
+
+function setStatus(ok: boolean) {
+  subscribed = ok;
+  if (ok) {
+    if (lostTimer) clearTimeout(lostTimer);
+    lostTimer = 0;
+    lostAt = 0;
+    useNet.setState({ connected: true, everConnected: true });
+    return;
+  }
+  if (!lostAt) lostAt = Date.now();
+  if (!lostTimer) lostTimer = setTimeout(() => useNet.setState({ connected: false }), LOST_GRACE_MS);
+}
+
+function makeChannel() {
+  if (!client) return;
+  const ch = client.channel('abuja-lobby', { config: { presence: { key: me.id }, broadcast: { self: false } } });
+  channel = ch;
+  ch.on('presence', { event: 'sync' }, syncPlayers)
     .on('broadcast', { event: 'move' }, ({ payload }) => {
       const p = payload as Presence;
       if (p.room !== useNet.getState().room) return;
@@ -65,10 +83,44 @@ export function startMultiplayer(name: string, shirt: string) {
       if (m.room === useNet.getState().room) addChat(m);
     })
     .subscribe((status) => {
-      subscribed = status === 'SUBSCRIBED';
-      useNet.setState({ connected: subscribed });
-      if (subscribed) void channel!.track(me);
+      if (ch !== channel) return; // an old channel we already replaced
+      setStatus(status === 'SUBSCRIBED');
+      if (status === 'SUBSCRIBED') void ch.track(me);
     });
+}
+
+/** Throw away a stuck channel and join again. */
+function rebuild() {
+  if (!client) return;
+  const old = channel;
+  channel = null;
+  if (old) void client.removeChannel(old);
+  if (!client.realtime.isConnected()) client.realtime.connect();
+  makeChannel();
+}
+
+export function startMultiplayer(name: string, shirt: string) {
+  if (!multiplayerEnabled() || client) return;
+  me = { ...me, id: playerId(), name: cleanText(name, 16) || 'Abuja Hustler', shirt };
+  client = createClient(SUPABASE_URL, SUPABASE_KEY, { realtime: { params: { eventsPerSecond: 10 }, heartbeatIntervalMs: 15000 } });
+  makeChannel();
+  // Watchdog: phones drop sockets when the screen sleeps; don't wait for slow backoff.
+  setInterval(() => {
+    if (!subscribed && lostAt && Date.now() - lostAt > REBUILD_AFTER_MS) {
+      lostAt = Date.now();
+      rebuild();
+    }
+  }, 3000);
+  if (typeof document === 'undefined') return;
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState !== 'visible' || !client) return;
+    if (!client.realtime.isConnected() || !subscribed) {
+      lostAt = lostAt || Date.now();
+      rebuild();
+    } else {
+      void channel?.track(me);
+    }
+  });
 }
 
 /** Players only meet in shared places; your house is private (room = null). */
