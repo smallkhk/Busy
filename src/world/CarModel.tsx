@@ -3,7 +3,7 @@ import { Suspense, useMemo } from 'react';
 import { type BufferGeometry, type Mesh, type MeshStandardMaterial } from 'three';
 import { toCreasedNormals } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 
-export type CarKind = 'sedan' | 'suv' | 'gwagon' | 'gls';
+export type CarKind = 'sedan' | 'suv' | 'gwagon' | 'gls' | 'challenger';
 
 type V3 = [number, number, number];
 
@@ -85,16 +85,36 @@ function Mirrors({ x, y, z, c }: { x: number; y: number; z: number; c: string })
   );
 }
 
-const GLS_URL = `${import.meta.env.BASE_URL}models/cars/gls.glb`;
-/** The model has no normals (it is simplified hard); crease them once per mesh. */
+type GlbSpec = {
+  file: string;
+  /** Turn so the nose points +x. */
+  rot: number;
+  scale: number;
+  /** Material that takes your paint. */
+  body: string;
+  glass: string[];
+  tyres?: string;
+  /** Glow when the lights are on: [headlamps, tail lights]. */
+  head: string[];
+  tail: string[];
+  /** Where the headlamp beam starts, in model units. */
+  beam: [number, number, number];
+};
+
+/** Real car models, shrunk for phones (see public/models/cars). */
+const GLB_CARS: Partial<Record<CarKind, GlbSpec>> = {
+  // 2020 Mercedes-Benz GLS 580, about 40k triangles
+  gls: { file: 'gls', rot: Math.PI / 2, scale: 0.4, body: 'Polar_White', glass: ['WindowsTint', 'Lights_Glass'], tyres: 'Tyres', head: ['Lights_Glass'], tail: ['Color_A07', 'Color_A08'], beam: [0, 1.6, 4.5] },
+  // Dodge Challenger, about 37k triangles
+  challenger: { file: 'challenger', rot: Math.PI, scale: 0.66, body: 'Material', glass: ['Cam', 'Material.009'], tyres: 'Material.003', head: ['Material.008', 'Material.009'], tail: [], beam: [-2.2, 0.6, 0] },
+};
+
+/** These models come without normals (they are simplified hard); crease them once per mesh. */
 const creased = new WeakMap<BufferGeometry, BufferGeometry>();
 
-/**
- * 2020 Mercedes-Benz GLS 580, a real model shrunk to about 40k triangles.
- * Its own parts carry the colours; the body takes your paint.
- */
-function GlsModel({ paint, lights }: { paint: string; lights: boolean }) {
-  const { scene } = useGLTF(GLS_URL);
+/** A real car model: its own parts keep their colours, the body takes your paint. */
+function GlbCar({ spec, paint, lights }: { spec: GlbSpec; paint: string; lights: boolean }) {
+  const { scene } = useGLTF(`${import.meta.env.BASE_URL}models/cars/${spec.file}.glb`);
   const obj = useMemo(() => {
     const c = scene.clone(true);
     c.traverse((o) => {
@@ -109,48 +129,51 @@ function GlsModel({ paint, lights }: { paint: string; lights: boolean }) {
       m.castShadow = true;
       m.receiveShadow = true;
       const k = (m.material as MeshStandardMaterial).clone();
-      k.metalness = 0.3;
-      k.roughness = 0.4;
-      if (k.name === 'Polar_White') {
+      const n = k.name;
+      if (n === spec.body) {
         k.color.set(paint);
         k.metalness = 0.55;
         k.roughness = 0.28;
-      } else if (k.name === 'WindowsTint' || k.name === 'Lights_Glass') {
+      } else if (spec.glass.includes(n)) {
+        k.color.set('#1d2430');
         k.transparent = true;
-        k.opacity = k.name === 'WindowsTint' ? 0.75 : 0.45;
+        k.opacity = 0.7;
+        k.metalness = 0.3;
         k.roughness = 0.05;
-        if (k.name === 'Lights_Glass' && lights) {
-          k.emissive.set('#fff3c4');
-          k.emissiveIntensity = 2;
-          k.opacity = 0.9;
-        }
-      } else if (k.name === 'Tyres') {
+      } else if (n === spec.tyres) {
         k.metalness = 0;
         k.roughness = 0.9;
-      } else if (lights && /^Color_A0[78]$/.test(k.name)) {
-        // Tail lights glow red
+      } else {
+        k.metalness = Math.min(k.metalness, 0.6);
+        k.roughness = Math.max(k.roughness, 0.25);
+      }
+      if (lights && spec.head.includes(n)) {
+        k.emissive.set('#fff3c4');
+        k.emissiveIntensity = 2;
+        k.opacity = 0.9;
+      } else if (lights && spec.tail.includes(n)) {
         k.emissive.set('#ff2a2a');
         k.emissiveIntensity = 1.5;
       }
       m.material = k;
     });
     return c;
-  }, [scene, paint, lights]);
-  // Nose to +x, about the size of the other cars
+  }, [scene, spec, paint, lights]);
   return (
-    <group rotation={[0, Math.PI / 2, 0]} scale={0.4}>
+    <group rotation={[0, spec.rot, 0]} scale={spec.scale}>
       <primitive object={obj} />
-      {lights && <pointLight position={[0, 1.6, 4.5]} intensity={4} distance={10} color="#fff3c4" />}
+      {lights && <pointLight position={spec.beam} intensity={4} distance={10} color="#fff3c4" />}
     </group>
   );
 }
 
 /** Showroom-quality cars, about 2 units long, facing +x. */
 export function CarModel({ kind, paint, lights = false }: { kind: CarKind; paint: string; lights?: boolean }) {
-  if (kind === 'gls') {
+  const spec = GLB_CARS[kind];
+  if (spec) {
     return (
       <Suspense fallback={null}>
-        <GlsModel paint={paint} lights={lights} />
+        <GlbCar spec={spec} paint={paint} lights={lights} />
       </Suspense>
     );
   }
