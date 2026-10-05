@@ -2,9 +2,10 @@ import type { ThreeEvent } from '@react-three/fiber';
 import { AREAS } from '../content/housing';
 import { clockParts, daylight } from '../engine/clock';
 import { useGame } from '../store/game';
-import { Art, Chair, Floor, marble, paint, Plant, Sconce, TRIM, WOOD } from './Interior';
+import { Art, Floor, marble, paint, Sconce, TRIM, WOOD } from './Interior';
 import { Box, Cyl, Tappable } from './Room';
 import { At, Shell } from './Spread';
+import { Prop } from './Prop';
 
 /** A proper flat (Gwarinpa, Garki, Wuse 2, your Kuje bungalow): bedroom, kitchen, bathroom, parlour, dining and a small study. */
 export function Flat({ onFloor }: { onFloor: (e: ThreeEvent<MouseEvent>) => void }) {
@@ -21,7 +22,8 @@ export function Flat({ onFloor }: { onFloor: (e: ThreeEvent<MouseEvent>) => void
 
   const tile = paint(`flat-tile-${theme.floor}`, marble(theme.floor, '#ffffff', '#00000033'));
   const white = paint('flat-white', marble('#eef0f2', '#c9ccd2', '#cfd2d8'));
-  const sofa = lux ? '#3d4a5c' : '#6b4f3a';
+  const sofa = lux ? '#3d4a5c' : '#7a5236';
+  const KITCHEN = lux ? { wood: '#f3f1ec', woodDark: '#d9d4c9' } : { wood: '#d9c6a5', woodDark: '#b8a17c' };
 
   return (
     <group>
@@ -59,13 +61,9 @@ export function Flat({ onFloor }: { onFloor: (e: ThreeEvent<MouseEvent>) => void
       {/* ---------- Bedroom ---------- */}
       <At id="bed">
       <Tappable id="bed">
-        <Box p={[-2.9, 0.2, -1.9]} s={[1.6, 0.4, 2.1]} c={WOOD} />
-        <Box p={[-2.9, 0.46, -1.85]} s={[1.5, 0.14, 2.0]} c="#f1eee8" />
-        <Box p={[-2.9, 0.5, -1.5]} s={[1.52, 0.12, 1.2]} c={theme.bed} />
-        <Box p={[-2.9, 0.6, -2.6]} s={[1.0, 0.12, 0.34]} c="#fafafa" />
-        <Box p={[-2.9, 0.75, -2.95]} s={[1.7, 1.0, 0.08]} c={WOOD} />
-        {has('mattress') && <Box p={[-2.9, 0.55, -1.85]} s={[1.5, 0.06, 2.0]} c="#ece7dd" />}
-      </Tappable>
+          <Prop name="bedDouble" p={[-2.9, 0, -1.95]} s={1.1} tint={{ wood: WOOD, carpet: theme.bed, carpetWhite: '#f1eee8' }} />
+          {has('mattress') && <Box p={[-2.9, 0.5, -2.0]} s={[1.5, 0.05, 1.8]} c="#ece7dd" />}
+        </Tappable>
       <Box p={[-3.9, 0.25, -2.75]} s={[0.36, 0.5, 0.36]} c={WOOD} />
       <mesh position={[-3.9, 0.65, -2.75]}>
         <cylinderGeometry args={[0.09, 0.12, 0.16, 14]} />
@@ -80,52 +78,38 @@ export function Flat({ onFloor }: { onFloor: (e: ThreeEvent<MouseEvent>) => void
       {/* ---------- Kitchen ---------- */}
       <At id="cooler">
       <Tappable id="cooler">
-        {has('fridge') ? (
-          <>
-            <Box p={[-0.75, 0.8, -2.65]} s={[0.65, 1.6, 0.6]} c="#d9dde0" />
-            <Box p={[-0.5, 1.0, -2.34]} s={[0.03, 0.4, 0.03]} c="#888" />
-          </>
-        ) : (
-          <>
-            <Box p={[-0.7, 0.25, -2.6]} s={[0.8, 0.5, 0.5]} c="#c8312b" />
-            <Box p={[-0.7, 0.54, -2.6]} s={[0.84, 0.08, 0.54]} c="#f4f4f4" />
-          </>
-        )}
-      </Tappable>
+          {has('fridge') ? (
+            <Prop name="kitchenFridge" p={[-0.75, 0, -2.8]} s={1.15} glossy />
+          ) : (
+            <>
+              <Box p={[-0.7, 0.25, -2.6]} s={[0.8, 0.5, 0.5]} c="#c8312b" />
+              <Box p={[-0.7, 0.54, -2.6]} s={[0.84, 0.08, 0.54]} c="#f4f4f4" />
+            </>
+          )}
+        </Tappable>
       </At>
       <At id="stove">
       <Tappable id="stove">
-        <Box p={[0.8, 0.44, -2.68]} s={[1.9, 0.88, 0.6]} c="#e9e4d8" />
-        <Box p={[0.8, 0.9, -2.68]} s={[1.94, 0.05, 0.64]} c="#3a3a3a" />
-        {[0.2, 0.8, 1.4].map((x) => <Box key={x} p={[x, 0.5, -2.37]} s={[0.55, 0.7, 0.02]} c="#d9d2c2" />)}
-        {[0.65, 0.95].map((x) => <Cyl key={x} p={[x, 0.95, -2.68]} r={0.09} h={0.02} c="#444" />)}
-        <Cyl p={[0.65, 1.04, -2.68]} r={0.12} h={0.16} c="#b5b5b5" />
-        <Box p={[0.8, 1.85, -2.8]} s={[1.9, 0.55, 0.35]} c="#e9e4d8" />
-        <Cyl p={[1.6, 0.3, -2.25]} r={0.16} h={0.55} c="#2f8f4e" />
-      </Tappable>
+          <Prop name="kitchenCabinetDrawer" p={[0.1, 0, -2.66]} tint={KITCHEN} />
+          <Prop name="kitchenStove" p={[0.79, 0, -2.66]} tint={KITCHEN} />
+          <Prop name="kitchenSink" p={[1.48, 0, -2.66]} tint={KITCHEN} />
+          <Prop name="kitchenCabinetUpper" p={[0.1, 1.35, -2.86]} tint={KITCHEN} />
+          <Prop name="kitchenCabinetUpper" p={[1.48, 1.35, -2.86]} tint={KITCHEN} />
+          <Cyl p={[0.79, 0.3, -2.1]} r={0.16} h={0.55} c="#2f8f4e" />
+        </Tappable>
       </At>
 
       {/* ---------- Bathroom ---------- */}
       <At id="bucket">
       <Tappable id="bucket">
-        <Box p={[2.45, 0.04, -2.6]} s={[0.8, 0.08, 0.7]} c="#f4f4f4" />
-        {lux ? (
-          <mesh position={[2.45, 1.0, -2.24]}>
-            <boxGeometry args={[0.8, 1.9, 0.03]} />
-            <meshStandardMaterial color="#cdeefa" transparent opacity={0.35} roughness={0.05} />
-          </mesh>
-        ) : (
-          <Box p={[2.45, 1.0, -2.24]} s={[0.8, 1.7, 0.02]} c="#5aa7c7" />
-        )}
-        <Cyl p={[2.45, 1.95, -2.85]} r={0.09} h={0.03} c="#c0c0c0" />
-        <Cyl p={[2.95, 0.15, -2.6]} r={0.16} h={0.3} c="#2f6fd6" />
-      </Tappable>
+          <Prop name={lux ? 'shower' : 'showerRound'} p={[2.48, 0, -2.55]} s={1.05} />
+          <Cyl p={[3.05, 0.15, -2.75]} r={0.16} h={0.3} c="#2f6fd6" />
+        </Tappable>
       </At>
       <At id="toilet">
       <Tappable id="toilet">
-        <Box p={[3.55, 0.22, -2.55]} s={[0.4, 0.44, 0.55]} c="#f5f5f5" />
-        <Box p={[3.55, 0.6, -2.85]} s={[0.45, 0.45, 0.2]} c="#f5f5f5" />
-      </Tappable>
+          <Prop name="toilet" p={[3.62, 0, -2.75]} s={1.1} />
+        </Tappable>
       <Box p={[3.55, 0.42, -1.2]} s={[0.5, 0.84, 0.38]} c={WOOD} />
       <Box p={[3.55, 0.86, -1.2]} s={[0.52, 0.05, 0.4]} c="#f4f4f4" />
       </At>
@@ -133,38 +117,26 @@ export function Flat({ onFloor }: { onFloor: (e: ThreeEvent<MouseEvent>) => void
       {/* ---------- Parlour ---------- */}
       <At id="tv">
       <Tappable id="tv">
-        <Box p={[-3.85, 0.3, 1.0]} s={[0.45, 0.6, 1.8]} c="#3d2a1a" />
-        {has('smarttv') ? (
-          <>
-            <Box p={[-3.95, 1.15, 1.0]} s={[0.06, 0.95, 1.7]} c="#0d0d0d" />
-            <mesh position={[-3.91, 1.15, 1.0]} rotation={[0, Math.PI / 2, 0]}>
-              <planeGeometry args={[1.6, 0.86]} />
-              <meshStandardMaterial color={tvOn ? '#3fb27f' : '#0b0b0b'} emissive={tvOn ? '#1d8a5a' : '#000'} emissiveIntensity={0.7} />
-            </mesh>
-          </>
-        ) : (
-          <>
-            <Box p={[-3.88, 0.95, 1.0]} s={[0.08, 0.66, 1.1]} c="#111" />
-            <mesh position={[-3.83, 0.95, 1.0]} rotation={[0, Math.PI / 2, 0]}>
-              <planeGeometry args={[1.0, 0.56]} />
-              <meshStandardMaterial color={tvOn ? '#4aa3df' : '#0b0b0b'} emissive={tvOn ? '#1d6fa5' : '#000'} emissiveIntensity={0.8} />
-            </mesh>
-          </>
-        )}
-        {has('ps5') && <Box p={[-3.8, 0.68, 1.65]} s={[0.12, 0.3, 0.26]} c="#f4f4f4" />}
-        {/* Three-seater and an armchair */}
-        <group position={[-1.6, 0, 1.0]}>
-          <Box p={[0, 0.28, 0]} s={[0.8, 0.4, 1.9]} c={sofa} />
-          <Box p={[0.32, 0.68, 0]} s={[0.18, 0.55, 1.9]} c={sofa} />
-          <Box p={[0, 0.52, -0.88]} s={[0.8, 0.3, 0.14]} c={sofa} />
-          <Box p={[0, 0.52, 0.88]} s={[0.8, 0.3, 0.14]} c={sofa} />
-        </group>
-        <group position={[-2.6, 0, 2.4]}>
-          <Box p={[0, 0.25, 0]} s={[0.8, 0.4, 0.7]} c={sofa} />
-          <Box p={[0, 0.6, 0.28]} s={[0.8, 0.4, 0.15]} c={sofa} />
-        </group>
-        <Box p={[-2.6, 0.25, 1.0]} s={[0.6, 0.06, 0.9]} c="#2b2b2b" />
-      </Tappable>
+          <Prop name="cabinetTelevision" p={[-3.85, 0, 1.0]} rot={Math.PI / 2} s={1.2} tint={{ wood: '#3d2a1a' }} />
+          {has('smarttv') ? (
+            <>
+              <Prop name="televisionModern" p={[-3.92, 0.6, 1.0]} rot={Math.PI / 2} s={1.6} />
+              <mesh position={[-3.83, 1.0, 1.0]} rotation={[0, Math.PI / 2, 0]}>
+                <planeGeometry args={[1.6, 0.82]} />
+                <meshStandardMaterial color={tvOn ? '#3fb27f' : '#0b0b0b'} emissive={tvOn ? '#1d8a5a' : '#000'} emissiveIntensity={0.8} />
+              </mesh>
+            </>
+          ) : (
+            <>
+              <Prop name="televisionVintage" p={[-3.85, 0.6, 1.0]} rot={Math.PI / 2} s={1.1} />
+            </>
+          )}
+          {has('ps5') && <Box p={[-3.8, 0.66, 1.65]} s={[0.12, 0.3, 0.26]} c="#f4f4f4" />}
+          {/* Three-seater and an armchair */}
+          <Prop name="loungeSofa" p={[-1.5, 0, 1.0]} rot={-Math.PI / 2} s={1.1} tint={{ carpet: sofa, wood: '#2b2018' }} />
+          <Prop name="loungeChair" p={[-2.6, 0, 2.4]} rot={Math.PI} s={1.15} tint={{ carpet: sofa, wood: '#2b2018' }} />
+          <Prop name="tableCoffee" p={[-2.6, 0, 1.0]} rot={Math.PI / 2} s={1.1} tint={{ wood: '#5a3e2a' }} />
+        </Tappable>
       </At>
       {/* Ceiling fan */}
       <At x={-2.4} z={1.0}>
@@ -175,7 +147,7 @@ export function Flat({ onFloor }: { onFloor: (e: ThreeEvent<MouseEvent>) => void
       </group>
       </At>
       <At x={-3.85} z={2.6}>
-      <Plant p={[-3.85, 0, 2.6]} s={0.9} />
+      <Prop name="pottedPlant" p={[-3.75, 0, 2.6]} s={1.3} tint={{ plant: '#2f8f3a' }} />
       </At>
       <At id="tv">
       {has('wifi') && (
@@ -196,32 +168,26 @@ export function Flat({ onFloor }: { onFloor: (e: ThreeEvent<MouseEvent>) => void
       </At>
       {/* ---------- Dining ---------- */}
       <At x={-5.4} z={-1.4}>
-      <group position={[-5.4, 0, -1.4]}>
-        <Box p={[0, 0.72, 0]} s={[1.4, 0.05, 0.8]} c={WOOD} />
-        {[-0.6, 0.6].flatMap((x) => [-0.32, 0.32].map((z) => <Box key={`${x}${z}`} p={[x, 0.36, z]} s={[0.06, 0.72, 0.06]} c="#3a2a1c" />))}
+        <Prop name="table" p={[-5.4, 0, -1.4]} s={1.1} tint={{ wood: WOOD }} />
         {[-0.35, 0.35].map((x) => (
           <group key={x}>
-            <Chair p={[x, 0, -0.65]} rotY={0} />
-            <Chair p={[x, 0, 0.65]} rotY={Math.PI} />
+            <Prop name="chairCushion" p={[-5.4 + x, 0, -2.05]} s={1.05} tint={{ wood: WOOD, carpet: theme.rug }} />
+            <Prop name="chairCushion" p={[-5.4 + x, 0, -0.75]} rot={Math.PI} s={1.05} tint={{ wood: WOOD, carpet: theme.rug }} />
           </group>
         ))}
-        <Cyl p={[0, 0.8, 0]} r={0.12} h={0.1} c="#f4f4f4" />
-      </group>
+        <Prop name="plantSmall1" p={[-5.4, 0.55, -1.4]} s={1.6} tint={{ plant: '#2f8f3a' }} />
       </At>
       <At x={-6.3} z={-3}>
-      <Plant p={[-6.3, 0, -2.6]} s={0.8} />
+        <Prop name="pottedPlant" p={[-6.3, 0, -2.7]} s={1.3} tint={{ plant: '#2f8f3a' }} />
       </At>
 
       {/* ---------- Small study ---------- */}
       <At x={-5.4} z={1.6}>
-      <group position={[-5.4, 0, 1.6]}>
-        <Box p={[0, 0.72, -0.6]} s={[1.2, 0.05, 0.55]} c="#8a6a4a" />
-        {[-0.55, 0.55].map((x) => <Box key={x} p={[x, 0.36, -0.6]} s={[0.05, 0.72, 0.5]} c="#6b4f32" />)}
-        <Box p={[0, 0.88, -0.75]} s={[0.5, 0.3, 0.03]} c="#111" />
-        <Chair p={[0, 0, -0.1]} rotY={Math.PI} />
-        <Box p={[-1.05, 0.9, 0.3]} s={[0.35, 1.8, 0.8]} c="#7a5a3c" />
-        {[0.5, 0.95, 1.4].map((y) => <Box key={y} p={[-0.9, y, 0.3]} s={[0.05, 0.3, 0.7]} c={y > 1 ? '#c0392b' : '#2f7fd6'} />)}
-      </group>
+        <Prop name="desk" p={[-5.4, 0, 0.7]} s={1.1} tint={{ wood: '#8a6a4a' }} />
+        <Prop name="computerScreen" p={[-5.4, 0.66, 0.6]} s={1.2} />
+        <Prop name="chairDesk" p={[-5.4, 0, 1.3]} rot={Math.PI} s={1.0} />
+        <Prop name="bookcaseOpen" p={[-6.4, 0, 1.9]} rot={Math.PI / 2} s={1.1} tint={{ wood: '#7a5a3c' }} />
+        <Prop name="books" p={[-6.35, 0.75, 1.9]} rot={Math.PI / 2} s={1.6} />
       </At>
 
       {/* ---------- Front door ---------- */}

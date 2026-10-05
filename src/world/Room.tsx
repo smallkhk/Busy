@@ -4,6 +4,7 @@ import { AREAS, homeTier, type HomeTier } from '../content/housing';
 import { useGame } from '../store/game';
 import { Person } from './Avatar';
 import { Mansion } from './Mansion';
+import { Prop } from './Prop';
 import { Flat } from './Flat';
 import { At, Shell, SpreadCtx, WallCutaway } from './Spread';
 import { HOME_SCALE } from '../content/homeLayout';
@@ -156,11 +157,7 @@ function SelfCon({ onFloor }: { onFloor: (e: ThreeEvent<MouseEvent>) => void }) 
           </>
         ) : (
           <>
-            <Box p={[-2.9, 0.2, -1.9]} s={[1.5, 0.4, 2.1]} c="#5b3a21" />
-            <Box p={[-2.9, 0.47, -1.85]} s={[1.4, 0.16, 2.0]} c="#e9e4f2" />
-            <Box p={[-2.9, 0.5, -1.6]} s={[1.42, 0.17, 1.3]} c={theme.bed} />
-            <Box p={[-2.9, 0.62, -2.6]} s={[0.9, 0.12, 0.4]} c="#fafafa" />
-            <Box p={[-2.9, 0.7, -2.95]} s={[1.5, 0.9, 0.08]} c="#5b3a21" />
+            <Prop name="bedDouble" p={[-2.9, 0, -2.0]} s={1.0} tint={{ wood: '#5b3a21', carpet: theme.bed, carpetWhite: '#e9e4f2' }} />
           </>
         )}
       </Tappable>
@@ -196,27 +193,17 @@ function SelfCon({ onFloor }: { onFloor: (e: ThreeEvent<MouseEvent>) => void }) 
 
       <At id="toilet">
       <Tappable id="toilet">
-        <Box p={[3.5, 0.22, -2.55]} s={[0.4, 0.44, 0.55]} c="#f5f5f5" />
-        <Box p={[3.5, 0.6, -2.85]} s={[0.45, 0.45, 0.2]} c="#f5f5f5" />
+        <Prop name="toilet" p={[3.5, 0, -2.75]} s={1.05} />
       </Tappable>
       </At>
 
       <At id="tv">
       <Tappable id="tv">
-        <Box p={[-3.6, 0.3, 1]} s={[0.5, 0.6, 1.4]} c="#3d2a1a" />
-        <Box p={[-3.62, 0.95, 1]} s={[0.08, 0.68, 1.15]} c="#111" />
-        <mesh position={[-3.57, 0.95, 1]} rotation={[0, Math.PI / 2, 0]}>
-          <planeGeometry args={[1.05, 0.58]} />
-          <meshStandardMaterial color={power ? '#4aa3df' : '#0b0b0b'} emissive={power ? '#1d6fa5' : '#000'} emissiveIntensity={power ? 0.8 : 0} />
-        </mesh>
+        <Prop name="cabinetTelevision" p={[-3.65, 0, 1]} rot={Math.PI / 2} s={1.0} tint={{ wood: '#3d2a1a' }} />
+        <Prop name="televisionVintage" p={[-3.68, 0.5, 1]} rot={Math.PI / 2} s={1.05} />
         {/* Sofa in better areas, red plastic chairs in Kubwa */}
         {(upgraded || has('sofa')) && (
-          <group position={[-1.6, 0, 1.0]}>
-            <Box p={[0, 0.3, 0]} s={[0.8, 0.4, 1.8]} c={AREAS[area].lux ? '#3d4a5c' : '#6b4f3a'} />
-            <Box p={[0.32, 0.7, 0]} s={[0.18, 0.6, 1.8]} c={AREAS[area].lux ? '#3d4a5c' : '#6b4f3a'} />
-            <Box p={[0, 0.55, -0.85]} s={[0.8, 0.3, 0.14]} c={AREAS[area].lux ? '#2c3646' : '#5a412f'} />
-            <Box p={[0, 0.55, 0.85]} s={[0.8, 0.3, 0.14]} c={AREAS[area].lux ? '#2c3646' : '#5a412f'} />
-          </group>
+          <Prop name="loungeSofa" p={[-1.5, 0, 1.0]} rot={-Math.PI / 2} s={1.05} tint={{ carpet: '#6b4f3a', wood: '#2b2018' }} />
         )}
         {!upgraded && !has('sofa') && [0.6, 1.4].map((z) => (
           <group key={z} position={[-1.7, 0, z]}>
@@ -278,8 +265,7 @@ function SelfCon({ onFloor }: { onFloor: (e: ThreeEvent<MouseEvent>) => void }) 
       <At x={-3.6} z={-0.35}>
       {has('fridge') && (
         <group>
-          <Box p={[-3.6, 0.75, -0.35]} s={[0.6, 1.5, 0.6]} c="#d9dde0" />
-          <Box p={[-3.29, 1.0, -0.2]} s={[0.02, 0.4, 0.04]} c="#888" />
+          <Prop name="kitchenFridge" p={[-3.65, 0, -0.35]} rot={Math.PI / 2} s={1.1} glossy />
         </group>
       )}
       </At>
