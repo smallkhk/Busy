@@ -1,8 +1,43 @@
 import { describe, expect, it } from 'vitest';
 import { EVENTS } from '../content/events';
-import { effectChips, pickEvent, resolveChoice, type EventContext } from './events';
+import { effectChips, heatLevel, pickEvent, resolveChoice, visibleChoices, type EventContext } from './events';
 
 const ctx: EventContext = { place: 'home', hour: 10, day: 1, money: 50000, power: true };
+
+describe('police', () => {
+  const stop = EVENTS.find((e) => e.id === 'police-stop')!;
+
+  it('hides "call somebody" until you get Long Leg', () => {
+    const labels = (c: EventContext) => visibleChoices(stop, c).map(({ c: ch }) => ch.label);
+    expect(labels({ ...ctx, longLeg: 0 }).some((l) => l.startsWith('Call somebody'))).toBe(false);
+    expect(labels({ ...ctx, longLeg: 40 }).some((l) => l.startsWith('Call somebody'))).toBe(true);
+    // Original indices survive the filter, so answerEvent gets the right choice
+    const vis = visibleChoices(stop, { ...ctx, longLeg: 0 });
+    for (const { c, i } of vis) expect(stop.choices[i]).toBe(c);
+  });
+
+  it('wanted people get detained more often', () => {
+    const refuse = stop.choices.find((c) => c.label.startsWith('Refuse'))!;
+    const detained = (heat: number) => {
+      let n = 0;
+      for (let k = 0; k < 400; k++) if ((resolveChoice(refuse, Math.random, { ...ctx, heat }).effect?.heat ?? 0) > 5) n++;
+      return n;
+    };
+    expect(detained(90)).toBeGreaterThan(detained(0));
+  });
+
+  it('raid only comes when you dey wanted', () => {
+    for (let i = 0; i < 30; i++) expect(pickEvent(EVENTS, 'idle', { ...ctx, heat: 10 }, {}, 0)?.id).not.toBe('raid');
+    expect(EVENTS.find((e) => e.id === 'raid')!.when!({ ...ctx, heat: 85 })).toBe(true);
+  });
+
+  it('names heat levels', () => {
+    expect(heatLevel(0).name).toBe('Normal');
+    expect(heatLevel(25).name).toBe('Suspicious');
+    expect(heatLevel(60).name).toBe('Known');
+    expect(heatLevel(95).name).toBe('Wanted');
+  });
+});
 
 describe('events', () => {
   it('only picks events whose conditions match', () => {

@@ -530,25 +530,227 @@ export const EVENTS: GameEvent[] = [
     ],
   },
 
-  // ---------------- On the road ----------------
+  // ---------------- Police ----------------
   {
-    id: 'checkpoint',
+    id: 'police-stop',
     emoji: '👮',
-    title: 'Police checkpoint',
-    text: 'Police stop your vehicle. "Oga driver, wetin you carry? Make everybody show ID."',
+    title: 'Police stop: "Oga, park well!"',
+    text: 'Police wave your vehicle to the side. "Where you dey go? Wetin you carry? Show us your documents."',
     trigger: 'commute',
-    weight: 4,
-    cooldownHours: 6,
+    weight: 5,
+    cooldownHours: 8,
     choices: [
-      { label: 'Show your ID, keep quiet', outcomes: [{ text: 'After 20 minutes dem wave una go.', effect: { minutes: 20 } }] },
       {
-        label: 'Talk am: "Officer, we dey rush"',
+        label: 'Show documents, calm down',
         outcomes: [
-          { weight: 1, text: '"Oya go." E work! 😎', effect: { needs: { fun: 5 } } },
-          { weight: 1, text: '"You dey teach me work?" Dem hold una 45 minutes 😩', effect: { minutes: 45, needs: { fun: -10 } } },
+          { weight: (c) => Math.max(0.5, 4 - (c.heat ?? 0) / 25), text: 'Everything correct. "Oya go. Safe journey." 👍🏾', effect: { minutes: 15, heat: -3 } },
+          { weight: (c) => 0.5 + (c.heat ?? 0) / 25, text: '"Wait… your name dey our list." Dem carry you go station 2 hours before dem release you 😩', effect: { minutes: 120, needs: { fun: -20, energy: -10 }, heat: 5 } },
+        ],
+      },
+      {
+        label: 'Explain yourself: "Officer, I be honest worker"',
+        outcomes: [
+          { weight: (c) => 0.5 + (c.packaging ?? 0) / 25, text: 'Your packaging talk for you. "Ah, sorry sir. Go ahead." 😎', effect: { needs: { fun: 5 } } },
+          { weight: 2, text: '"You dey form smart?" Dem search your bag finish. 40 minutes waste.', effect: { minutes: 40, needs: { fun: -10 }, heat: 3 } },
+        ],
+      },
+      {
+        label: 'Call somebody (use your 🦵 Long Leg)',
+        when: (c) => (c.longLeg ?? 0) >= 10,
+        outcomes: [
+          { weight: (c) => (c.longLeg ?? 0) / 10, text: 'One phone call. Officer face change: "Ah! Na Oga person? Sorry sir!" 🫡', effect: { needs: { fun: 15 }, heat: -10 } },
+          { weight: 1, text: 'Your person no pick call 😭 Police laugh you, hold you 1 hour.', effect: { minutes: 60, needs: { social: -5 }, heat: 5 } },
+        ],
+      },
+      {
+        label: 'Give them "something"',
+        cost: 2000,
+        outcomes: [
+          { weight: 4, text: '"God bless you." Dem wave you go. Na so the system be 😑', effect: { heat: 2 } },
+          { weight: 1, text: 'Na anti-corruption sting! 📹 Dem carry you go station. ₦20,000 fine.', effect: { money: -20000, minutes: 180, needs: { fun: -20 }, heat: 20 } },
+        ],
+      },
+      {
+        label: 'Refuse: "I know my rights"',
+        outcomes: [
+          { weight: (c) => ((c.heat ?? 0) < 50 ? 2 : 0.5), text: '"This one sabi law." Dem wave you go 😂', effect: { needs: { fun: 10 }, heat: 2 } },
+          { weight: (c) => 1 + (c.heat ?? 0) / 20, text: 'Dem carry you enter van. 3 hours for cell before your guy bail you with ₦10,000.', effect: { money: -10000, minutes: 180, needs: { fun: -25, energy: -15 }, heat: 15 } },
         ],
       },
     ],
+  },
+  {
+    id: 'police-night',
+    emoji: '🔦',
+    title: 'Night patrol',
+    text: 'Patrol van flash torch for your face. "Wetin you dey do outside this time? Unlock your phone make we check."',
+    trigger: 'idle',
+    weight: 3,
+    cooldownHours: 24,
+    when: (c) => c.place !== 'home' && c.place !== 'lounge' && (c.hour >= 22 || c.hour < 5),
+    choices: [
+      {
+        label: 'Unlock phone, let dem check',
+        outcomes: [
+          { weight: 3, text: 'Dem scroll your gallery, laugh at your memes, dem go. 😮‍💨', effect: { minutes: 30, heat: -2 } },
+          { weight: (c) => 0.5 + (c.heat ?? 0) / 20, text: 'Dem see crypto app. "Na Yahoo boy be this!" You pay ₦30,000 before dem free you.', effect: { money: -30000, minutes: 90, needs: { fun: -25 }, heat: 10 } },
+        ],
+      },
+      {
+        label: 'Refuse: "Na my privacy"',
+        outcomes: [
+          { weight: 1, text: '"Oya, go house now now!" You waka fast 😅', effect: { heat: 5 } },
+          { weight: (c) => 1 + (c.heat ?? 0) / 25, text: 'Dem detain you overnight 😭 Mosquito for cell no small.', effect: { minutes: 360, needs: { energy: -30, fun: -30, hygiene: -20 }, heat: 10 } },
+        ],
+      },
+      {
+        label: 'Call somebody (use your 🦵 Long Leg)',
+        when: (c) => (c.longLeg ?? 0) >= 10,
+        outcomes: [
+          { weight: (c) => (c.longLeg ?? 0) / 10, text: '"Oga don talk. Go home safe, sir." 🫡', effect: { heat: -5 } },
+          { weight: 1, text: 'Network bad. Dem collect ₦5,000 "for fuel" before you go.', effect: { money: -5000, heat: 3 } },
+        ],
+      },
+      {
+        label: 'Run 🏃🏾',
+        outcomes: [
+          { weight: 1, text: 'You escape inside street corner! But dem don snap your face 📸', effect: { needs: { energy: -15, fun: 10 }, heat: 25 } },
+          { weight: 1, text: 'Dem catch you. Detention till morning plus ₦15,000.', effect: { money: -15000, minutes: 480, needs: { energy: -40, fun: -30 }, heat: 20 } },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'raid',
+    emoji: '🚨',
+    title: 'Police don come your house',
+    text: 'Police van park for your gate. Neighbours dey peep. "We dey look for you. You go follow us go station."',
+    trigger: 'idle',
+    weight: 25,
+    cooldownHours: 72,
+    when: (c) => (c.heat ?? 0) >= 80 && (c.place === 'home' || c.place === 'street'),
+    choices: [
+      { label: 'Follow dem quietly', outcomes: [{ text: 'Dem question you 6 hours. No evidence, dem release you. Your name cool small.', effect: { minutes: 360, needs: { energy: -30, fun: -30, social: -10 }, heat: -40 } }] },
+      {
+        label: 'Call Barrister Ade',
+        cost: 20000,
+        when: (c) => !!c.met?.includes('ade'),
+        outcomes: [{ text: 'Barrister land with big English: "Where is your warrant?" Dem apologise and comot 😎', effect: { heat: -50, rel: { ade: 5 } } }],
+      },
+      { label: 'Settle am', cost: 50000, outcomes: [{ text: '"We no see you today." Dem comot. Heat cool small.', effect: { heat: -30 } }] },
+      {
+        label: 'Call somebody big (🦵 Long Leg)',
+        when: (c) => (c.longLeg ?? 0) >= 30,
+        outcomes: [{ text: 'One call. The DPO himself call back to apologise 🫡', effect: { heat: -60, needs: { fun: 10 } } }],
+      },
+    ],
+  },
+
+  // ---------------- On the road ----------------
+  {
+    id: 'go-slow',
+    emoji: '🚗',
+    title: 'Go-slow',
+    text: 'Traffic don hold. Motor no dey move at all. Hawkers dey sell everything from gala to phone charger.',
+    trigger: 'commute',
+    weight: 6,
+    cooldownHours: 6,
+    choices: [
+      { label: 'Wait patiently', outcomes: [{ text: '50 minutes later, una move. Abuja road 😮‍💨', effect: { minutes: 50, needs: { fun: -10 } } }] },
+      { label: 'Buy gala & La Casera', cost: 600, outcomes: [{ text: 'Gala for traffic na Nigerian culture 🍞', effect: { minutes: 50, needs: { food: 15, fun: 5 } } }] },
+      {
+        label: 'Come down, trek the rest',
+        when: (c) => !c.trip?.startsWith('drive-'),
+        outcomes: [{ text: 'You waka pass the go-slow. Sweat don soak your shirt 🥵', effect: { minutes: 20, needs: { energy: -15, hygiene: -10 } } }],
+      },
+    ],
+  },
+  {
+    id: 'driver-cancel',
+    emoji: '📵',
+    title: 'Driver don cancel',
+    text: 'After you wait 15 minutes, driver cancel: "Sorry, I no dey go that side again."',
+    trigger: 'commute',
+    weight: 5,
+    cooldownHours: 12,
+    when: (c) => !!c.trip?.startsWith('hail-'),
+    choices: [
+      { label: 'Book another one', outcomes: [{ text: 'Second driver come. 20 minutes don waste.', effect: { minutes: 20, needs: { fun: -10 } } }] },
+      { label: 'Rate am 1 star 😤', outcomes: [{ text: 'You feel better small. You still wait 20 minutes.', effect: { minutes: 20, needs: { fun: 3 } } }] },
+    ],
+  },
+  {
+    id: 'driver-extra',
+    emoji: '💸',
+    title: 'Driver wan increase money',
+    text: '"Oga, traffic too much. Add ₦1,500 or I drop you here."',
+    trigger: 'commute',
+    weight: 4,
+    cooldownHours: 12,
+    when: (c) => !!c.trip?.startsWith('hail-'),
+    choices: [
+      { label: 'Add the money', cost: 1500, outcomes: [{ text: 'E carry you reach with gospel music 🎶' }] },
+      {
+        label: 'Refuse: "Na the app price!"',
+        outcomes: [
+          { weight: 1, text: 'E grumble but e carry you go 😤', effect: { needs: { fun: -5 } } },
+          { weight: 1, text: 'E drop you for roadside. You trek the rest 🥵', effect: { minutes: 40, needs: { energy: -15, hygiene: -10 } } },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'bus-gist',
+    emoji: '🗣️',
+    title: 'Gist inside bus',
+    text: 'The person wey sit near you start gist. "Abeg, which side you dey work?"',
+    trigger: 'commute',
+    weight: 4,
+    cooldownHours: 24,
+    when: (c) => !c.trip?.startsWith('hail-') && !c.trip?.startsWith('drive-'),
+    choices: [
+      {
+        label: 'Gist am well',
+        outcomes: [
+          { weight: 1, text: 'Na Chinedu! Your old classmate. "Guy! Long time!" 🤝', effect: { meet: 'chinedu', needs: { social: 15 } } },
+          { weight: 1, text: 'She be HR for the mall. She collect your number 📱', effect: { meet: 'okafor', needs: { social: 15 } } },
+          { weight: 2, text: 'Na network marketing e dey do 😂 "You go like to be your own boss?"', effect: { needs: { social: 5, fun: 5 } } },
+        ],
+      },
+      { label: 'Plug earpiece, ignore am', outcomes: [{ text: 'Afrobeats carry you reach 🎧', effect: { needs: { fun: 5 } } }] },
+    ],
+  },
+  {
+    id: 'fuel-scarcity',
+    emoji: '⛽',
+    title: 'Fuel don finish',
+    text: 'Your fuel light don show. The filling station queue long reach expressway.',
+    trigger: 'commute',
+    weight: 4,
+    cooldownHours: 48,
+    when: (c) => !!c.trip?.startsWith('drive-'),
+    choices: [
+      { label: 'Join the queue', cost: 8000, outcomes: [{ text: '90 minutes for queue. At least na correct fuel.', effect: { minutes: 90, needs: { fun: -15 } } }] },
+      {
+        label: 'Buy black market jerrycan',
+        cost: 12000,
+        outcomes: [
+          { weight: 3, text: 'Boy pour am inside your tank sharp sharp. You move 🏃🏾' },
+          { weight: 1, text: 'Na adulterated fuel! Engine dey knock 😩', effect: { carWear: 15, needs: { fun: -15 } } },
+        ],
+      },
+      { label: 'Beg passer-by for small fuel', outcomes: [{ text: 'One okada man siphon 2 litres give you. "God go bless you, my brother." 🙏', effect: { minutes: 45, needs: { social: 10, fun: -5 } } }] },
+    ],
+  },
+  {
+    id: 'road-works',
+    emoji: '🚧',
+    title: 'Road construction',
+    text: 'Construction company don close one lane. Diversion dey carry everybody round.',
+    trigger: 'commute',
+    weight: 3,
+    cooldownHours: 24,
+    choices: [{ label: 'Endure am', outcomes: [{ text: 'You reach 35 minutes late. "Na for our good," dem talk.', effect: { minutes: 35, needs: { fun: -5 } } }] }],
   },
   {
     id: 'agbero',

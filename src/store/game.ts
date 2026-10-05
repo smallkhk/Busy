@@ -12,7 +12,7 @@ import { rollSickness, SICK_DRAIN, SICKNESS, type Sickness } from '../content/he
 import { ALL_GOALS } from '../content/goals';
 import { LOAN_DAYS, LOAN_FEE, LOAN_MAX, SAVINGS_DAILY_RATE, TOKEN_COST } from '../content/phoneapps';
 import { BRAND_COOLDOWN_DAYS, BRAND_MIN_FOLLOWERS, brandPay, followersGain, packagingGap, POST_COOLDOWN_MIN, postById } from '../content/gram';
-import { effectChips, pickEvent, resolveChoice } from '../engine/events';
+import { effectChips, pickEvent, resolveChoice, type EventContext } from '../engine/events';
 import { clamp, fullNeeds, LOW_NEED, NEED_KEYS, NEED_META, tickNeeds, type NeedKey, type Needs } from '../engine/needs';
 
 export type Txn = { at: number; label: string; amount: number };
@@ -52,6 +52,10 @@ type GameState = {
   businesses: Record<string, OwnedBusiness>;
   car: { id: string; condition: number } | null;
   sick: Sickness | null;
+  /** Police suspicion 0–100. Goes down small small every day. */
+  heat: number;
+  /** Trip in progress when the current event fired. */
+  eventTrip: string | null;
   hasNet: boolean;
   /** Goal ids already completed. */
   goals: string[];
@@ -173,6 +177,8 @@ const initial = () => ({
   businesses: {} as Record<string, OwnedBusiness>,
   car: null as { id: string; condition: number } | null,
   sick: null as Sickness | null,
+  heat: 0,
+  eventTrip: null as string | null,
   hasNet: false,
   goals: [] as string[],
   savings: 0,
@@ -201,6 +207,30 @@ const initial = () => ({
 
 /** Why an activity can't start right now, or null if it can. */
 export type BlockState = Pick<GameState, 'time' | 'money' | 'power' | 'active' | 'packaging' | 'pantry' | 'cv' | 'area' | 'rentLocked'> & { unlocks?: string[]; grade?: number; hasCar?: boolean; car?: unknown; sick?: Sickness | null; contacts?: Record<string, ContactState> };
+
+/** Everything events look at to decide if and how they happen. */
+export function eventContext(s: GameState, trip?: string | null): EventContext {
+  const { hour, day } = clockParts(s.time);
+  return {
+    place: s.place,
+    hour,
+    day,
+    money: s.money,
+    power: s.power,
+    rentOverdue: day > s.rentDueDay && !s.rentLocked,
+    met: Object.keys(s.contacts),
+    gap: packagingGap(s.packaging, s.money, s.area),
+    followers: s.followers,
+    loanOverdue: !!s.loan && day > s.loan.dueDay,
+    owned: Object.keys(s.businesses),
+    grade: s.cv >= 3 ? s.grade : -1,
+    carCondition: s.car?.condition,
+    trip: trip ?? undefined,
+    heat: s.heat ?? 0,
+    longLeg: longLeg(s.contacts),
+    packaging: s.packaging,
+  };
+}
 
 export function blockReason(a: Activity, s: BlockState): string | null {
   if (a.locked) return a.locked;
@@ -370,14 +400,8 @@ export const useGame = create<GameState>()(
 
       const fireEvent = (trigger: 'idle' | 'commute', trip?: string) => {
         const s = get();
-        const { hour, day } = clockParts(s.time);
-        const rentOverdue = day > s.rentDueDay && !s.rentLocked;
-        const met = Object.keys(s.contacts);
-        const gap = packagingGap(s.packaging, s.money, s.area);
-        const loanOverdue = !!s.loan && day > s.loan.dueDay;
-        const owned = Object.keys(s.businesses);
-        const e = pickEvent(EVENTS, trigger, { place: s.place, hour, day, money: s.money, power: s.power, rentOverdue, met, gap, followers: s.followers, loanOverdue, owned, grade: s.cv >= 3 ? s.grade : -1, carCondition: s.car?.condition, trip }, s.eventHistory, s.time);
-        if (e) set({ event: e.id, eventHistory: { ...s.eventHistory, [e.id]: s.time }, menu: null, phone: null });
+        const e = pickEvent(EVENTS, trigger, eventContext(s, trip), s.eventHistory, s.time);
+        if (e) set({ event: e.id, eventTrip: trip ?? null, eventHistory: { ...s.eventHistory, [e.id]: s.time }, menu: null, phone: null });
       };
 
       return {
@@ -388,9 +412,10 @@ export const useGame = create<GameState>()(
           const e = EVENTS.find((x) => x.id === s.event);
           const choice = e?.choices[index];
           if (!e || !choice) return set({ event: null });
+          if (choice.when && !choice.when(eventContext(s, s.eventTrip))) return;
           const cost = choice.cost ?? 0;
           if (cost > s.money) return;
-          const fx = resolveChoice(choice);
+          const fx = resolveChoice(choice, Math.random, eventContext(s, s.eventTrip));
           const effect = fx.effect ?? {};
           const moneyDelta = (effect.money ?? 0) - cost;
           let needs = { ...s.needs };
@@ -399,6 +424,8 @@ export const useGame = create<GameState>()(
           if (lost) needs = tickNeeds(needs, lost);
           set({
             event: null,
+            eventTrip: null,
+            heat: clamp((s.heat ?? 0) + (effect.heat ?? 0)),
             money: s.money + moneyDelta,
             needs,
             time: s.time + lost,
@@ -421,6 +448,7 @@ export const useGame = create<GameState>()(
           if (effect.payLoan) get().repayLoan();
           const myCar = get().car;
           if (effect.carRepair && myCar) set({ car: { ...myCar, condition: 100 } });
+          if (effect.carWear && myCar) set({ car: { ...myCar, condition: Math.max(0, myCar.condition - effect.carWear) } });
           const cb = effect.closeBusiness;
           if (cb && get().businesses[cb.id]) {
             const biz = get().businesses;
@@ -826,7 +854,7 @@ export const useGame = create<GameState>()(
             const contacts = Object.fromEntries(
               Object.entries(get().contacts).map(([id, c]) => [id, { ...c, rel: Math.max(5, c.rel - 1) }]),
             );
-            set({ contacts });
+            set({ contacts, heat: Math.max(0, (get().heat ?? 0) - 4) });
             // Sickness roll for the new day
             const hs = get();
             if (!hs.sick) {
@@ -952,6 +980,8 @@ export const useGame = create<GameState>()(
         businesses: s.businesses,
         car: s.car,
         sick: s.sick,
+        heat: s.heat,
+        eventTrip: s.eventTrip,
         hasNet: s.hasNet,
         goals: s.goals,
         savings: s.savings,
