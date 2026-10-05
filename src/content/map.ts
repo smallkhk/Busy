@@ -6,6 +6,11 @@ export type MapSpot = { id: string; name: string; short?: string; emoji: string;
 
 /** Where your home node sits depends on the area you live in. */
 export const HOME_XY: Record<AreaId, [number, number]> = {
+  mararaba: [276, 338],
+  nyanya: [262, 300],
+  garki: [170, 246],
+  maitama: [214, 84],
+  asokoro: [250, 226],
   kubwa: [58, 62],
   gwarinpa: [92, 112],
   wuse2: [196, 132],

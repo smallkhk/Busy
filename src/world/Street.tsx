@@ -7,6 +7,9 @@ import { CarModel } from './CarModel';
 import { useGame } from '../store/game';
 import { Person } from './Avatar';
 import { Box, Cyl, Tappable, type V3 } from './Room';
+import { AREAS } from '../content/housing';
+import type { Outfit } from '../content/fashion';
+import type { Hat } from './HumanModel';
 
 const LOOP = 30; // vehicles wrap between -15 and +15
 
@@ -78,7 +81,7 @@ function Traffic() {
   );
 }
 
-export type Walker = { from: number; to: number; z: number; speed: number; shirt: string; tray?: boolean; woman?: boolean };
+export type Walker = { from: number; to: number; z: number; speed: number; shirt: string; tray?: boolean; woman?: boolean; outfit?: Outfit; hat?: Hat; trousers?: string };
 
 const WALKERS: Walker[] = [
   { from: -7, to: 7, z: 2.9, speed: 0.9, shirt: '#c0392b' },
@@ -86,8 +89,25 @@ const WALKERS: Walker[] = [
   { from: -2, to: 6.5, z: 3.1, speed: 0.6, shirt: '#8e44ad' },
 ];
 
-function Pedestrians() {
-  return <Walkers walkers={WALKERS} />;
+/** Big-money streets: Alhajis in agbada, madams in gele, and the Mai gadi. */
+const RICH_WALKERS: Walker[] = [
+  { from: -7, to: 7, z: 2.9, speed: 0.5, shirt: '#f2ead8', outfit: 'agbada', woman: false },
+  { from: 6, to: -6, z: -1.6, speed: 0.45, shirt: '#5b2a6e', woman: true, hat: { type: 'gele', color: '#c9a23a', band: '#5b2a6e' } },
+  { from: -2, to: 6.5, z: 3.1, speed: 0.5, shirt: '#2c5e8a', trousers: '#2c5e8a', woman: false, hat: { type: 'hula', color: '#f4f1ec', band: '#2c5e8a' } },
+];
+
+function Pedestrians({ rich }: { rich: boolean }) {
+  return (
+    <>
+      <Walkers walkers={rich ? RICH_WALKERS : WALKERS} />
+      {rich && (
+        <group position={[-5.6, 0, -2.3]} rotation={[0, Math.PI / 4, 0]}>
+          {/* Mai gadi at the gate, in kaftan and hula */}
+          <Person shirt="#3f5a3a" trousers="#3f5a3a" skin="#3d2416" hat={{ type: 'hula', color: '#f4f1ec' }} />
+        </group>
+      )}
+    </>
+  );
 }
 
 /** NPCs pacing back and forth along x. */
@@ -112,7 +132,7 @@ export function Walkers({ walkers }: { walkers: Walker[] }) {
       {walkers.map((w, i) => (
         <group key={i} ref={(g) => { refs.current[i] = g; }} scale={0.92}>
           {/* Hawkers with tray and every second passer-by na woman */}
-          <Person shirt={w.shirt} trousers={w.tray || (w.woman ?? i % 2 === 1) ? undefined : '#2d2d2d'} woman={w.tray || (w.woman ?? i % 2 === 1)} move="Walk" />
+          <Person shirt={w.shirt} trousers={w.trousers ?? (w.tray || (w.woman ?? i % 2 === 1) ? undefined : '#2d2d2d')} woman={w.tray || (w.woman ?? i % 2 === 1)} outfit={w.outfit} hat={w.hat} move="Walk" />
           {w.tray && (
             <>
               {/* Pure water seller with tray on head */}
@@ -192,6 +212,7 @@ function MyCar() {
 
 export function Street() {
   const walkTo = useGame((s) => s.walkTo);
+  const rich = useGame((s) => !!AREAS[s.area].lux);
   const night = useGame((s) => daylight(clockParts(Math.floor(s.time / 10) * 10).minuteOfDay) < 0.3);
 
   const onGround = (e: ThreeEvent<MouseEvent>) => {
@@ -206,7 +227,7 @@ export function Street() {
       {/* Red Abuja laterite ground */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.02, 0]} receiveShadow onClick={onGround}>
         <planeGeometry args={[80, 80]} />
-        <meshStandardMaterial color="#b0703f" />
+        <meshStandardMaterial color={rich ? '#6f9a52' : '#b0703f'} />
       </mesh>
       {/* Road */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0.4]} receiveShadow onClick={onGround}>
@@ -333,7 +354,7 @@ export function Street() {
 
       <MyCar />
       <Traffic />
-      <Pedestrians />
+      <Pedestrians rich={rich} />
     </group>
   );
 }

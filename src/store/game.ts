@@ -5,6 +5,7 @@ import { AD_BIZ_BOOST } from '../content/billboards';
 import { appointChance, CAMPAIGN_DAYS, canRun, electionWon, MOVES, moveSupport, NO_POLITICS, OFFICES, startingSupport, TERM_DAYS, type CampaignMove, type Politics } from '../content/politics';
 import { courseById, GYM_DAYS, GYM_FEE, sickDodge, workEnergyFactor, type CourseId } from '../content/learning';
 import { festivalOn } from '../content/festivals';
+import { EDUCATIONS, familyById, ORIGINS, type Birth } from '../content/birth';
 import { DEFAULT_LOOK, HAIR_COST, OUTFITS, type Hair, type Look, type Outfit } from '../content/fashion';
 import { driveWear } from '../content/minigames';
 import { areaAllows, genCostFor, homeItemById, TV_ACTIVITIES, WIFI_FREE } from '../content/homeup';
@@ -84,6 +85,8 @@ export type GameState = {
   look: Look;
   /** Outfits you own. */
   wardrobe: Outfit[];
+  /** The life you born into (old saves: undefined). */
+  birth?: Birth;
   /** Things you don buy for your house. */
   homeUps: string[];
   /** Abuja Love: people you matched with. */
@@ -130,7 +133,7 @@ export type GameState = {
   eventHistory: Record<string, number>;
   nextEventCheck: number;
 
-  start: (name: string, shirt: string, look?: Look) => void;
+  start: (name: string, shirt: string, look?: Look, birth?: Birth) => void;
   buyOutfit: (id: Outfit) => void;
   enroll: (id: CourseId) => void;
   /** Buy the nomination form (or lobby for an appointment). */
@@ -1245,7 +1248,25 @@ export const useGame = create<GameState>()(
           get().toast(`📦 You don pack enter ${AREAS[to].home}! ${AREAS[to].emoji}`);
         },
 
-        start: (name, shirt, look) => set({ ...initial(), started: true, name: name.trim() || 'Abuja Hustler', shirt, look: look ?? DEFAULT_LOOK }),
+        start: (name, shirt, look, birth) => {
+          const base = { ...initial(), started: true, name: name.trim() || 'Abuja Hustler', shirt, look: look ?? DEFAULT_LOOK };
+          if (!birth) return set(base);
+          const fam = familyById(birth.family);
+          const edu = EDUCATIONS.find((e) => e.id === birth.education);
+          const home = ORIGINS.find((o) => o.id === birth.origin)?.outfit;
+          set({
+            ...base,
+            birth,
+            money: fam.money,
+            area: birth.area,
+            rentDueDay: 1 + RENT_CYCLE_DAYS * fam.rentPaidCycles,
+            packaging: base.packaging + fam.packaging,
+            cv: edu?.cv ?? 0,
+            fitness: Math.max(0, base.fitness + (edu?.fitness ?? 0)),
+            wardrobe: home && home !== 'tee' ? ['tee', home] : ['tee'],
+            car: fam.car ? { id: fam.car, condition: 100, fuel: START_FUEL } : null,
+          });
+        },
 
         declare: (target) => {
           const s = get();
@@ -1675,6 +1696,7 @@ export const useGame = create<GameState>()(
         fitness: s.fitness,
         gymUntil: s.gymUntil,
         wardrobe: s.wardrobe,
+        birth: s.birth,
         properties: s.properties,
         adBoostUntil: s.adBoostUntil,
         swiped: s.swiped,

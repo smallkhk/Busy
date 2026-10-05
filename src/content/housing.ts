@@ -1,6 +1,6 @@
 import type { Place } from './common';
 
-export type AreaId = 'kubwa' | 'gwarinpa' | 'wuse2' | 'kuje' | 'guzape';
+export type AreaId = 'mararaba' | 'nyanya' | 'kubwa' | 'gwarinpa' | 'garki' | 'wuse2' | 'maitama' | 'asokoro' | 'kuje' | 'guzape';
 
 export type Area = {
   id: AreaId;
@@ -14,12 +14,36 @@ export type Area = {
   /** Multiplier on trips to and from your area. */
   commute: number;
   blurb: string;
+  /** Big-money area: fine furniture, gatemen, Alhajis for road. */
+  lux?: boolean;
   /** Houses you buy instead of rent: no rent once you own am. */
   own?: { land?: number; build?: number; buildDays?: number; price?: number; rentOut: number };
   theme: { wall: string; wall2: string; floor: string; rug: string; bed: string };
 };
 
 export const AREAS: Record<AreaId, Area> = {
+  mararaba: {
+    id: 'mararaba',
+    name: 'Mararaba',
+    home: 'Face-me-I-face-you, Mararaba',
+    emoji: '🛖',
+    rent: 35000,
+    packaging: -5,
+    commute: 1.6,
+    blurb: 'Nasarawa side. Rent cheap pass everywhere, but Nyanya bridge traffic na your portion.',
+    theme: { wall: '#e6d9bf', wall2: '#dccdb0', floor: '#b9a687', rug: '#6b4a2f', bed: '#5a6b3a' },
+  },
+  nyanya: {
+    id: 'nyanya',
+    name: 'Nyanya',
+    home: 'Room & parlour, Nyanya',
+    emoji: '🏚️',
+    rent: 50000,
+    packaging: -2,
+    commute: 1.3,
+    blurb: 'Where Abuja workers sleep. Bus full by 6am, but money go remain for your pocket.',
+    theme: { wall: '#ebdfc7', wall2: '#e0d2b6', floor: '#c8b393', rug: '#8a3b2b', bed: '#2f5d8a' },
+  },
   kubwa: {
     id: 'kubwa',
     name: 'Kubwa',
@@ -42,6 +66,17 @@ export const AREAS: Record<AreaId, Area> = {
     blurb: 'Estate life. Closer to town, people go respect you small.',
     theme: { wall: '#e3ece6', wall2: '#d8e4dc', floor: '#c9b79c', rug: '#2f5d8a', bed: '#6b3fa0' },
   },
+  garki: {
+    id: 'garki',
+    name: 'Garki',
+    home: '2-bedroom flat, Garki Area 11',
+    emoji: '🏢',
+    rent: 320000,
+    packaging: 15,
+    commute: 0.5,
+    blurb: 'Old Abuja, central. Area 1 market for your back, CBD for your front.',
+    theme: { wall: '#eef0ea', wall2: '#e2e6dc', floor: '#a88a6a', rug: '#2f6b4a', bed: '#5a3d7a' },
+  },
   wuse2: {
     id: 'wuse2',
     name: 'Wuse 2',
@@ -51,7 +86,32 @@ export const AREAS: Record<AreaId, Area> = {
     packaging: 25,
     commute: 0.35,
     blurb: 'Big girl/big boy address. Everywhere near, but rent no be joke.',
+    lux: true,
     theme: { wall: '#f4f1ec', wall2: '#ebe6de', floor: '#8a6a4f', rug: '#e8b04b', bed: '#1f2a36' },
+  },
+  maitama: {
+    id: 'maitama',
+    name: 'Maitama',
+    home: 'Serviced 4-bedroom, Maitama',
+    emoji: '💎',
+    rent: 3500000,
+    packaging: 60,
+    commute: 0.3,
+    blurb: 'Embassies, senators and Alhajis with three Land Cruisers. ₦40m+ a year. Gateman go salute you.',
+    lux: true,
+    theme: { wall: '#fbf9f4', wall2: '#f1ede4', floor: '#4a3828', rug: '#8b1e3f', bed: '#0f1a24' },
+  },
+  asokoro: {
+    id: 'asokoro',
+    name: 'Asokoro',
+    home: 'Mansion, Asokoro',
+    emoji: '🏰',
+    rent: 7500000,
+    packaging: 80,
+    commute: 0.3,
+    blurb: 'Presidential neighbourhood. ₦90m a year, soldiers for road, and your neighbour na Minister.',
+    lux: true,
+    theme: { wall: '#fdfbf6', wall2: '#f3efe6', floor: '#3a2a1e', rug: '#c9a24a', bed: '#14202c' },
   },
   kuje: {
     id: 'kuje',
@@ -75,12 +135,13 @@ export const AREAS: Record<AreaId, Area> = {
     commute: 0.45,
     blurb: 'Hills, views, big gates. When you say "I dey Guzape", conversation don end.',
     own: { price: 85000000, rentOut: 90000 },
+    lux: true,
     theme: { wall: '#fbf8f2', wall2: '#f0ebe2', floor: '#5c4433', rug: '#c9a24a', bed: '#14202c' },
   },
 };
 
 /** Areas you rent (the move list); the others you must buy first. */
-export const RENT_AREAS: AreaId[] = ['kubwa', 'gwarinpa', 'wuse2'];
+export const RENT_AREAS: AreaId[] = ['mararaba', 'nyanya', 'kubwa', 'gwarinpa', 'garki', 'wuse2', 'maitama', 'asokoro'];
 
 export type Property = { status: 'land' | 'building' | 'built'; boughtDay: number; readyDay?: number; spent: number; rentedOut?: boolean };
 
