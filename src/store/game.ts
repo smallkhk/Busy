@@ -13,13 +13,14 @@ import { ALL_GOALS } from '../content/goals';
 import { LOAN_DAYS, LOAN_FEE, LOAN_MAX, SAVINGS_DAILY_RATE, TOKEN_COST } from '../content/phoneapps';
 import { BRAND_COOLDOWN_DAYS, BRAND_MIN_FOLLOWERS, brandPay, followersGain, packagingGap, POST_COOLDOWN_MIN, postById } from '../content/gram';
 import { TALK_MINUTES, TALK_REL } from '../content/npcs';
+import { ASK_OUT_AT, DAILY_COOL, DATE_TIERS, dateInterest, matchById, matchChance, officialPartner, PROPOSE_AFTER_DAYS, RING_COST, TEXT_INTEREST, WEDDING_COST, WEDDING_PACKAGING, type Love } from '../content/dating';
 import { combinedMods, nextWeather, priceOf, tripFactor, weatherSpell, WORLD_NEWS, type ActiveNews, type Weather } from '../content/world';
 import { effectChips, pickEvent, resolveChoice, type EventContext } from '../engine/events';
 import { clamp, fullNeeds, LOW_NEED, NEED_KEYS, NEED_META, tickNeeds, type NeedKey, type Needs } from '../engine/needs';
 
 export type Txn = { at: number; label: string; amount: number };
 export type Toast = { id: number; text: string };
-export type PhoneApp = 'home' | 'bank' | 'jobs' | 'chat' | 'map' | 'gram' | 'house' | 'contacts' | 'chop' | 'ride' | 'news' | 'goals' | 'biz' | 'cars' | 'gist';
+export type PhoneApp = 'home' | 'bank' | 'jobs' | 'chat' | 'map' | 'gram' | 'house' | 'contacts' | 'chop' | 'ride' | 'news' | 'goals' | 'biz' | 'cars' | 'gist' | 'love';
 
 /** `total` is the actual duration (rush hour makes trips longer); old saves may lack it. */
 type Active = { id: string; remaining: number; gen: boolean; total?: number; eventAt?: number };
@@ -56,6 +57,10 @@ type GameState = {
   sick: Sickness | null;
   /** Police suspicion 0–100. Goes down small small every day. */
   heat: number;
+  /** Abuja Love: people you matched with. */
+  loves: Record<string, Love>;
+  /** Profiles you don swipe already. */
+  swiped: string[];
   /** Story flags and the day each was set. */
   flags: Record<string, number>;
   weather: Weather;
@@ -120,6 +125,13 @@ type GameState = {
   brandDeal: () => void;
   callContact: (id: string) => void;
   openNpc: (id: string | null) => void;
+  swipe: (id: string, like: boolean) => void;
+  textLove: (id: string) => void;
+  dateLove: (id: string, tier: string) => void;
+  askOut: (id: string) => void;
+  propose: (id: string) => void;
+  wed: (id: string) => void;
+  breakUp: (id: string) => void;
   /** Walk up to a stranger and introduce yourself. */
   introduce: (id: string) => void;
   /** Gist face to face with a contact you know. */
@@ -199,6 +211,8 @@ const initial = () => ({
   sick: null as Sickness | null,
   heat: 0,
   flags: {} as Record<string, number>,
+  loves: {} as Record<string, Love>,
+  swiped: [] as string[],
   weather: 'sunny' as Weather,
   nextWeatherChange: START_TIME + 240,
   news: [] as ActiveNews[],
@@ -256,7 +270,17 @@ export function eventContext(s: GameState, trip?: string | null): EventContext {
     packaging: s.packaging,
     weather: s.weather ?? 'sunny',
     flags: s.flags ?? {},
+    partner: officialPartner(s.loves ?? {}),
+    dating: Object.values(s.loves ?? {}).filter((l) => l.interest >= 55 && !l.married).length,
+    fakeLife: Object.values(s.loves ?? {}).some((l) => l.fakeLife),
   };
+}
+
+/** Changes interest for your official partner, or whoever you dey date most. */
+function applyPartnerLove(loves: Record<string, Love>, delta: number): Record<string, Love> {
+  const id = officialPartner(loves) ?? Object.entries(loves).sort((a, b) => b[1].interest - a[1].interest)[0]?.[0];
+  if (!id) return loves;
+  return { ...loves, [id]: { ...loves[id], interest: clamp(loves[id].interest + delta), ...(delta < 0 ? { fakeLife: false } : {}) } };
 }
 
 export function blockReason(a: Activity, s: BlockState): string | null {
@@ -467,6 +491,7 @@ export const useGame = create<GameState>()(
             event: null,
             eventTrip: null,
             heat: clamp((s.heat ?? 0) + (effect.heat ?? 0)),
+            loves: effect.partnerLove ? applyPartnerLove(s.loves ?? {}, effect.partnerLove) : s.loves,
             flags: effect.flag ? { ...(s.flags ?? {}), ...Object.fromEntries([effect.flag].flat().map((f) => [f, clockParts(s.time).day])) } : s.flags,
             money: s.money + moneyDelta,
             needs,
@@ -716,6 +741,116 @@ export const useGame = create<GameState>()(
 
         openNpc: (id) => set({ npcMenu: id, menu: null }),
 
+        swipe: (id, like) => {
+          const s = get();
+          const m = matchById(id);
+          if (!m || s.swiped?.includes(id)) return;
+          const swiped = [...(s.swiped ?? []), id];
+          if (!like) return set({ swiped });
+          if (Math.random() < matchChance(s.packaging, m.standard)) {
+            set({ swiped, loves: { ...(s.loves ?? {}), [id]: { interest: 12 } } });
+            get().toast(`💕 Na match! ${m.name} like you back`);
+          } else {
+            set({ swiped });
+            get().toast(`💔 ${m.name} no like you back.${s.packaging < m.standard ? ' Your packaging never reach 👔' : ''}`);
+          }
+        },
+
+        textLove: (id) => {
+          const s = get();
+          const l = s.loves?.[id];
+          const m = matchById(id);
+          if (!l || !m) return;
+          const { day } = clockParts(s.time);
+          if (l.lastTextDay === day) return get().toast(`💬 You don text ${m.name} today. No do too much 😅`);
+          if (s.money < CALL_COST) return get().toast('😕 You no get data money');
+          set({
+            money: s.money - CALL_COST,
+            needs: { ...s.needs, social: clamp(s.needs.social + 6) },
+            loves: { ...s.loves, [id]: { ...l, interest: clamp(l.interest + TEXT_INTEREST), lastTextDay: day } },
+          });
+          get().toast(`💬 You and ${m.name} gist till phone hot. 💕 +${TEXT_INTEREST}`);
+        },
+
+        dateLove: (id, tierId) => {
+          const s = get();
+          const l = s.loves?.[id];
+          const m = matchById(id);
+          const tier = DATE_TIERS.find((t) => t.id === tierId);
+          if (!l || !m || !tier) return;
+          if (s.active) return get().toast('😕 Finish wetin you dey do first');
+          const { day } = clockParts(s.time);
+          if (l.lastDateDay === day) return get().toast('📅 One date per day abeg');
+          if (l.interest < 25) return get().toast(`💬 Gist with ${m.name} small first before you ask am out`);
+          if (s.money < tier.cost) return get().toast(`😕 You need ${formatNaira(tier.cost)}`);
+          const gain = dateInterest(m.taste, tier.id);
+          const fake = (tier.id === 'fakelife' || tier.id === 'bigboy') && packagingGap(s.packaging, s.money - tier.cost, s.area) > 30;
+          set({
+            money: s.money - tier.cost,
+            time: s.time + tier.minutes,
+            needs: { ...tickNeeds(s.needs, tier.minutes), fun: clamp(s.needs.fun + 25), social: clamp(s.needs.social + 25), food: clamp(s.needs.food + 30) },
+            packaging: clamp(s.packaging + (tier.id === 'bigboy' || tier.id === 'fakelife' ? 1 : 0)),
+            loves: { ...s.loves, [id]: { ...l, interest: clamp(l.interest + gain), lastDateDay: day, fakeLife: l.fakeLife || fake } },
+            txns: [{ at: s.time, label: `Date with ${m.name}: ${tier.label}`, amount: -tier.cost }, ...s.txns].slice(0, 40),
+          });
+          get().toast(gain >= 14 ? `${tier.emoji} ${m.name} enjoy am die! 💕 +${gain}` : gain > 0 ? `${tier.emoji} The date dey okay. 💕 +${gain}` : `${tier.emoji} ${m.name} face no happy… 💔 ${gain}`);
+        },
+
+        askOut: (id) => {
+          const s = get();
+          const l = s.loves?.[id];
+          const m = matchById(id);
+          if (!l || !m || l.official) return;
+          const other = officialPartner(s.loves);
+          if (other) return get().toast(`😬 You don get ${matchById(other)?.name}. One love at a time!`);
+          if (l.interest < ASK_OUT_AT) {
+            set({ loves: { ...s.loves, [id]: { ...l, interest: clamp(l.interest - 10) } } });
+            return get().toast(`🙈 ${m.name}: "Hmm… make we still dey know each other." 💔 -10`);
+          }
+          set({ loves: { ...s.loves, [id]: { ...l, official: true, sinceDay: clockParts(s.time).day, interest: clamp(l.interest + 5) } } });
+          get().toast(`❤️ ${m.name} say YES! Una don dey official`);
+        },
+
+        propose: (id) => {
+          const s = get();
+          const l = s.loves?.[id];
+          const m = matchById(id);
+          if (!l?.official || !m || l.engaged) return;
+          const { day } = clockParts(s.time);
+          if (day - (l.sinceDay ?? day) < PROPOSE_AFTER_DAYS) return get().toast(`⏳ Una never date reach ${PROPOSE_AFTER_DAYS} days. Calm down 😅`);
+          if (s.money < RING_COST) return get().toast(`💍 Ring na ${formatNaira(RING_COST)}`);
+          if (l.interest < 85) {
+            set({ money: s.money - RING_COST, loves: { ...s.loves, [id]: { ...l, interest: clamp(l.interest - 15) } } });
+            return get().toast(`💔 ${m.name}: "I no ready…" Ring don waste 😭`);
+          }
+          set({ money: s.money - RING_COST, loves: { ...s.loves, [id]: { ...l, engaged: true } }, txns: [{ at: s.time, label: 'Engagement ring 💍', amount: -RING_COST }, ...s.txns].slice(0, 40) });
+          get().toast(`💍 ${m.name} cry, say YES! Una go meet family for introduction`);
+        },
+
+        wed: (id) => {
+          const s = get();
+          const l = s.loves?.[id];
+          const m = matchById(id);
+          if (!l?.engaged || !m || l.married) return;
+          if (s.money < WEDDING_COST) return get().toast(`💒 Wedding (aso-ebi, hall, jollof) na ${formatNaira(WEDDING_COST)}`);
+          set({
+            money: s.money - WEDDING_COST,
+            packaging: clamp(s.packaging + WEDDING_PACKAGING),
+            loves: { ...s.loves, [id]: { ...l, married: true, interest: 100 } },
+            txns: [{ at: s.time, label: `Wedding with ${m.name} 💒`, amount: -WEDDING_COST }, ...s.txns].slice(0, 40),
+          });
+          get().toast(`💒 Happy married life! You and ${m.name} don do am 🎉 👔 +${WEDDING_PACKAGING}`);
+        },
+
+        breakUp: (id) => {
+          const s = get();
+          const m = matchById(id);
+          const loves = { ...s.loves };
+          delete loves[id];
+          set({ loves, needs: { ...s.needs, fun: clamp(s.needs.fun - 20) } });
+          get().toast(`💔 You and ${m?.name} don separate`);
+        },
+
         introduce: (id) => {
           if (get().contacts[id]) return;
           meetContact(id);
@@ -957,6 +1092,20 @@ export const useGame = create<GameState>()(
               }
             }
             set({ news: running });
+            // Love cools if you no dey check on them; partners lift your mood
+            const lv = get().loves ?? {};
+            const nextLoves: Record<string, Love> = {};
+            for (const [id, l] of Object.entries(lv)) {
+              const quiet = Math.min(cur.day - (l.lastTextDay ?? -9), cur.day - (l.lastDateDay ?? -9)) >= 2;
+              const interest = clamp(l.interest - (quiet ? (l.married ? 1 : DAILY_COOL) : 0));
+              if (l.official && !l.married && interest < 15) {
+                now.toast(`💔 ${matchById(id)?.name} don break up with you. You no dey check am 😢`);
+                continue;
+              }
+              nextLoves[id] = { ...l, interest };
+            }
+            const partner = officialPartner(nextLoves);
+            set({ loves: nextLoves, ...(partner ? { needs: { ...get().needs, social: clamp(get().needs.social + 10) } } : {}) });
             // Sickness roll for the new day
             const hs = get();
             if (!hs.sick) {
@@ -1085,6 +1234,8 @@ export const useGame = create<GameState>()(
         sick: s.sick,
         heat: s.heat,
         flags: s.flags,
+        loves: s.loves,
+        swiped: s.swiped,
         weather: s.weather,
         nextWeatherChange: s.nextWeatherChange,
         news: s.news,

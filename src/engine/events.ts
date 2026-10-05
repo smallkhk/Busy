@@ -32,6 +32,12 @@ export type EventContext = {
   weather?: 'sunny' | 'cloudy' | 'rain' | 'storm';
   /** Story flags, with the day each was set. */
   flags?: Record<string, number>;
+  /** Your official partner (Abuja Love id). */
+  partner?: string;
+  /** How many people you dey date at once. */
+  dating?: number;
+  /** You took someone on a date wey pass your pocket. */
+  fakeLife?: boolean;
 };
 
 export type Effect = {
@@ -65,6 +71,8 @@ export type Effect = {
   carWear?: number;
   /** Litres into your car tank. */
   fuel?: number;
+  /** Love change with your partner. */
+  partnerLove?: number;
   /** Story flags to set (remembered with today's day). */
   flag?: string | string[];
 };
@@ -149,6 +157,7 @@ export function effectChips(effect: Effect | undefined, cost = 0, needEmoji: Rec
   if (effect?.followersPct) chips.push(`${effect.followersPct > 0 ? '+' : ''}${effect.followersPct}% 📸 followers`);
   if (effect?.closeBusiness) chips.push(`Business closed ${effect.closeBusiness.days} days 🔒`);
   if (effect?.carRepair) chips.push('Car don fix 🔧');
+  if (effect?.partnerLove) chips.push(`${effect.partnerLove > 0 ? '+' : ''}${effect.partnerLove} 💕`);
   if (effect?.fuel) chips.push(`+${effect.fuel}L ⛽`);
   if (effect?.carWear) chips.push(`Car condition -${effect.carWear} 🚗`);
   if (effect?.heat) chips.push(`🚨 Police heat ${effect.heat > 0 ? '+' : ''}${effect.heat}`);
