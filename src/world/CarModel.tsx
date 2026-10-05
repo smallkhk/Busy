@@ -1,4 +1,9 @@
-export type CarKind = 'sedan' | 'suv' | 'gwagon';
+import { useGLTF } from '@react-three/drei';
+import { Suspense, useMemo } from 'react';
+import { type BufferGeometry, type Mesh, type MeshStandardMaterial } from 'three';
+import { toCreasedNormals } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+
+export type CarKind = 'sedan' | 'suv' | 'gwagon' | 'gls';
 
 type V3 = [number, number, number];
 
@@ -80,8 +85,75 @@ function Mirrors({ x, y, z, c }: { x: number; y: number; z: number; c: string })
   );
 }
 
+const GLS_URL = `${import.meta.env.BASE_URL}models/cars/gls.glb`;
+/** The model has no normals (it is simplified hard); crease them once per mesh. */
+const creased = new WeakMap<BufferGeometry, BufferGeometry>();
+
+/**
+ * 2020 Mercedes-Benz GLS 580, a real model shrunk to about 40k triangles.
+ * Its own parts carry the colours; the body takes your paint.
+ */
+function GlsModel({ paint, lights }: { paint: string; lights: boolean }) {
+  const { scene } = useGLTF(GLS_URL);
+  const obj = useMemo(() => {
+    const c = scene.clone(true);
+    c.traverse((o) => {
+      const m = o as Mesh;
+      if (!m.isMesh) return;
+      let g = creased.get(m.geometry);
+      if (!g) {
+        g = toCreasedNormals(m.geometry, 0.6);
+        creased.set(m.geometry, g);
+      }
+      m.geometry = g;
+      m.castShadow = true;
+      m.receiveShadow = true;
+      const k = (m.material as MeshStandardMaterial).clone();
+      k.metalness = 0.3;
+      k.roughness = 0.4;
+      if (k.name === 'Polar_White') {
+        k.color.set(paint);
+        k.metalness = 0.55;
+        k.roughness = 0.28;
+      } else if (k.name === 'WindowsTint' || k.name === 'Lights_Glass') {
+        k.transparent = true;
+        k.opacity = k.name === 'WindowsTint' ? 0.75 : 0.45;
+        k.roughness = 0.05;
+        if (k.name === 'Lights_Glass' && lights) {
+          k.emissive.set('#fff3c4');
+          k.emissiveIntensity = 2;
+          k.opacity = 0.9;
+        }
+      } else if (k.name === 'Tyres') {
+        k.metalness = 0;
+        k.roughness = 0.9;
+      } else if (lights && /^Color_A0[78]$/.test(k.name)) {
+        // Tail lights glow red
+        k.emissive.set('#ff2a2a');
+        k.emissiveIntensity = 1.5;
+      }
+      m.material = k;
+    });
+    return c;
+  }, [scene, paint, lights]);
+  // Nose to +x, about the size of the other cars
+  return (
+    <group rotation={[0, Math.PI / 2, 0]} scale={0.4}>
+      <primitive object={obj} />
+      {lights && <pointLight position={[0, 1.6, 4.5]} intensity={4} distance={10} color="#fff3c4" />}
+    </group>
+  );
+}
+
 /** Showroom-quality cars, about 2 units long, facing +x. */
 export function CarModel({ kind, paint, lights = false }: { kind: CarKind; paint: string; lights?: boolean }) {
+  if (kind === 'gls') {
+    return (
+      <Suspense fallback={null}>
+        <GlsModel paint={paint} lights={lights} />
+      </Suspense>
+    );
+  }
   if (kind === 'sedan') {
     return (
       <group>

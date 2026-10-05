@@ -299,7 +299,7 @@ export function Mansion({ onFloor }: { onFloor: (e: ThreeEvent<MouseEvent>) => v
       <At x={-6.6} z={1.7}>
         {/* Family cars always dey garage; your own motor parks in front */}
         <group position={[-6.6, 0, 0.6]}>
-          <CarModel kind="gwagon" paint="#16171a" />
+          <CarModel kind="gls" paint="#16171a" />
         </group>
         <group position={[-6.6, 0, 2.75]}>
           <CarModel kind="sedan" paint="#e8b04b" />
