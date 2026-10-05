@@ -36,7 +36,8 @@ export function EventModal() {
   const danger = event.id.startsWith('accident') || event.id.startsWith('police') || event.id === 'raid';
   return (
     <div className="event-backdrop">
-      <div className={`event card ${danger ? 'danger' : ''}`}>
+      <div className={`event card ${danger ? 'danger' : ''} ${event.caller ? 'call' : ''}`}>
+        {event.caller && <div className="call-head"><span className="call-ring">📞</span> Incoming call · <b>{event.caller}</b></div>}
         <div className="event-emoji">{event.emoji}</div>
         <div className="event-title">{event.title}</div>
         <p className="event-text">{event.text}</p>

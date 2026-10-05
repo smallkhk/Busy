@@ -262,6 +262,7 @@ const BASE_EVENTS: GameEvent[] = [
   // ---------------- Long Leg ----------------
   {
     id: 'chinedu-loan',
+    caller: 'Chinedu 🧑🏾‍💼',
     emoji: '🧑🏾‍💼',
     title: 'Chinedu dey call',
     text: '"Guy, salary never enter. Abeg borrow me ₦10,000, I go pay back end of month. You know say I get you."',

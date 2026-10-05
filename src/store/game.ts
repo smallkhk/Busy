@@ -1147,6 +1147,8 @@ export const useGame = create<GameState>()(
             now.toast(`🌅 Day ${cur.day} for Abuja. Make today count!`);
             const fl = get().flags ?? {};
             if (fl['garba-appt'] === cur.day - 1 && fl['garba-done'] === undefined) now.toast('📌 Today: meet Garba\'s Director for Federal Secretariat before 12 noon!');
+            if (fl['chinedu-meet'] === cur.day - 1 && fl['chinedu-meet-done'] === undefined) now.toast('📌 Today: meet Chinedu for Federal Secretariat before 3pm!');
+            if (fl['boss-ot'] === cur.day - 1) now.toast('📌 Today: overtime for office, Federal Secretariat before 2pm!');
             const { rentDueDay, rentLocked, area } = get();
             const left = rentDueDay - cur.day;
             if (left === 7 || left === 1) now.toast(`🏠 Rent go due in ${left} day${left > 1 ? 's' : ''}: ${formatNaira(AREAS[area].rent)}`);
