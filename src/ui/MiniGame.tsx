@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { activityById } from '../content/activities';
-import { cookScore, DECOYS, inZone, markerAt, matchResult, MATCHES_TV, posRound, RECIPES, type Pick } from '../content/minigames';
+import { cookScore, DECOYS, DRIVE_SECONDS, driveScore, inZone, LANES, markerAt, matchResult, MATCHES_TV, posRound, RECIPES, ROAD_HAZARDS, type Pick } from '../content/minigames';
 import { formatNaira } from '../engine/clock';
 import { useGame } from '../store/game';
 
@@ -141,7 +141,74 @@ function Predict({ done }: { done: Done }) {
   );
 }
 
-const TITLES = { pos: '🏧 POS rush', wash: '🧽 Car wash', cook: '🍳 Kitchen time', timing: '🕺 Feel the beat', predict: '⚽ Predict the match' } as const;
+type Hazard = { id: number; lane: number; y: number; emoji: string; hit?: boolean };
+
+function Drive({ done }: { done: Done }) {
+  const [lane, setLane] = useState(1);
+  const [hazards, setHazards] = useState<Hazard[]>([]);
+  const [hits, setHits] = useState(0);
+  const [left, setLeft] = useState(DRIVE_SECONDS);
+  const laneRef = useRef(1);
+  laneRef.current = lane;
+  const over = useRef(false);
+  const list = useRef<Hazard[]>([]);
+  useEffect(() => {
+    let id = 0;
+    let last = performance.now();
+    let spawn = 0;
+    let raf = 0;
+    const start = last;
+    const loop = (t: number) => {
+      const dt = Math.min(0.05, (t - last) / 1000);
+      last = t;
+      spawn -= dt;
+      setLeft(Math.max(0, DRIVE_SECONDS - (t - start) / 1000));
+      let hs = list.current.map((h) => ({ ...h, y: h.y + dt * 0.55 }));
+      if (spawn <= 0) {
+        spawn = 0.55 + Math.random() * 0.35;
+        hs.push({ id: id++, lane: Math.floor(Math.random() * LANES), y: -0.1, emoji: ROAD_HAZARDS[Math.floor(Math.random() * ROAD_HAZARDS.length)] });
+      }
+      let newHits = 0;
+      hs = hs.map((h) => {
+        if (!h.hit && h.y > 0.78 && h.y < 0.92 && h.lane === laneRef.current) {
+          newHits++;
+          return { ...h, hit: true };
+        }
+        return h;
+      });
+      list.current = hs.filter((h) => h.y < 1.1);
+      setHazards(list.current);
+      if (newHits) setHits((n) => n + newHits);
+      if ((t - start) / 1000 < DRIVE_SECONDS) raf = requestAnimationFrame(loop);
+    };
+    raf = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(raf);
+  }, []);
+  useEffect(() => {
+    if (left <= 0 && !over.current) {
+      over.current = true;
+      setTimeout(() => done(driveScore(hits)), 300);
+    }
+  }, [left, hits, done]);
+  return (
+    <>
+      <p className="small">Dodge potholes, okada and goats! ⏱️ {Math.ceil(left)}s · 💥 {hits}</p>
+      <div className="mg-road">
+        {[1, 2].map((i) => <div key={i} className="mg-lane-line" style={{ left: `${(i / LANES) * 100}%` }} />)}
+        {hazards.map((h) => (
+          <span key={h.id} className={`mg-hazard ${h.hit ? 'hit' : ''}`} style={{ left: `${((h.lane + 0.5) / LANES) * 100}%`, top: `${h.y * 100}%` }}>{h.emoji}</span>
+        ))}
+        <span className="mg-mycar" style={{ left: `${((lane + 0.5) / LANES) * 100}%` }}>🚗</span>
+      </div>
+      <div className="mg-steer">
+        <button className="primary" onPointerDown={() => setLane((l) => Math.max(0, l - 1))}>⬅️ Left</button>
+        <button className="primary" onPointerDown={() => setLane((l) => Math.min(LANES - 1, l + 1))}>Right ➡️</button>
+      </div>
+    </>
+  );
+}
+
+const TITLES = { pos: '🏧 POS rush', wash: '🧽 Car wash', cook: '🍳 Kitchen time', timing: '🕺 Feel the beat', predict: '⚽ Predict the match', drive: '🚗 Abuja road' } as const;
 
 /** Quick game before some activities. Your score changes the pay or the fun. */
 export function MiniGame() {
@@ -154,12 +221,13 @@ export function MiniGame() {
     <div className="event-backdrop">
       <div className="event card minigame" key={mg.id}>
         <div className="event-title">{TITLES[mg.kind]}</div>
-        <div className="muted small">{a?.label}{a?.pay ? ' · score high = more pay' : ''}</div>
+        <div className="muted small">{a?.label}{a?.pay ? ' · score high = more pay' : mg.kind === 'drive' ? ' · drive well, car no go spoil' : ''}</div>
         {mg.kind === 'pos' && <Pos done={done} />}
         {mg.kind === 'wash' && <Wash done={done} />}
         {mg.kind === 'cook' && <Cook done={done} />}
         {mg.kind === 'timing' && <Timing done={done} label={mg.id === 'conductor' ? '📢 "Nyanya! Mararaba!"' : '💃 Dance!'} />}
         {mg.kind === 'predict' && <Predict done={done} />}
+        {mg.kind === 'drive' && <Drive done={done} />}
         <button className="ghost" onClick={() => play(null)}>Skip game</button>
       </div>
     </div>

@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import { activityById, activityPlace, ENTRY_SPOT, EXIT_SPOT, PLACE_NAMES, type Activity, type Place } from '../content/activities';
 import { AD_BIZ_BOOST } from '../content/billboards';
+import { driveWear } from '../content/minigames';
 import { areaAllows, genCostFor, homeItemById, TV_ACTIVITIES, WIFI_FREE } from '../content/homeup';
 import { AREAS, moveCost, placeLabel, PROPERTY_SELL_FEE, propertyValue, RENT_CYCLE_DAYS, RENT_GRACE_DAYS, rentOwed, type AreaId, type Property } from '../content/housing';
 import { clockParts, formatNaira, inHours } from '../engine/clock';
@@ -472,6 +473,12 @@ export const useGame = create<GameState>()(
           const n = get().needs;
           if (a.minigame === 'cook') set({ needs: { ...n, food: clamp(n.food + Math.round(30 * (bonus - 0.5))), fun: clamp(n.fun + Math.round(10 * bonus)) } });
           if (a.minigame === 'timing' && !pay) set({ needs: { ...n, fun: clamp(n.fun + Math.round(30 * bonus - 10)), social: clamp(n.social + Math.round(10 * bonus)) } });
+          if (a.minigame === 'drive' && bonus !== 0.5 && get().car) {
+            const car = get().car!;
+            const wear = driveWear(bonus);
+            set({ car: { ...car, condition: Math.max(0, Math.min(100, car.condition - wear)) } });
+            get().toast(wear > 0 ? `🚗💥 Rough driving: car condition -${wear}` : '🚗✨ Smooth driving! Car no suffer');
+          }
           if (a.minigame === 'predict' && bonus !== 0.5) {
             set({ needs: { ...n, fun: clamp(n.fun + (bonus >= 1 ? 20 : -5)), social: clamp(n.social + (bonus >= 1 ? 10 : 0)) } });
             get().toast(bonus >= 1 ? '🎯 Your prediction correct! Everybody dey hail you 🙌🏾' : '😅 Your prediction no enter. Next match!');

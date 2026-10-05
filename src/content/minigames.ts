@@ -37,6 +37,15 @@ export const markerAt = (t: number, speed = 0.9) => {
 };
 export const inZone = (pos: number, lo = 0.4, hi = 0.6) => pos >= lo && pos <= hi;
 
+/** Driving: dodge things on the road. */
+export const LANES = 3;
+export const DRIVE_SECONDS = 10;
+export const ROAD_HAZARDS = ['🕳️', '🏍️', '🐐', '🚧', '🛺'];
+/** Score from how many things you hit. */
+export const driveScore = (hits: number) => Math.max(0, 1 - hits / 4);
+/** Extra car damage from your driving: good driving saves the car. */
+export const driveWear = (score: number) => Math.round((1 - score) * 12) - 3;
+
 export type Match = { home: string; away: string };
 export const MATCHES_TV: Match[] = [
   { home: '🇳🇬 Super Eagles', away: '🇬🇭 Black Stars' },

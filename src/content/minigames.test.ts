@@ -38,3 +38,11 @@ describe('mini-games', () => {
     }
   });
 });
+
+describe('driving game', () => {
+  it('clean driving saves the car, crashes cost it', async () => {
+    const { driveScore, driveWear } = await import('./minigames');
+    expect(driveWear(driveScore(0))).toBeLessThan(0);
+    expect(driveWear(driveScore(4))).toBeGreaterThan(5);
+  });
+});
