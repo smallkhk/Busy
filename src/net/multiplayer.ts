@@ -3,13 +3,20 @@ import { multiplayerEnabled, SUPABASE_KEY, SUPABASE_URL } from './config';
 import { cleanText } from './filter';
 import { useNet, type ChatMsg, type Remote } from './useNet';
 
+/**
+ * One shared realtime channel for everybody. Presence carries who is online,
+ * which room they are in and where they stand; broadcasts carry moves and chat.
+ * Each client only shows players and messages from its own room.
+ */
 const ID_KEY = 'abuja-life-player-id';
 const BUBBLE_MS = 6000;
 
+type Presence = Remote & { room: string | null };
+
 let client: SupabaseClient | null = null;
-let lobby: RealtimeChannel | null = null;
-let room: RealtimeChannel | null = null;
-let me: Remote = { id: '', name: '', shirt: '#2f9e6b', x: 0, z: 0 };
+let channel: RealtimeChannel | null = null;
+let subscribed = false;
+let me: Presence = { id: '', name: '', shirt: '#2f9e6b', x: 0, z: 0, room: null };
 let lastChat = 0;
 
 export function playerId(): string {
@@ -24,47 +31,53 @@ export function playerId(): string {
   }
 }
 
+/** Rebuild the list of players in my room from presence. */
+function syncPlayers() {
+  if (!channel) return;
+  const state = channel.presenceState<Presence>();
+  const players: Record<string, Remote> = {};
+  const room = useNet.getState().room;
+  for (const [id, metas] of Object.entries(state)) {
+    const m = metas[metas.length - 1];
+    if (!m || id === me.id || !room || m.room !== room) continue;
+    const prev = useNet.getState().players[id];
+    // Keep the live position from broadcasts if we already have one
+    players[id] = { id, name: m.name, shirt: m.shirt, x: prev?.x ?? m.x, z: prev?.z ?? m.z, hidden: prev?.hidden ?? m.hidden };
+  }
+  useNet.setState({ online: Object.keys(state).length, players });
+}
+
 export function startMultiplayer(name: string, shirt: string) {
   if (!multiplayerEnabled() || client) return;
   me = { ...me, id: playerId(), name: cleanText(name, 16) || 'Abuja Hustler', shirt };
   client = createClient(SUPABASE_URL, SUPABASE_KEY, { realtime: { params: { eventsPerSecond: 10 } } });
-  lobby = client.channel('abuja-lobby', { config: { presence: { key: me.id } } });
-  lobby
-    .on('presence', { event: 'sync' }, () => useNet.setState({ online: Object.keys(lobby!.presenceState()).length }))
+  channel = client.channel('abuja-lobby', { config: { presence: { key: me.id }, broadcast: { self: false } } });
+  channel
+    .on('presence', { event: 'sync' }, syncPlayers)
+    .on('broadcast', { event: 'move' }, ({ payload }) => {
+      const p = payload as Presence;
+      if (p.room !== useNet.getState().room) return;
+      const cur = useNet.getState().players[p.id];
+      if (cur) useNet.setState((s) => ({ players: { ...s.players, [p.id]: { ...cur, x: p.x, z: p.z, hidden: p.hidden } } }));
+    })
+    .on('broadcast', { event: 'chat' }, ({ payload }) => {
+      const m = payload as ChatMsg & { room: string };
+      if (m.room === useNet.getState().room) addChat(m);
+    })
     .subscribe((status) => {
-      useNet.setState({ connected: status === 'SUBSCRIBED' });
-      if (status === 'SUBSCRIBED') void lobby!.track({ id: me.id });
+      subscribed = status === 'SUBSCRIBED';
+      useNet.setState({ connected: subscribed });
+      if (subscribed) void channel!.track(me);
     });
 }
 
 /** Players only meet in shared places; your house is private (room = null). */
 export function joinRoom(key: string | null) {
-  if (!client || useNet.getState().room === key) return;
-  if (room) void client.removeChannel(room);
-  room = null;
+  if (useNet.getState().room === key && me.room === key) return;
+  me = { ...me, room: key };
   useNet.setState({ room: key, players: {}, chat: [], bubbles: {} });
-  if (!key) return;
-  const ch = client.channel(`room:${key}`, { config: { presence: { key: me.id }, broadcast: { self: false } } });
-  room = ch;
-  ch.on('presence', { event: 'sync' }, () => {
-    const state = ch.presenceState<Remote>();
-    const players: Record<string, Remote> = {};
-    for (const [id, metas] of Object.entries(state)) {
-      if (id === me.id || !metas.length) continue;
-      const m = metas[metas.length - 1];
-      players[id] = { ...useNet.getState().players[id], ...m, id };
-    }
-    useNet.setState({ players });
-  })
-    .on('broadcast', { event: 'move' }, ({ payload }) => {
-      const p = payload as Remote;
-      const cur = useNet.getState().players[p.id];
-      if (cur) useNet.setState((s) => ({ players: { ...s.players, [p.id]: { ...cur, x: p.x, z: p.z, hidden: p.hidden } } }));
-    })
-    .on('broadcast', { event: 'chat' }, ({ payload }) => addChat(payload as ChatMsg))
-    .subscribe((status) => {
-      if (status === 'SUBSCRIBED') void ch.track(me);
-    });
+  if (channel && subscribed) void channel.track(me);
+  syncPlayers();
 }
 
 function addChat(m: ChatMsg) {
@@ -78,24 +91,25 @@ let lastSent = { x: NaN, z: NaN, hidden: false };
 /** Called a few times a second with your avatar position. */
 export function sendMove(x: number, z: number, hidden: boolean) {
   me = { ...me, x, z, hidden };
-  if (!room || (Math.abs(x - lastSent.x) < 0.05 && Math.abs(z - lastSent.z) < 0.05 && hidden === lastSent.hidden)) return;
+  if (!channel || !subscribed || !me.room) return;
+  if (Math.abs(x - lastSent.x) < 0.05 && Math.abs(z - lastSent.z) < 0.05 && hidden === lastSent.hidden) return;
   lastSent = { x, z, hidden };
-  void room.send({ type: 'broadcast', event: 'move', payload: { id: me.id, x, z, hidden } });
+  void channel.send({ type: 'broadcast', event: 'move', payload: { id: me.id, room: me.room, x, z, hidden } });
 }
 
 /** Refresh presence so late joiners see where you stand. */
 export function refreshPresence() {
-  if (room) void room.track(me);
+  if (channel && subscribed) void channel.track(me);
 }
 
 export function sendChat(raw: string): boolean {
   const text = cleanText(raw);
-  if (!text || !room) return false;
+  if (!text || !channel || !me.room) return false;
   const now = Date.now();
   if (now - lastChat < 2000) return false;
   lastChat = now;
   const msg: ChatMsg = { id: me.id, name: me.name, text, at: now };
-  void room.send({ type: 'broadcast', event: 'chat', payload: msg });
+  void channel.send({ type: 'broadcast', event: 'chat', payload: { ...msg, room: me.room } });
   addChat({ ...msg, mine: true });
   return true;
 }
