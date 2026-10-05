@@ -378,3 +378,16 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
 .news-weather { margin: 8px 0; padding: 8px 10px; border-radius: 10px; background: rgba(61, 143, 196, 0.18); font-size: 13px; }
 .news-item.breaking { border-left: 3px solid #e74c3c; }
 .breaking-tag { background: #e74c3c; color: #fff; font-size: 10px; font-weight: 800; padding: 1px 5px; border-radius: 4px; letter-spacing: 0.04em; }
+
+/* GistApp voice notes */
+.gist-voice { display: flex; align-items: center; gap: 8px; min-width: 190px; }
+.gist-play { width: 30px; height: 30px; border-radius: 50%; border: 0; background: rgba(255, 255, 255, 0.15); color: #fff; font-size: 13px; flex: none; }
+.gist-wave { display: flex; align-items: center; gap: 2px; height: 22px; flex: 1; }
+.gist-wave i { display: block; width: 3px; border-radius: 2px; background: #8fd6c4; }
+.gist-dur { font-size: 11px; opacity: 0.8; }
+.gist-input.recording { align-items: center; }
+.gist-rec { flex: 1; display: flex; align-items: center; gap: 8px; color: #e9edef; font-variant-numeric: tabular-nums; }
+.gist-dot { width: 10px; height: 10px; border-radius: 50%; background: #e74c3c; animation: gist-blink 1s infinite; }
+@keyframes gist-blink { 50% { opacity: 0.2; } }
+.gist-cancel { background: transparent !important; }
+.gist-rec-err { flex: 1; color: #f5b7b1; }

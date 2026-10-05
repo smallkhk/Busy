@@ -4,7 +4,7 @@ import { setPlayerId } from './multiplayer';
 import { getClient } from './supabase';
 
 export type Profile = { id: string; name: string; shirt: string };
-export type Msg = { id: number; sender: string; recipient: string; body: string; created_at: string; read_at: string | null };
+export type Msg = { id: number; sender: string; recipient: string; body: string; created_at: string; read_at: string | null; voice_path?: string | null; voice_ms?: number | null };
 
 type SocialState = {
   /** needs-setup: anonymous sign-in or the tables are missing in Supabase. */
@@ -101,6 +101,7 @@ export async function initSocial(name: string, shirt: string) {
   const friends = (fr ?? []).filter((f) => f.user_id === uid).map((f) => f.friend_id as string);
   const addedMe = (fr ?? []).filter((f) => f.friend_id === uid).map((f) => f.user_id as string);
   useSocial.setState({ friends, addedMe, status: 'ready' });
+  void cleanupOldVoice(uid);
   addMessages((msgs ?? []) as Msg[]);
   await loadProfiles([...friends, ...addedMe, ...((msgs ?? []) as Msg[]).map((m) => other(m, uid))]);
 
@@ -154,6 +155,58 @@ export async function sendMessage(to: string, raw: string): Promise<boolean> {
   if (error || !data) return false;
   addMessages([data as Msg]);
   return true;
+}
+
+// ---------------- Voice notes ----------------
+/** Your own voice notes get deleted after this, so storage no go fill up. */
+const VOICE_KEEP_DAYS = 14;
+
+export async function sendVoice(to: string, rec: { blob: Blob; ms: number; type: string; ext: string }): Promise<string | null> {
+  const c = getClient();
+  const { uid } = useSocial.getState();
+  if (!c || !uid) return 'Messaging never ready';
+  if (rec.ms < 700) return 'Too short. Hold am small longer';
+  const path = `${uid}/${to}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${rec.ext}`;
+  const up = await c.storage.from('voice').upload(path, rec.blob, { contentType: rec.type, upsert: false });
+  if (up.error) return /bucket|not found/i.test(up.error.message) ? 'Voice notes never set up. Game owner: run supabase/voice.sql' : `Upload fail: ${up.error.message}`;
+  const { data, error } = await c.from('messages').insert({ recipient: to, body: '🎤 Voice note', voice_path: path, voice_ms: Math.round(rec.ms) }).select().single();
+  if (error || !data) {
+    await c.storage.from('voice').remove([path]);
+    return 'Message no send. Try again';
+  }
+  addMessages([data as Msg]);
+  return null;
+}
+
+const voiceUrls = new Map<string, Promise<string | null>>();
+
+/** Downloads a voice note once and keeps a local URL for playback. */
+export function voiceUrl(path: string): Promise<string | null> {
+  let p = voiceUrls.get(path);
+  if (!p) {
+    p = (async () => {
+      const c = getClient();
+      if (!c) return null;
+      const { data, error } = await c.storage.from('voice').download(path);
+      return error || !data ? null : URL.createObjectURL(data);
+    })();
+    voiceUrls.set(path, p);
+    void p.then((u) => u || voiceUrls.delete(path));
+  }
+  return p;
+}
+
+/** Deletes voice notes you sent more than two weeks ago. */
+async function cleanupOldVoice(uid: string) {
+  const c = getClient();
+  if (!c) return;
+  const cutoff = Date.now() - VOICE_KEEP_DAYS * 24 * 60 * 60 * 1000;
+  const { data: folders } = await c.storage.from('voice').list(uid, { limit: 100 });
+  for (const f of folders ?? []) {
+    const { data: files } = await c.storage.from('voice').list(`${uid}/${f.name}`, { limit: 100, sortBy: { column: 'created_at', order: 'asc' } });
+    const old = (files ?? []).filter((x) => x.created_at && Date.parse(x.created_at) < cutoff).map((x) => `${uid}/${f.name}/${x.name}`);
+    if (old.length) await c.storage.from('voice').remove(old);
+  }
 }
 
 export async function markRead(from: string) {
