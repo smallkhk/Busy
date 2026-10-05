@@ -3,6 +3,7 @@ import { AREAS, type AreaId } from '../content/housing';
 import { multiplayerEnabled } from './config';
 import { sendChat } from './multiplayer';
 import { useNet } from './useNet';
+import { useAdmin } from './admin';
 
 const ROOM_NAMES: Record<string, string> = { wuse: 'Wuse Market', jabi: 'Jabi Lake', secretariat: 'Secretariat', lounge: 'the lounge', hospital: 'hospital', maitama: 'Maitama', asokoro: 'Asokoro', garki: 'Area 1', nyanya: 'Nyanya', airport: 'the airport', utako: 'Utako', mararaba: 'Mararaba', park: 'Millennium Park', stadium: 'the stadium' };
 const roomName = (r: string) => (r.startsWith('street-') ? `${AREAS[r.slice(7) as AreaId]?.name ?? r.slice(7)} street` : ROOM_NAMES[r] ?? r);
@@ -17,6 +18,7 @@ export function ChatBar() {
   const chat = useNet((s) => s.chat);
   const [text, setText] = useState('');
   if (!multiplayerEnabled()) return null;
+  const banned = useAdmin((s) => s.banned);
   const send = () => {
     if (sendChat(text)) setText('');
   };
@@ -33,7 +35,9 @@ export function ChatBar() {
           ))}
         </div>
       )}
-      {room ? (
+      {banned ? (
+        <div className="muted small">🚫 Game owner don ban you from chat.</div>
+      ) : room ? (
         <div className="chat-input">
           <input
             value={text}

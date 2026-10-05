@@ -1,13 +1,15 @@
 import { useEffect } from 'react';
 import { activityById } from '../content/activities';
 import { setCompanionCheck, useGame } from '../store/game';
-import { formatNaira } from '../engine/clock';
+import { clockParts, formatNaira } from '../engine/clock';
 import { avatarLabelPos } from '../world/labels';
 import { joinRoom, refreshPresence, sendMove, setAppearance, startMultiplayer } from './multiplayer';
 import { DEFAULT_LOOK, encodeLook } from '../content/fashion';
 import { initSocial, setCashHandler, setIncomingHandler, useSocial } from './social';
 import { useNet } from './useNet';
 import { startCloud } from './cloud';
+import { initAdmin, setAnnounceHandler } from './admin';
+import { newsById } from '../content/world';
 
 /** Room players share: your house is private; streets are per area. */
 function roomFor(place: string, area: string): string | null {
@@ -33,7 +35,23 @@ export function NetDirector() {
       const buddy = Object.values(useNet.getState().players).find((p) => !p.hidden && (friends.includes(p.id) || addedMe.includes(p.id)));
       return buddy?.name;
     });
-    void initSocial(s.name, s.shirt).then(() => startCloud());
+    setAnnounceHandler((a) => {
+      const g = useGame.getState();
+      const key = `ann-${a.id}`;
+      if (g.flags?.[key]) return;
+      const day = clockParts(g.time).day;
+      const news = a.news ? newsById(a.news) : undefined;
+      const running = g.news ?? [];
+      useGame.setState({
+        flags: { ...g.flags, [key]: day },
+        news: news && !running.some((n) => n.id === news.id) ? [...running, { id: news.id, until: day + news.days - 1 }] : running,
+      });
+      g.toast(`📣 ${a.body}${news ? ` · 📰 ${news.headline}` : ''}`);
+    });
+    void initSocial(s.name, s.shirt).then(() => {
+      startCloud();
+      void initAdmin();
+    });
     joinRoom(roomFor(s.place, s.area));
     const unsub = useGame.subscribe((n, p) => {
       if (n.place !== p.place || n.area !== p.area) joinRoom(roomFor(n.place, n.area));

@@ -28,7 +28,7 @@ import { clamp, fullNeeds, LOW_NEED, NEED_KEYS, NEED_META, tickNeeds, type NeedK
 
 export type Txn = { at: number; label: string; amount: number };
 export type Toast = { id: number; text: string };
-export type PhoneApp = 'home' | 'bank' | 'jobs' | 'chat' | 'map' | 'gram' | 'house' | 'contacts' | 'chop' | 'ride' | 'news' | 'goals' | 'biz' | 'cars' | 'gist' | 'love' | 'account' | 'rankings' | 'style' | 'learn' | 'politics';
+export type PhoneApp = 'home' | 'bank' | 'jobs' | 'chat' | 'map' | 'gram' | 'house' | 'contacts' | 'chop' | 'ride' | 'news' | 'goals' | 'biz' | 'cars' | 'gist' | 'love' | 'account' | 'rankings' | 'style' | 'learn' | 'politics' | 'admin';
 
 /** `total` is the actual duration (rush hour makes trips longer); old saves may lack it. */
 type Active = { id: string; remaining: number; gen: boolean; total?: number; eventAt?: number; /** Mini-game score 0–1. */ bonus?: number };

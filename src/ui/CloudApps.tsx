@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { formatNaira } from '../engine/clock';
 import { acceptOffer, fetchBoard, formatCode, loadFromCode, netWorth, saveNow, useCloud, type Metric, type Row } from '../net/cloud';
-import { useSocial } from '../net/social';
+import { tag, useSocial } from '../net/social';
 import { useGame } from '../store/game';
 import { isIOS, promptInstall, useInstall, useSettings } from '../settings';
 
@@ -46,6 +46,7 @@ function QualityToggle() {
 export function AccountApp() {
   const { status, lastSaved, code } = useCloud();
   const social = useSocial((s) => s.status);
+  const uid = useSocial((s) => s.uid);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [input, setInput] = useState('');
@@ -78,6 +79,13 @@ export function AccountApp() {
           <div className="cloud-code">{formatCode(code)}</div>
           <div className="muted small">Write am down! If you change phone or clear your browser, enter this code to continue this same life.</div>
           <button className="ghost" style={{ marginTop: 8, width: '100%' }} onClick={() => void navigator.clipboard?.writeText(formatCode(code)).then(() => setMsg('📋 Code don copy'))}>📋 Copy code</button>
+        </div>
+      )}
+      {uid && (
+        <div className="balance">
+          <div className="muted small">🪪 Player ID {tag(uid)}</div>
+          <div className="small" style={{ wordBreak: 'break-all' }}>{uid}</div>
+          <button className="ghost" style={{ marginTop: 8, width: '100%' }} onClick={() => void navigator.clipboard?.writeText(uid).then(() => setMsg('📋 Player ID don copy'))}>📋 Copy player ID</button>
         </div>
       )}
       <InstallCard />
