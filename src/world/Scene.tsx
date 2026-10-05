@@ -6,6 +6,7 @@ import { useEffect, useMemo, useRef, type ReactElement } from 'react';
 import { Color, Object3D, Vector3, type AmbientLight, type InstancedMesh } from 'three';
 import { clockParts, daylight } from '../engine/clock';
 import { useGame } from '../store/game';
+import { useSettings } from '../settings';
 import { Avatar } from './Avatar';
 import { Room } from './Room';
 import { Street } from './Street';
@@ -178,7 +179,7 @@ function Rain({ storm }: { storm: boolean }) {
     mesh.instanceMatrix.needsUpdate = true;
   });
   return (
-    <instancedMesh ref={ref} args={[undefined, undefined, storm ? RAIN_DROPS : RAIN_DROPS / 2]}>
+    <instancedMesh ref={ref} args={[undefined, undefined, (storm ? RAIN_DROPS : RAIN_DROPS / 2) / (useSettings.getState().quality === 'low' ? 2 : 1)]}>
       <boxGeometry args={[0.02, 0.35, 0.02]} />
       <meshBasicMaterial color="#b9d3ee" transparent opacity={0.55} />
     </instancedMesh>
@@ -204,6 +205,7 @@ const DAY_SKY = new Color('#8fc6e8');
 const DUSK = new Color('#f2a65a');
 
 function Lights({ place }: { place: Place }) {
+  const low = useSettings((s) => s.quality === 'low');
   // Re-render lights once per in-game ~10 minutes, not every frame.
   const bucket = useGame((s) => Math.floor(s.time / 10));
   const power = useGame((s) => s.power);
@@ -238,7 +240,7 @@ function Lights({ place }: { place: Place }) {
         intensity={0.15 + light * 2.1}
         color={light < 0.6 && light > 0 ? '#ffb877' : '#fff4e0'}
         castShadow
-        shadow-mapSize={[2048, 2048]}
+        shadow-mapSize={low ? [1024, 1024] : [2048, 2048]}
         shadow-bias={-0.0004}
         shadow-normalBias={0.03}
         shadow-camera-left={-11}
@@ -256,18 +258,19 @@ function Lights({ place }: { place: Place }) {
 }
 
 export function Scene() {
+  const low = useSettings((s) => s.quality === 'low');
   const place = useGame((s) => s.place);
   const weather = useGame((s) => s.weather ?? 'sunny');
   const wet = weather === 'rain' || weather === 'storm';
   const PlaceScene = SCENES[place];
   return (
-    <Canvas shadows="soft" dpr={[1, 2]} className="scene">
+    <Canvas key={low ? 'low' : 'high'} shadows={low ? true : 'soft'} dpr={low ? 1 : [1, 2]} gl={{ antialias: !low, powerPreference: 'high-performance' }} className="scene">
       <IsoCamera key={place} place={place} />
       <Lights place={place} />
       <GameLoop />
       <LabelSync />
       <PlaceScene />
-      <Neighborhood key={place} seed={SEEDS[place]} clear={CLEAR[place] ?? [[-8.6, -8, 8.6, 4.6]]} near={place === 'home' ? -4.6 : -5.5} />
+      <Neighborhood key={place} extent={low ? 15 : 26} far={low ? -13 : -19} frontFar={low ? 11 : 17} seed={SEEDS[place]} clear={CLEAR[place] ?? [[-8.6, -8, 8.6, 4.6]]} near={place === 'home' ? -4.6 : -5.5} />
       <Avatar />
       <RemotePlayers />
       <Npcs />
