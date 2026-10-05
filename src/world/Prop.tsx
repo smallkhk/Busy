@@ -30,8 +30,8 @@ const box = new Box3();
  * One piece of furniture: centred on its footprint, standing on y = 0, recoloured
  * by material name (`wood`, `carpet`, `metal`…) with `tint`.
  */
-function PropModel({ name, tint, glossy }: { name: PropName; tint?: Record<string, string>; glossy?: boolean }) {
-  const { scene } = useGLTF(url(name));
+function PropModel({ src, tint, glossy, glow }: { src: string; tint?: Record<string, string>; glossy?: boolean; glow?: number }) {
+  const { scene } = useGLTF(src);
   const tintKey = JSON.stringify(tint ?? {});
   const obj = useMemo(() => {
     const tints: Record<string, string> = JSON.parse(tintKey);
@@ -45,6 +45,11 @@ function PropModel({ name, tint, glossy }: { name: PropName; tint?: Record<strin
         const k = (mat as MeshStandardMaterial).clone();
         if (tints[mat.name]) k.color.set(tints[mat.name]);
         if (glossy) k.roughness = Math.min(k.roughness, 0.35);
+        // Bulbs and lampshades light up
+        if (glow !== undefined && /^(light|lamp)$/i.test(mat.name)) {
+          k.emissive.set('#ffd89a');
+          k.emissiveIntensity = glow;
+        }
         if (mat.name === 'glass') {
           k.transparent = true;
           k.opacity = 0.35;
@@ -60,7 +65,7 @@ function PropModel({ name, tint, glossy }: { name: PropName; tint?: Record<strin
     const g = new Group();
     g.add(c);
     return g;
-  }, [scene, tintKey, glossy]);
+  }, [scene, tintKey, glossy, glow]);
   return <primitive object={obj} />;
 }
 
@@ -70,10 +75,35 @@ export function Prop({ name, p = [0, 0, 0], rot = 0, s = 1, tint, glossy }: { na
   return (
     <group position={p} rotation={[0, rot, 0]} scale={sc}>
       <Suspense fallback={null}>
-        <PropModel name={name} tint={tint} glossy={glossy} />
+        <PropModel src={url(name)} tint={tint} glossy={glossy} />
       </Suspense>
     </group>
   );
 }
 
 export const preloadProps = (names: PropName[]) => names.forEach((n) => useGLTF.preload(url(n)));
+
+// ---------------- Quaternius "Ultimate House Interior" + "Furniture Pack" (CC0) ----------------
+
+/** File names in public/models/house (Furniture Pack items start with F_). */
+export type HouseName = string;
+
+const houseUrl = (n: HouseName) => `${import.meta.env.BASE_URL}models/house/${n}.glb`;
+
+/** Quaternius models are built big: this brings a chair to chair size. */
+const QS = 0.44;
+
+/**
+ * Place a Quaternius house model. Materials are named like `Couch_Beige`, `Wood`,
+ * `Red`, `White`, `Plant_Green`; recolour them with `tint`.
+ */
+export function HouseProp({ name, p = [0, 0, 0], rot = 0, s = 1, tint, glossy, glow }: { name: HouseName; p?: [number, number, number]; rot?: number; s?: number | [number, number, number]; tint?: Record<string, string>; glossy?: boolean; /** Light up bulbs at this strength. */ glow?: number }) {
+  const sc: [number, number, number] = Array.isArray(s) ? [s[0] * QS, s[1] * QS, s[2] * QS] : [s * QS, s * QS, s * QS];
+  return (
+    <group position={p} rotation={[0, rot, 0]} scale={sc}>
+      <Suspense fallback={null}>
+        <PropModel src={houseUrl(name)} tint={tint} glossy={glossy} glow={glow} />
+      </Suspense>
+    </group>
+  );
+}
