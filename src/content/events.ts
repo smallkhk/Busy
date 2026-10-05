@@ -575,6 +575,22 @@ const BASE_EVENTS: GameEvent[] = [
     ],
   },
   {
+    id: 'omo-onile',
+    emoji: '🏚️',
+    title: 'Omo onile for your land!',
+    text: 'Your site manager call: "Some boys don block the land for Kuje. Dem say na dem papa land, and you go \'settle\' them or no block go stand."',
+    caller: 'Site manager 👷🏾',
+    trigger: 'idle',
+    weight: 8,
+    cooldownHours: 168,
+    when: (c) => !!c.landAt?.includes('kuje'),
+    choices: [
+      { label: 'Settle them', cost: 300000, outcomes: [{ text: 'Dem collect and disappear. Work continue 🧱' }] },
+      { label: 'Call your Long Leg', when: (c) => (c.longLeg ?? 0) >= 30, outcomes: [{ text: 'One call to the Area Council. Police clear them sharp sharp 🫡', effect: { heat: 2 } }] },
+      { label: 'Show them your C of O', outcomes: [{ weight: 1, text: '"Na paper be this?" Dem laugh, but chief later warn them. Dem go 😮‍💨', effect: { minutes: 120 } }, { weight: 1, text: 'Dem scatter your blocks! ₦150,000 damage 😤', effect: { money: -150000, needs: { fun: -20 } } }] },
+    ],
+  },
+  {
     id: 'burglary',
     emoji: '🦹🏾',
     title: 'Thief don enter your house!',

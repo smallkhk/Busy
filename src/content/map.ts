@@ -9,6 +9,8 @@ export const HOME_XY: Record<AreaId, [number, number]> = {
   kubwa: [58, 62],
   gwarinpa: [92, 112],
   wuse2: [196, 132],
+  kuje: [22, 300],
+  guzape: [238, 262],
 };
 
 export const MAP_SPOTS: MapSpot[] = [
