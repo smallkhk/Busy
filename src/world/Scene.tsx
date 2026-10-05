@@ -3,7 +3,10 @@ import type { MapControls as MapControlsImpl, OrbitControls as OrbitControlsImpl
 import { Neighborhood, type Rect } from './Neighborhood';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { useEffect, useMemo, useRef, type ReactElement } from 'react';
-import { Color, MOUSE, Object3D, TOUCH, Vector3, type AmbientLight, type InstancedMesh } from 'three';
+import { Color, MOUSE, Object3D, PMREMGenerator, TOUCH, Vector3, type AmbientLight, type InstancedMesh } from 'three';
+import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
+import { Bloom, EffectComposer, N8AO, ToneMapping } from '@react-three/postprocessing';
+import { ToneMappingMode } from 'postprocessing';
 import { clockParts, daylight } from '../engine/clock';
 import { useGame } from '../store/game';
 import { useSettings } from '../settings';
@@ -194,7 +197,7 @@ function HomeCamera() {
   // Fit most of the house across the screen; pinch to see the rest
   const width = view.width * k * (tier === 'mansion' ? 0.72 : 0.9);
   const dist = Math.max(width / 2 / Math.tan(hHalf), (width * 0.55) / 2 / Math.tan(vHalf), 9);
-  const dir = new Vector3(1, 0.95, 1).normalize().multiplyScalar(dist);
+  const dir = new Vector3(1, 1.3, 1).normalize().multiplyScalar(dist);
   const reach = view.width * k * 0.45;
 
   // Keep the view on the house when you drag far
@@ -229,6 +232,37 @@ function HomeCamera() {
         onChange={clamp}
       />
     </>
+  );
+}
+
+/**
+ * The house look: soft room reflections on marble and glass, shadow in the corners
+ * (ambient occlusion), and glow from lamps, LED strips and the TV.
+ */
+function HomeLook() {
+  const { gl, scene } = useThree();
+  const high = useSettings((s) => s.quality === 'high');
+  const night = useGame((s) => daylight(clockParts(Math.floor(s.time / 30) * 30).minuteOfDay) < 0.3);
+  useEffect(() => {
+    const pm = new PMREMGenerator(gl);
+    const env = pm.fromScene(new RoomEnvironment(), 0.04).texture;
+    scene.environment = env;
+    return () => {
+      scene.environment = null;
+      env.dispose();
+      pm.dispose();
+    };
+  }, [gl, scene]);
+  useEffect(() => {
+    scene.environmentIntensity = night ? 0.12 : 0.4;
+  }, [scene, night]);
+  if (!high) return null;
+  return (
+    <EffectComposer multisampling={4}>
+      <N8AO aoRadius={0.7} distanceFalloff={0.8} intensity={2.2} quality="medium" />
+      <Bloom luminanceThreshold={0.95} luminanceSmoothing={0.2} intensity={0.55} mipmapBlur />
+      <ToneMapping mode={ToneMappingMode.ACES_FILMIC} />
+    </EffectComposer>
   );
 }
 
@@ -382,6 +416,7 @@ export function Scene() {
   return (
     <Canvas key={low ? 'low' : 'high'} shadows={low ? true : 'soft'} dpr={low ? 1 : [1, 2]} gl={{ antialias: !low, powerPreference: 'high-performance' }} className="scene">
       {place === 'home' ? <HomeCamera key={tier} /> : <IsoCamera key={place} place={place} />}
+      {place === 'home' && <HomeLook />}
       <Lights place={place} />
       <GameLoop />
       <LabelSync />

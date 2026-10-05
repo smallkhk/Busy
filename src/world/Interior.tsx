@@ -1,5 +1,7 @@
 import type { ThreeEvent } from '@react-three/fiber';
+import { MeshReflectorMaterial } from '@react-three/drei';
 import { useMemo } from 'react';
+import { useSettings } from '../settings';
 import { CanvasTexture, RepeatWrapping, SRGBColorSpace, type Texture } from 'three';
 import { Box, Cyl, type V3 } from './Room';
 
@@ -28,6 +30,7 @@ export function paint(key: string, draw: (g: CanvasRenderingContext2D, r: () => 
   if (!t) {
     const c = document.createElement('canvas');
     c.width = c.height = 256;
+    c.getContext('2d')!.imageSmoothingEnabled = true;
     draw(c.getContext('2d')!, rng(key.length * 977 + 13));
     t = new CanvasTexture(c);
     t.wrapS = t.wrapT = RepeatWrapping;
@@ -93,7 +96,8 @@ export function concrete(g: CanvasRenderingContext2D, r: () => number) {
 }
 
 /** A floor patch. `tile` is world units per texture repeat. */
-export function Floor({ x0, z0, x1, z1, tex, tile = 2, y = 0.004, rough = 0.3, onFloor }: { x0: number; z0: number; x1: number; z1: number; tex: Texture; tile?: number; y?: number; rough?: number; onFloor: (e: ThreeEvent<MouseEvent>) => void }) {
+export function Floor({ x0, z0, x1, z1, tex, tile = 2, y = 0.004, rough = 0.3, reflect = false, onFloor }: { x0: number; z0: number; x1: number; z1: number; tex: Texture; tile?: number; y?: number; rough?: number; /** Polished floor that mirrors the room (high graphics only). */ reflect?: boolean; onFloor: (e: ThreeEvent<MouseEvent>) => void }) {
+  const low = useSettings((s) => s.quality === 'low');
   const w = x1 - x0;
   const d = z1 - z0;
   const map = useMemo(() => {
@@ -105,7 +109,11 @@ export function Floor({ x0, z0, x1, z1, tex, tile = 2, y = 0.004, rough = 0.3, o
   return (
     <mesh rotation={[-Math.PI / 2, 0, 0]} position={[(x0 + x1) / 2, y, (z0 + z1) / 2]} receiveShadow onClick={onFloor}>
       <planeGeometry args={[w, d]} />
-      <meshStandardMaterial map={map} roughness={rough} metalness={0.05} />
+      {reflect && !low ? (
+        <MeshReflectorMaterial map={map} roughness={rough} metalness={0.15} mirror={0.55} blur={[260, 80]} mixBlur={0.8} mixStrength={1.4} resolution={512} depthScale={0} />
+      ) : (
+        <meshStandardMaterial map={map} roughness={rough} metalness={0.05} />
+      )}
     </mesh>
   );
 }
