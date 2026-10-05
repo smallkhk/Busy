@@ -67,6 +67,24 @@ export const CONTACTS: Contact[] = [
     where: 'Big men dey owambe',
     favour: { label: 'Give me small contract', minRel: 60, cooldownDays: 14, text: '"Supply 20 office chairs for ministry." You deliver am, collect your cut 💰', effect: { money: 80000 } },
   },
+  {
+    id: 'aisha',
+    name: 'Aisha',
+    emoji: '🧕🏾',
+    role: 'Visa officer for one embassy for Maitama',
+    influence: 3,
+    where: 'People wey dey do visa interview for Maitama',
+    favour: { label: 'Help me with visa appointment', minRel: 50, cooldownDays: 60, text: '"Your appointment don move forward. Come with complete documents." No need to form big man 🛂', effect: { unlock: 'visa-interview' } },
+  },
+  {
+    id: 'hon',
+    name: 'Hon. Danjuma',
+    emoji: '🎩',
+    role: 'House of Reps member. Im convoy dey make noise for Asokoro',
+    influence: 5,
+    where: 'Big men dey play golf for Asokoro',
+    favour: { label: 'Attach me to constituency project', minRel: 60, cooldownDays: 21, text: '"Supply 50 bags of cement for the borehole project." Your cut land 💰🏗️', effect: { money: 150000 } },
+  },
 ];
 
 export const contactById = (id: string) => CONTACTS.find((c) => c.id === id);

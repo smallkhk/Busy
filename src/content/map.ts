@@ -17,13 +17,13 @@ export const MAP_SPOTS: MapSpot[] = [
   { id: 'lounge', name: 'Wuse 2 lounge', short: 'Wuse 2', emoji: '🍾', x: 214, y: 146, place: 'lounge', label: 'right' },
   { id: 'secretariat', name: 'Federal Secretariat (CBD)', short: 'Secretariat', emoji: '🏛️', x: 214, y: 214, place: 'secretariat', label: 'left' },
   { id: 'hospital', name: 'General Hospital', short: 'Hospital', emoji: '🏥', x: 166, y: 232, place: 'hospital', label: 'left' },
-  { id: 'maitama', name: 'Maitama', emoji: '💎', x: 230, y: 96, note: 'Embassies and big men. Coming soon' },
+  { id: 'maitama', name: 'Maitama', emoji: '💎', x: 230, y: 96, place: 'maitama', label: 'right', note: 'Embassies, mansions and big men' },
   { id: 'asorock', name: 'Aso Rock', emoji: '⛰️', x: 280, y: 196, label: 'above', note: 'Presidential Villa. You no fit enter 😅' },
-  { id: 'asokoro', name: 'Asokoro', emoji: '🏰', x: 262, y: 240, label: 'left', note: 'Coming soon' },
-  { id: 'garki', name: 'Garki / Area 1', short: 'Garki', emoji: '🏪', x: 186, y: 258, note: 'Coming soon' },
-  { id: 'nyanya', name: 'Nyanya', emoji: '🚌', x: 280, y: 290, label: 'left', note: 'Coming soon' },
+  { id: 'asokoro', name: 'Asokoro', emoji: '🏰', x: 262, y: 240, place: 'asokoro', label: 'left', note: 'Government and VIPs' },
+  { id: 'garki', name: 'Garki / Area 1', short: 'Garki', emoji: '🏪', x: 186, y: 258, place: 'garki', note: 'Area 1 market, POS and mechanics' },
+  { id: 'nyanya', name: 'Nyanya', emoji: '🚌', x: 280, y: 290, label: 'left', place: 'nyanya', note: 'Where Abuja workers sleep' },
   { id: 'lugbe', name: 'Lugbe', emoji: '🏘️', x: 92, y: 290, note: 'Coming soon' },
-  { id: 'airport', name: 'Nnamdi Azikiwe Airport', short: 'Airport', emoji: '✈️', x: 40, y: 336, label: 'right', note: 'Japa route. Coming soon' },
+  { id: 'airport', name: 'Nnamdi Azikiwe Airport', short: 'Airport', emoji: '✈️', x: 40, y: 336, label: 'right', place: 'airport', note: 'Japa route ✈️' },
 ];
 
 /** Main roads as SVG polylines. */
