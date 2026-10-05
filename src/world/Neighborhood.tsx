@@ -1,6 +1,7 @@
 import { Instance, Instances } from '@react-three/drei';
-import { useMemo } from 'react';
+import { Suspense, useMemo } from 'react';
 import { RoundedBoxGeometry } from 'three-stdlib';
+import { KitInstances, kitMaterial, paintedMap, useKit, type Paint, type Placement } from './City';
 
 /** Rects [x0, z0, x1, z1] the filler houses must stay out of (the playable area). */
 export type Rect = [number, number, number, number];
@@ -25,12 +26,91 @@ function rng(seed: number) {
   };
 }
 
+/** What kind of area the filler lots belong to. */
+export type HoodStyle = 'poor' | 'mixed' | 'rich' | 'city';
+
+/** Kenney model footprints at scale 1: [width x, height, depth z]. */
+const SUBURBAN: Record<string, [number, number, number]> = {
+  'building-type-a': [1.30, 0.83, 1.03], 'building-type-b': [1.83, 1.14, 1.14], 'building-type-c': [1.29, 1.03, 1.03],
+  'building-type-d': [1.76, 1.24, 1.03], 'building-type-e': [1.30, 1.14, 1.03], 'building-type-f': [1.43, 1.14, 1.41],
+  'building-type-g': [1.45, 0.77, 1.18], 'building-type-h': [1.30, 0.74, 0.92], 'building-type-i': [1.29, 0.74, 1.03],
+  'building-type-j': [1.37, 1.04, 0.92], 'building-type-k': [0.92, 1.15, 1.02], 'building-type-l': [1.03, 1.05, 1.02],
+  'building-type-m': [1.43, 0.74, 1.43], 'building-type-n': [1.78, 1.14, 1.38], 'building-type-o': [1.27, 1.14, 1.03],
+  'building-type-p': [1.24, 0.92, 0.99], 'building-type-q': [1.24, 0.92, 0.89], 'building-type-r': [1.03, 1.14, 1.02],
+  'building-type-s': [1.41, 1.14, 1.09], 'building-type-t': [1.31, 1.16, 1.41], 'building-type-u': [1.43, 1.14, 1.09],
+};
+const COMMERCIAL: Record<string, [number, number, number]> = {
+  'building-a': [0.88, 1.29, 0.94], 'building-b': [0.97, 1.29, 0.94], 'building-c': [0.88, 0.89, 1.09], 'building-d': [0.84, 1.29, 0.90],
+  'building-e': [1.64, 0.89, 1.01], 'building-f': [0.84, 1.69, 1.03], 'building-g': [0.97, 1.69, 0.92], 'building-h': [0.88, 1.29, 1.01],
+  'building-i': [1.24, 1.68, 1.30], 'building-j': [2.08, 1.69, 1.34], 'building-k': [2.08, 1.47, 0.94], 'building-l': [1.37, 2.27, 1.40],
+  'building-m': [1.24, 3.15, 1.24], 'building-n': [2.32, 2.48, 1.82],
+  'building-skyscraper-a': [1.36, 2.88, 1.36], 'building-skyscraper-b': [1.36, 4.48, 1.36], 'building-skyscraper-c': [1.28, 4.08, 1.39],
+  'building-skyscraper-d': [1.28, 5.47, 1.39], 'building-skyscraper-e': [1.29, 4.08, 1.24],
+};
+const BUNGALOWS = Object.keys(SUBURBAN).filter((k) => SUBURBAN[k][1] < 0.85);
+const DUPLEXES = Object.keys(SUBURBAN).filter((k) => SUBURBAN[k][1] >= 0.85);
+const BLOCKS = Object.keys(COMMERCIAL).filter((k) => !k.includes('sky'));
+const TOWERS = Object.keys(COMMERCIAL).filter((k) => k.includes('sky') || COMMERCIAL[k][1] > 2.2);
+
+/** Roof sheets and paint you see around Abuja: red, rust, green, blue and grey zinc over cream walls. */
+const HOUSE_PAINTS: Paint[] = [
+  { roof: '#b5402e', wall: '#f3e6cc' },
+  { roof: '#8a4a2b', wall: '#f2d6bf' },
+  { roof: '#2f7a4f', wall: '#f7f3ea' },
+  { roof: '#2a5d9f', wall: '#e4ecf2' },
+  { roof: '#6d7278', wall: '#f4e7a8' },
+  { roof: '#7a2b2b', wall: '#ead2c0' },
+];
+const BLOCK_PAINTS: Paint[] = [{}, { wall: '#f1e3c8' }, { wall: '#e9d2c2' }, { wall: '#dfe8ee' }];
+
+export type KenneyLot = { kit: 'suburban' | 'commercial'; name: string; paint: number; x: number; z: number; rot: number; s: number };
+
 /** Builds one lot's house from parts. Every house rolls its own type, size and colours. */
-function house(x: number, z: number, r: () => number, box: BoxPart[], cone: ConePart[], cyl: CylPart[], glass: BoxPart[], trees: TreePart[]) {
+function house(x: number, z: number, r: () => number, box: BoxPart[], cone: ConePart[], cyl: CylPart[], glass: BoxPart[], trees: TreePart[], style: HoodStyle = 'mixed', kenney?: KenneyLot[]) {
   const pick = <T,>(a: T[]) => a[Math.floor(r() * a.length)];
   const wall = pick(WALLS);
   const roof = pick(ROOFS);
-  const type = r();
+  // Back rows face the road (+z), the rows across the road face back at it.
+  const rot = z < 0 ? 0 : Math.PI;
+  const front = z > 0;
+  if (kenney) {
+    const roll = r();
+    const odds = { poor: [0.45, 0.45, 0.45], mixed: [0.68, 0.68, 0.68], rich: [0.92, 0.92, 0.92], city: [0.12, 0.82, 0.82] }[style];
+    let name: string | undefined;
+    let kit: KenneyLot['kit'] = 'suburban';
+    if (style === 'city' && roll >= odds[0] && roll < odds[1]) {
+      kit = 'commercial';
+      // Towers stand at the back so they never block your view
+      const pool = !front && z < -9 && r() < 0.45 ? TOWERS : BLOCKS.filter((k) => !front || COMMERCIAL[k][1] < 1.4);
+      name = pick(pool);
+    } else if (roll < odds[0]) {
+      name = style === 'poor' ? pick(r() < 0.7 ? BUNGALOWS : DUPLEXES) : style === 'rich' ? pick(DUPLEXES) : pick(r() < 0.4 ? BUNGALOWS : DUPLEXES);
+    }
+    if (name) {
+      const [w, , d] = (kit === 'suburban' ? SUBURBAN : COMMERCIAL)[name];
+      const max = kit === 'suburban' ? (style === 'rich' ? 2.1 : 1.9) : 2.3;
+      const s = Math.min(max, 3.0 / Math.max(w, d));
+      kenney.push({ kit, name, paint: Math.floor(r() * (kit === 'suburban' ? HOUSE_PAINTS : BLOCK_PAINTS).length), x, z, rot, s });
+      // Most Abuja houses sit inside a fenced compound with a gate
+      if (kit === 'suburban' && r() < (style === 'rich' ? 0.9 : 0.6)) {
+        const fw = Math.min(3.25, w * s + 0.7);
+        const fd = Math.min(3.3, d * s + 0.9);
+        const fc = pick(['#cbbd9d', '#d8cdb5', '#b9a98a', '#e3d9c6', '#f1ece2']);
+        const h = style === 'rich' ? 1.25 : 0.9 + r() * 0.3;
+        const gz = front ? z - fd / 2 : z + fd / 2;
+        const bz = front ? z + fd / 2 : z - fd / 2;
+        box.push({ p: [x, h / 2, bz], s: [fw, h, 0.12], c: fc });
+        box.push({ p: [x - fw / 2, h / 2, z], s: [0.12, h, fd], c: fc });
+        box.push({ p: [x + fw / 2, h / 2, z], s: [0.12, h, fd], c: fc });
+        box.push({ p: [x - fw * 0.3, h / 2, gz], s: [fw * 0.4, h, 0.12], c: fc });
+        box.push({ p: [x + fw * 0.35, h / 2, gz], s: [fw * 0.3, h, 0.12], c: fc });
+        box.push({ p: [x + 0.05, h * 0.52, gz], s: [fw * 0.3, h * 1.05, 0.06], c: pick(GATES) });
+      }
+      if (r() < 0.35) trees.push({ x: x - 1.35, z: z + (front ? -1.2 : 1.2), s: 0.45 + r() * 0.25, c: pick(TREES) });
+      return;
+    }
+  }
+  const type = style === 'rich' || style === 'city' ? 0.52 + r() * 0.32 : style === 'poor' ? 0.6 + r() * 0.4 : 0.52 + r() * 0.48;
   // Windows on the two faces the camera sees (+x and +z)
   const windows = (cx: number, cz: number, w: number, d: number, y0: number, floors: number, fh: number) => {
     for (let f = 0; f < floors; f++) {
@@ -123,10 +203,11 @@ const roundedUnit = new RoundedBoxGeometry(1, 1, 1, 2, 0.06);
  * Filler neighbourhood around a scene: varied houses, flats, shop rows and
  * uncompleted buildings, plus trees. All drawn with a handful of instanced meshes.
  */
-export function Neighborhood({ seed, clear = [], extent = 26, near = -5.5, far = -19, front = 6.2, frontFar = 17 }: { seed: number; clear?: Rect[]; extent?: number; near?: number; far?: number; front?: number; frontFar?: number }) {
+export function Neighborhood({ seed, clear = [], extent = 26, near = -5.5, far = -19, front = 6.2, frontFar = 17, style = 'mixed' }: { seed: number; clear?: Rect[]; extent?: number; near?: number; far?: number; front?: number; frontFar?: number; style?: HoodStyle }) {
   const parts = useMemo(() => {
     const r = rng(seed * 7919 + 13);
     const box: BoxPart[] = [], cone: ConePart[] = [], cyl: CylPart[] = [], glass: BoxPart[] = [], trees: TreePart[] = [];
+    const kenney: KenneyLot[] = [];
     const blocked = (x: number, z: number) => clear.some(([x0, z0, x1, z1]) => x > x0 - 1.6 && x < x1 + 1.6 && z > z0 - 1.6 && z < z1 + 1.6);
     const lots: [number, number][] = [];
     // Back rows (behind the scene) and front rows (across the road)
@@ -141,14 +222,17 @@ export function Neighborhood({ seed, clear = [], extent = 26, near = -5.5, far =
         box.push({ p: [x, 1.0, z + 1.2], s: [0.9, 0.4, 0.04], c: '#f4f4f4' });
         continue;
       }
-      house(x, z, r, box, cone, cyl, glass, trees);
+      house(x, z, r, box, cone, cyl, glass, trees, style, kenney);
     }
-    return { box, cone, cyl, glass, trees };
+    return { box, cone, cyl, glass, trees, kenney };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [seed]);
+  }, [seed, style]);
 
   return (
     <group>
+      <Suspense fallback={null}>
+        <KenneyHouses lots={parts.kenney} />
+      </Suspense>
       <Instances limit={parts.box.length} geometry={roundedUnit} castShadow receiveShadow>
         <meshStandardMaterial roughness={0.8} />
         {parts.box.map((b, i) => (
@@ -191,5 +275,31 @@ export function Neighborhood({ seed, clear = [], extent = 26, near = -5.5, far =
         ))}
       </Instances>
     </group>
+  );
+}
+
+/** The Kenney houses and blocks: one instanced mesh per model and paint. */
+function KenneyHouses({ lots }: { lots: KenneyLot[] }) {
+  const suburban = useKit('suburban');
+  const commercial = useKit('commercial');
+  const groups = useMemo(() => {
+    const g = new Map<string, { lot: KenneyLot; at: Placement[] }>();
+    for (const l of lots) {
+      const k = `${l.kit}|${l.name}|${l.paint}`;
+      if (!g.has(k)) g.set(k, { lot: l, at: [] });
+      g.get(k)!.at.push({ x: l.x, z: l.z, rot: l.rot, s: l.s });
+    }
+    return [...g.values()];
+  }, [lots]);
+  return (
+    <>
+      {groups.map(({ lot, at }) => {
+        const kit = lot.kit === 'suburban' ? suburban : commercial;
+        const paint = (lot.kit === 'suburban' ? HOUSE_PAINTS : BLOCK_PAINTS)[lot.paint];
+        const part = kit.parts[lot.name];
+        if (!part) return null;
+        return <KitInstances key={`${lot.kit}|${lot.name}|${lot.paint}`} part={part} at={at} material={kitMaterial(paintedMap(kit.map, lot.kit, paint))} />;
+      })}
+    </>
   );
 }

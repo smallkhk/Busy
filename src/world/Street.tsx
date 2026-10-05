@@ -1,5 +1,5 @@
 import { useFrame, type ThreeEvent } from '@react-three/fiber';
-import { useRef } from 'react';
+import { Suspense, useRef } from 'react';
 import type { Group } from 'three';
 import { clockParts, daylight } from '../engine/clock';
 import { carById } from '../content/cars';
@@ -10,6 +10,7 @@ import { Box, Cyl, Tappable, type V3 } from './Room';
 import { AREAS } from '../content/housing';
 import type { Outfit } from '../content/fashion';
 import type { Hat } from './HumanModel';
+import { KitModel } from './City';
 
 const LOOP = 30; // vehicles wrap between -15 and +15
 
@@ -47,7 +48,25 @@ export function Keke() {
   );
 }
 
-type Mover = { kind: 'taxi' | 'keke' | 'car' | 'suv'; lane: number; dir: 1 | -1; speed: number; offset: number; color?: string };
+/** Yellow danfo bus with the black stripes (Kenney van, repainted). Nose points +x like the cars. */
+export function Danfo() {
+  return (
+    <group>
+      <Suspense fallback={null}>
+        <KitModel kit="cars" name="van" rot={Math.PI / 2} s={0.8} paint={DANFO_PAINT} />
+      </Suspense>
+      {[-0.61, 0.61].map((z) => (
+        <mesh key={z} position={[-0.05, 0.62, z]}>
+          <boxGeometry args={[1.9, 0.09, 0.01]} />
+          <meshStandardMaterial color="#111" />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+const DANFO_PAINT = { body: '#f2b705' };
+
+type Mover = { kind: 'taxi' | 'keke' | 'car' | 'suv' | 'danfo'; lane: number; dir: 1 | -1; speed: number; offset: number; color?: string };
 
 // Abuja taxis are green and white.
 const TRAFFIC: Mover[] = [
@@ -56,6 +75,7 @@ const TRAFFIC: Mover[] = [
   { kind: 'keke', lane: -0.2, dir: -1, speed: 2.2, offset: 4 },
   { kind: 'taxi', lane: -0.2, dir: -1, speed: 2.2, offset: 17 },
   { kind: 'suv', lane: -0.2, dir: -1, speed: 2.2, offset: 25, color: '#20232a' },
+  { kind: 'danfo', lane: 1.0, dir: 1, speed: 3.2, offset: 22 },
 ];
 
 function Traffic() {
@@ -74,7 +94,7 @@ function Traffic() {
     <>
       {TRAFFIC.map((m, i) => (
         <group key={i} ref={(g) => { refs.current[i] = g; }}>
-          {m.kind === 'keke' ? <Keke /> : m.kind === 'taxi' ? <Car body="#f4f4f4" roof="#f4f4f4" stripe="#1f8a4c" /> : <Car body={m.color!} kind={m.kind === 'suv' ? 'suv' : 'sedan'} />}
+          {m.kind === 'danfo' ? <Danfo /> : m.kind === 'keke' ? <Keke /> : m.kind === 'taxi' ? <Car body="#f4f4f4" roof="#f4f4f4" stripe="#1f8a4c" /> : <Car body={m.color!} kind={m.kind === 'suv' ? 'suv' : 'sedan'} />}
         </group>
       ))}
     </>
@@ -206,6 +226,42 @@ function MyCar() {
   return (
     <group position={[-5.6, 0.03, -1.75]} scale={0.92}>
       <CarModel kind={c.model} paint={car?.paint ?? c.color} />
+    </group>
+  );
+}
+
+/** NEPA wooden poles with sagging wires along the far side of the road. */
+const POLES = [-13, -8, -3.2, 4.0, 9, 14];
+function PowerLine() {
+  const z = 3.55;
+  const top = 3.45;
+  return (
+    <group>
+      <Suspense fallback={null}>
+        {POLES.map((x) => (
+          <KitModel key={x} kit="roads" name="electricity-pole-single" p={[x, 0, z]} s={6.8} />
+        ))}
+      </Suspense>
+      {POLES.slice(1).map((x, i) => {
+        const x0 = POLES[i];
+        const len = x - x0;
+        return [-0.45, 0.45].map((dz) => (
+          <group key={`${x}${dz}`}>
+            {/* Two straight halves dipping to the middle look like a sagging wire */}
+            {[0, 1].map((h) => {
+              const sag = 0.35;
+              const a = x0 + (h * len) / 2;
+              const ang = Math.atan2(sag, len / 2) * (h === 0 ? -1 : 1);
+              return (
+                <mesh key={h} position={[a + len / 4, top - sag / 2, z + dz]} rotation={[0, 0, ang]}>
+                  <boxGeometry args={[Math.hypot(len / 2, sag), 0.025, 0.025]} />
+                  <meshStandardMaterial color="#1b1b1b" />
+                </mesh>
+              );
+            })}
+          </group>
+        ));
+      })}
     </group>
   );
 }
@@ -352,6 +408,7 @@ export function Street() {
         <meshStandardMaterial color="#6c8a52" flatShading />
       </mesh>
 
+      <PowerLine />
       <MyCar />
       <Traffic />
       <Pedestrians rich={rich} />

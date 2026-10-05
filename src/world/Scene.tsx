@@ -1,6 +1,6 @@
 import { MapControls, OrbitControls, OrthographicCamera, PerspectiveCamera } from '@react-three/drei';
 import type { MapControls as MapControlsImpl, OrbitControls as OrbitControlsImpl } from 'three-stdlib';
-import { Neighborhood, type Rect } from './Neighborhood';
+import { Neighborhood, type HoodStyle, type Rect } from './Neighborhood';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { useEffect, useMemo, useRef, type ReactElement } from 'react';
 import { Color, MOUSE, Object3D, PMREMGenerator, TOUCH, Vector3, type AmbientLight, type InstancedMesh } from 'three';
@@ -59,6 +59,28 @@ const CLEAR: Partial<Record<Place, Rect[]>> = {
   airport: [[-8.6, -8, 8.6, 4.6], [-15, -10.5, 18, -5.5]],
   lounge: [[-8.6, -8, 8.6, 4.6]],
 };
+
+/** What the surrounding blocks look like: towers downtown, big houses in Maitama, face-me-I-face-you in Nyanya. */
+const STYLE: Partial<Record<Place, HoodStyle>> = {
+  maitama: 'rich',
+  asokoro: 'rich',
+  secretariat: 'city',
+  garki: 'city',
+  utako: 'city',
+  wuse: 'city',
+  hospital: 'city',
+  airport: 'city',
+  nyanya: 'poor',
+  mararaba: 'poor',
+};
+
+function hoodStyle(place: Place, area: AreaId): HoodStyle {
+  if (place === 'home' || place === 'street') {
+    const tier = homeTier(area);
+    return tier === 'mansion' ? 'rich' : tier === 'room' ? 'poor' : 'mixed';
+  }
+  return STYLE[place] ?? 'mixed';
+}
 
 const SCENES: Record<Place, () => ReactElement> = {
   home: Room,
@@ -413,6 +435,7 @@ export function Scene() {
   const wet = weather === 'rain' || weather === 'storm';
   const PlaceScene = SCENES[place];
   const tier = useGame((s) => (place === 'home' ? homeTier(s.area) : 'x'));
+  const style = useGame((s) => hoodStyle(place, s.area));
   return (
     <Canvas key={low ? 'low' : 'high'} shadows={low ? true : 'soft'} dpr={low ? 1 : [1, 2]} gl={{ antialias: !low, powerPreference: 'high-performance' }} className="scene">
       {place === 'home' ? <HomeCamera key={tier} /> : <IsoCamera key={place} place={place} />}
@@ -421,7 +444,7 @@ export function Scene() {
       <GameLoop />
       <LabelSync />
       <PlaceScene />
-      <Neighborhood key={`${place}${tier}`} extent={low ? 15 : 26} far={low ? -13 : -19} frontFar={low ? 11 : 17} seed={SEEDS[place]} clear={tier === 'mansion' ? [[-10, -4.5, 9, 7]] : tier === 'flat' ? [[-8, -4.5, 9, 7]] : CLEAR[place] ?? [[-8.6, -8, 8.6, 4.6]]} near={place === 'home' ? -4.6 : -5.5} />
+      <Neighborhood key={`${place}${tier}`} style={style} extent={low ? 15 : 26} far={low ? -13 : -19} frontFar={low ? 11 : 17} seed={SEEDS[place]} clear={tier === 'mansion' ? [[-10, -4.5, 9, 7]] : tier === 'flat' ? [[-8, -4.5, 9, 7]] : CLEAR[place] ?? [[-8.6, -8, 8.6, 4.6]]} near={place === 'home' ? -4.6 : -5.5} />
       <Avatar />
       <RemotePlayers />
       {fest && fest.decor.length > 0 && place !== 'home' && <FestivalDecor colors={fest.decor} night={night} />}
