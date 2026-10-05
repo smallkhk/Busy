@@ -12,6 +12,7 @@ import { rollSickness, SICK_DRAIN, SICKNESS, type Sickness } from '../content/he
 import { ALL_GOALS } from '../content/goals';
 import { LOAN_DAYS, LOAN_FEE, LOAN_MAX, SAVINGS_DAILY_RATE, TOKEN_COST } from '../content/phoneapps';
 import { BRAND_COOLDOWN_DAYS, BRAND_MIN_FOLLOWERS, brandPay, followersGain, packagingGap, POST_COOLDOWN_MIN, postById } from '../content/gram';
+import { TALK_MINUTES, TALK_REL } from '../content/npcs';
 import { combinedMods, nextWeather, priceOf, tripFactor, weatherSpell, WORLD_NEWS, type ActiveNews, type Weather } from '../content/world';
 import { effectChips, pickEvent, resolveChoice, type EventContext } from '../engine/events';
 import { clamp, fullNeeds, LOW_NEED, NEED_KEYS, NEED_META, tickNeeds, type NeedKey, type Needs } from '../engine/needs';
@@ -55,6 +56,8 @@ type GameState = {
   sick: Sickness | null;
   /** Police suspicion 0–100. Goes down small small every day. */
   heat: number;
+  /** Story flags and the day each was set. */
+  flags: Record<string, number>;
   weather: Weather;
   nextWeatherChange: number;
   /** World news running now, with the day it ends. */
@@ -82,6 +85,8 @@ type GameState = {
   toasts: Toast[];
   lowWarned: Partial<Record<NeedKey, boolean>>;
   menu: string | null;
+  /** Contact whose talk sheet is open. */
+  npcMenu: string | null;
   phone: PhoneApp | null;
   /** Id of the event waiting for an answer; the game pauses while set. */
   event: string | null;
@@ -114,6 +119,11 @@ type GameState = {
   post: (id: string) => void;
   brandDeal: () => void;
   callContact: (id: string) => void;
+  openNpc: (id: string | null) => void;
+  /** Walk up to a stranger and introduce yourself. */
+  introduce: (id: string) => void;
+  /** Gist face to face with a contact you know. */
+  talkTo: (id: string) => void;
   giftContact: (id: string) => void;
   askFavour: (id: string) => void;
   payRent: () => void;
@@ -188,6 +198,7 @@ const initial = () => ({
   car: null as { id: string; condition: number } | null,
   sick: null as Sickness | null,
   heat: 0,
+  flags: {} as Record<string, number>,
   weather: 'sunny' as Weather,
   nextWeatherChange: START_TIME + 240,
   news: [] as ActiveNews[],
@@ -211,6 +222,7 @@ const initial = () => ({
   toasts: [],
   lowWarned: {},
   menu: null,
+  npcMenu: null,
   phone: null,
   event: null as string | null,
   eventResult: null as EventResult | null,
@@ -243,6 +255,7 @@ export function eventContext(s: GameState, trip?: string | null): EventContext {
     longLeg: longLeg(s.contacts),
     packaging: s.packaging,
     weather: s.weather ?? 'sunny',
+    flags: s.flags ?? {},
   };
 }
 
@@ -441,6 +454,7 @@ export const useGame = create<GameState>()(
             event: null,
             eventTrip: null,
             heat: clamp((s.heat ?? 0) + (effect.heat ?? 0)),
+            flags: effect.flag ? { ...(s.flags ?? {}), ...Object.fromEntries([effect.flag].flat().map((f) => [f, clockParts(s.time).day])) } : s.flags,
             money: s.money + moneyDelta,
             needs,
             time: s.time + lost,
@@ -686,6 +700,31 @@ export const useGame = create<GameState>()(
           get().toast(`💼 You promote "Mama Titi Jollof" for your page. ${formatNaira(pay)} land!`);
         },
 
+        openNpc: (id) => set({ npcMenu: id, menu: null }),
+
+        introduce: (id) => {
+          if (get().contacts[id]) return;
+          meetContact(id);
+          const { day } = clockParts(get().time);
+          const cs = get().contacts[id];
+          if (cs) set({ contacts: { ...get().contacts, [id]: { ...cs, lastTalkDay: day } } });
+        },
+
+        talkTo: (id) => {
+          const s = get();
+          const c = contactById(id);
+          const cs = s.contacts[id];
+          if (!c || !cs || s.active) return;
+          const { day } = clockParts(s.time);
+          if (cs.lastTalkDay === day) return get().toast(`🗣️ You and ${c.name} don gist today already`);
+          set({
+            time: s.time + TALK_MINUTES,
+            needs: { ...tickNeeds(s.needs, TALK_MINUTES), social: clamp(s.needs.social + 12) },
+            contacts: { ...s.contacts, [id]: { ...cs, rel: clamp(cs.rel + TALK_REL), lastTalkDay: day } },
+          });
+          get().toast(`🗣️ You and ${c.name} gist face to face. 🦵 +${TALK_REL}`);
+        },
+
         callContact: (id) => {
           const s = get();
           const c = contactById(id);
@@ -882,6 +921,8 @@ export const useGame = create<GameState>()(
           const cur = clockParts(time);
           if (cur.day !== prev.day) {
             now.toast(`🌅 Day ${cur.day} for Abuja. Make today count!`);
+            const fl = get().flags ?? {};
+            if (fl['garba-appt'] === cur.day - 1 && fl['garba-done'] === undefined) now.toast('📌 Today: meet Garba\'s Director for Federal Secretariat before 12 noon!');
             const { rentDueDay, rentLocked, area } = get();
             const left = rentDueDay - cur.day;
             if (left === 7 || left === 1) now.toast(`🏠 Rent go due in ${left} day${left > 1 ? 's' : ''}: ${formatNaira(AREAS[area].rent)}`);
@@ -1029,6 +1070,7 @@ export const useGame = create<GameState>()(
         car: s.car,
         sick: s.sick,
         heat: s.heat,
+        flags: s.flags,
         weather: s.weather,
         nextWeatherChange: s.nextWeatherChange,
         news: s.news,

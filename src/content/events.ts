@@ -1,9 +1,10 @@
 import type { GameEvent } from '../engine/events';
+import { STORIES } from './stories';
 
 const outside = (p: string) => p !== 'home';
 const day = (h: number) => h >= 7 && h < 20;
 
-export const EVENTS: GameEvent[] = [
+const BASE_EVENTS: GameEvent[] = [
   // ---------------- Home & area ----------------
   {
     id: 'borehole-levy',
@@ -267,7 +268,8 @@ export const EVENTS: GameEvent[] = [
     trigger: 'idle',
     weight: 2,
     cooldownHours: 240,
-    when: (c) => !!c.met?.includes('chinedu'),
+    // Comes back now and then, once the big Chinedu story don finish
+    when: (c) => !!c.met?.includes('chinedu') && c.flags?.['chinedu-done'] !== undefined,
     choices: [
       { label: 'Send am ₦10,000', cost: 10000, outcomes: [{ text: '"You be real one!" Chinedu no go forget this 🤝', effect: { rel: { chinedu: 20 }, needs: { social: 10 } } }] },
       { label: '"I no get o"', outcomes: [{ text: '"No wahala." Im voice change small 😐', effect: { rel: { chinedu: -15 } } }] },
@@ -904,3 +906,5 @@ export const EVENTS: GameEvent[] = [
     ],
   },
 ];
+
+export const EVENTS: GameEvent[] = [...BASE_EVENTS, ...STORIES];
