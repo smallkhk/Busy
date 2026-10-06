@@ -1,3 +1,4 @@
+import { setFastActivities } from './engine/clock';
 import { create } from 'zustand';
 
 export type Quality = 'high' | 'low';
@@ -20,7 +21,28 @@ const saved = (): Quality | null => {
   }
 };
 
-export const useSettings = create<{ quality: Quality; setQuality: (q: Quality) => void }>((set) => ({
+const FAST_KEY = 'abuja-life-fast';
+/** Fast activities are on while the game is still being built; switch off in Settings. */
+const savedFast = (): boolean => {
+  try {
+    return localStorage.getItem(FAST_KEY) !== 'off';
+  } catch {
+    return true;
+  }
+};
+setFastActivities(savedFast());
+
+export const useSettings = create<{ quality: Quality; setQuality: (q: Quality) => void; fast: boolean; setFast: (on: boolean) => void }>((set) => ({
+  fast: savedFast(),
+  setFast: (fast) => {
+    try {
+      localStorage.setItem(FAST_KEY, fast ? 'on' : 'off');
+    } catch {
+      /* private mode */
+    }
+    setFastActivities(fast);
+    set({ fast });
+  },
   quality: saved() ?? detectQuality(),
   setQuality: (quality) => {
     try {

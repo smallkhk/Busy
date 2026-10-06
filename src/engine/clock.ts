@@ -60,7 +60,16 @@ export const realMinutes = (epoch: number, now: number) => (now - epoch) / 60000
  * How many real seconds an activity takes when the game runs on real time.
  * Quick things stay quick (tea ~15s, an hour ~50s); sleep or a work shift take ~15 minutes.
  */
-export const activityRealSeconds = (gameMinutes: number) => Math.round(Math.max(5, Math.pow(Math.max(1, gameMinutes), 1.4) / 6));
+/** Development speed: every activity finishes in a few real seconds (see Settings). */
+let fastActivities = false;
+export const setFastActivities = (on: boolean) => {
+  fastActivities = on;
+};
+
+export const activityRealSeconds = (gameMinutes: number) =>
+  fastActivities
+    ? Math.min(4, Math.max(2, Math.round(gameMinutes / 120) + 2))
+    : Math.round(Math.max(5, Math.pow(Math.max(1, gameMinutes), 1.4) / 6));
 
 export function formatSeconds(sec: number): string {
   const s = Math.max(0, Math.ceil(sec));
