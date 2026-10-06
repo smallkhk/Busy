@@ -579,4 +579,3 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
 .flight-bar { position: relative; flex: 1; height: 6px; border-radius: 3px; background: rgba(255, 255, 255, 0.18); }
 .flight-fill { height: 100%; border-radius: 3px; background: #f2c230; transition: width 0.5s linear; }
 .flight-plane { position: absolute; top: 50%; transform: translate(-50%, -55%); font-size: 16px; transition: left 0.5s linear; }
-.plane-livery { color: #118a4c; font-weight: 900; letter-spacing: 2px; font-size: 15px; white-space: nowrap; text-shadow: 0 1px 0 #fff; }

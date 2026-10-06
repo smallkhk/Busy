@@ -1,9 +1,9 @@
 import { Html } from '@react-three/drei';
 import { useFrame, useThree, type ThreeEvent } from '@react-three/fiber';
-import { Suspense, useEffect, useMemo, useRef, type ReactElement } from 'react';
+import { useEffect, useMemo, useRef, type ReactElement } from 'react';
 import { CanvasTexture, RepeatWrapping, SRGBColorSpace, type Group, type OrthographicCamera } from 'three';
 import { create } from 'zustand';
-import { AIRLINE, BEACH_CHAIR_TOP, BEACH_CHAIRS, BIZ_ROWS, BIZ_TOP, BIZ_ZS, BUKA_BENCHES, CABIN_TAKEN, ECON_ROWS, ECON_TOP, ECON_ZS, LAGOS } from '../../content/flights';
+import { BEACH_CHAIR_TOP, BEACH_CHAIRS, BIZ_ROWS, BIZ_TOP, BIZ_ZS, BUKA_BENCHES, CABIN_TAKEN, ECON_ROWS, ECON_TOP, ECON_ZS, LAGOS } from '../../content/flights';
 import { SEAT_BASE } from '../../content/seats';
 import { useGame } from '../../store/game';
 import { useSettings } from '../../settings';
@@ -12,7 +12,7 @@ import { Box, Cyl, Tappable } from '../Room';
 import { Danfo, Keke, Tree, Walkers, type Walker } from '../Street';
 import { groundMap } from '../groundTex';
 import { Flag } from './common';
-import { AirportModel } from '../AirportModel';
+import { FlyingJet, Terminal } from '../Terminal';
 
 /** Inside the cabin or outside looking at the plane. */
 export const useFlightView = create<{ out: boolean; setOut: (out: boolean) => void }>((set) => ({ out: false, setOut: (out) => set({ out }) }));
@@ -207,82 +207,12 @@ function Interior() {
   );
 }
 
-/** The plane from outside: white body, green tail and stripe, two engines. Parked planes stay still. */
-export function ZumaJet({ parked }: { parked?: boolean }) {
-  const ref = useRef<Group>(null);
-  useFrame(({ clock }) => {
-    const g = ref.current;
-    if (!g || parked) return;
-    const t = clock.getElapsedTime();
-    g.position.y = Math.sin(t * 0.8) * 0.15;
-    g.rotation.x = Math.sin(t * 0.5) * 0.03;
-  });
-  const white = '#f4f6f8';
-  return (
-    <group ref={ref}>
-      {/* Body along x, nose at +x */}
-      <mesh position={[-0.75, 1.0, 0]} rotation={[0, 0, Math.PI / 2]} castShadow>
-        <cylinderGeometry args={[2.25, 2.25, 25, 32]} />
-        <meshStandardMaterial color={white} roughness={0.4} />
-      </mesh>
-      <mesh position={[11.75, 1.0, 0]} scale={[1.9, 1, 1]}>
-        <sphereGeometry args={[2.25, 24, 16]} />
-        <meshStandardMaterial color={white} roughness={0.4} />
-      </mesh>
-      <mesh position={[14.6, 1.6, 0]} rotation={[0, 0, -0.5]} scale={[0.8, 0.5, 1.4]}>
-        <boxGeometry args={[0.8, 0.5, 1.4]} />
-        <meshStandardMaterial color="#1b2633" />
-      </mesh>
-      <mesh position={[-15.5, 1.5, 0]} rotation={[0, 0, Math.PI / 2 + 0.12]}>
-        <cylinderGeometry args={[2.2, 0.4, 6, 24]} />
-        <meshStandardMaterial color={white} roughness={0.4} />
-      </mesh>
-      {/* Green stripes and the windows */}
-      <Box p={[-0.75, 0.25, 2.12]} s={[25, 0.22, 0.05]} c="#118a4c" />
-      <Box p={[-0.75, 0.05, 2.02]} s={[25, 0.08, 0.05]} c="#d8a53a" />
-      {Array.from({ length: 30 }, (_, i) => (
-        <Box key={i} p={[-12 + i * 0.75, 1.55, 2.2]} s={[0.22, 0.28, 0.03]} c="#26313d" />
-      ))}
-      <Box p={[11.2, 1.6, 2.15]} s={[0.35, 1.7, 0.04]} c="#c7ccd2" />
-      {/* Wings, swept back */}
-      {[-1, 1].map((side) => (
-        <group key={side}>
-          <Box p={[-1.5, 0.1, side * 8.2]} s={[3.8, 0.25, 12]} r={[0, -side * 0.35, 0]} c="#d6dbe0" />
-          <Box p={[-3.8, 0.8, side * 13.9]} s={[1.2, 1.4, 0.12]} r={[0, -side * 0.35, 0]} c="#118a4c" />
-          <mesh position={[0.6, -0.6, side * 5.2]} rotation={[0, 0, Math.PI / 2]}>
-            <cylinderGeometry args={[0.85, 0.75, 3.2, 20]} />
-            <meshStandardMaterial color="#e8ebee" roughness={0.35} />
-          </mesh>
-          <mesh position={[2.21, -0.6, side * 5.2]} rotation={[0, 0, Math.PI / 2]}>
-            <cylinderGeometry args={[0.7, 0.7, 0.05, 20]} />
-            <meshStandardMaterial color="#2a2f35" />
-          </mesh>
-        </group>
-      ))}
-      {/* Tail fin and tailplanes */}
-      <Box p={[-15.2, 4.3, 0]} s={[3.4, 4.4, 0.25]} r={[0, 0, -0.45]} c="#118a4c" />
-      <mesh position={[-15.6, 4.9, 0.14]}>
-        <circleGeometry args={[0.7, 20]} />
-        <meshStandardMaterial color="#d8a53a" />
-      </mesh>
-      {[-1, 1].map((side) => (
-        <Box key={side} p={[-16, 1.8, side * 2.6]} s={[2, 0.15, 3.6]} r={[0, -side * 0.3, 0]} c="#d6dbe0" />
-      ))}
-      {!parked && (
-        <Html position={[0, 2.6, 2.3]} center zIndexRange={[2, 0]} style={{ pointerEvents: 'none' }}>
-          <div className="plane-livery">{AIRLINE.toUpperCase()}</div>
-        </Html>
-      )}
-    </group>
-  );
-}
-
 /** Pull the camera back to see the whole plane while you look from outside. */
 function OutCamera() {
   const camera = useThree((s) => s.camera) as OrthographicCamera;
   useEffect(() => {
     const before = camera.zoom;
-    camera.zoom = before * 0.42;
+    camera.zoom = before * 0.3;
     camera.updateProjectionMatrix();
     return () => {
       camera.zoom = before;
@@ -299,7 +229,7 @@ export function Cabin() {
       <Sky />
       {out ? (
         <>
-          <ZumaJet />
+          <FlyingJet />
           <OutCamera />
         </>
       ) : (
@@ -408,17 +338,14 @@ export function Lagos() {
       ))}
 
       {/* Murtala Muhammed Airport */}
-      <Suspense fallback={null}>
-        <AirportModel position={[LAGOS.airport[0] - 8, 0, LAGOS.airport[1] - 6]} />
-      </Suspense>
-      <ParkedJets at={[LAGOS.airport[0] - 8, LAGOS.airport[1] - 6]} />
-      {/* Departures canopy: where you check in */}
+      <group position={[LAGOS.airport[0], 0, LAGOS.airport[1] + 2.5]}>
+        <Terminal name="MURTALA MUHAMMED AIRPORT" towerX={-15} />
+      </group>
+      {/* Check-in counter under the canopy */}
       <Tappable id="mmia">
-        <Box p={[LAGOS.airport[0], 2.4, LAGOS.airport[1] + 3.2]} s={[6, 0.15, 2.4]} c="#118a4c" />
-        {[-2.8, 2.8].map((dx) => <Cyl key={dx} p={[LAGOS.airport[0] + dx, 1.2, LAGOS.airport[1] + 4.2]} r={0.08} h={2.4} c="#c7ccd2" />)}
-        <Box p={[LAGOS.airport[0], 0.55, LAGOS.airport[1] + 3]} s={[3, 1.1, 0.7]} c="#d9dde2" />
+        <Box p={[LAGOS.airport[0], 0.55, LAGOS.airport[1] + 3.4]} s={[3, 1.1, 0.7]} c="#2b3640" />
+        <Box p={[LAGOS.airport[0], 1.3, LAGOS.airport[1] + 3.2]} s={[2.4, 0.4, 0.05]} c="#118a4c" />
       </Tappable>
-      <Sign p={[LAGOS.airport[0], 3.3, LAGOS.airport[1] + 3.6]} text="✈️ MURTALA MUHAMMED AIRPORT" />
       <Flag x={LAGOS.airport[0] - 4} z={LAGOS.airport[1] + 5} h={4} />
 
       {/* Danfo park */}
@@ -481,19 +408,6 @@ export function Lagos() {
 
       <Walkers walkers={low ? LAGOS_WALKERS.slice(0, 2) : LAGOS_WALKERS} />
     </group>
-  );
-}
-
-/** Zuma Air jets parked on the apron behind a terminal centred at `at`, noses to the gates. */
-export function ParkedJets({ at }: { at: [number, number] }) {
-  return (
-    <>
-      {[-9, 4].map((dx) => (
-        <group key={dx} position={[at[0] + dx, 0.45, at[1] - 7.5]} rotation={[0, -Math.PI / 2, 0]} scale={0.13}>
-          <ZumaJet parked />
-        </group>
-      ))}
-    </>
   );
 }
 
