@@ -1,6 +1,6 @@
 import { Html } from '@react-three/drei';
 import { useFrame, useThree, type ThreeEvent } from '@react-three/fiber';
-import { useEffect, useMemo, useRef, type ReactElement } from 'react';
+import { Suspense, useEffect, useMemo, useRef, type ReactElement } from 'react';
 import { CanvasTexture, RepeatWrapping, SRGBColorSpace, type Group, type OrthographicCamera } from 'three';
 import { create } from 'zustand';
 import { AIRLINE, BEACH_CHAIR_TOP, BEACH_CHAIRS, BIZ_ROWS, BIZ_TOP, BIZ_ZS, BUKA_BENCHES, CABIN_TAKEN, ECON_ROWS, ECON_TOP, ECON_ZS, LAGOS } from '../../content/flights';
@@ -12,6 +12,7 @@ import { Box, Cyl, Tappable } from '../Room';
 import { Danfo, Keke, Tree, Walkers, type Walker } from '../Street';
 import { groundMap } from '../groundTex';
 import { Flag } from './common';
+import { AirportModel } from '../AirportModel';
 
 /** Inside the cabin or outside looking at the plane. */
 export const useFlightView = create<{ out: boolean; setOut: (out: boolean) => void }>((set) => ({ out: false, setOut: (out) => set({ out }) }));
@@ -206,12 +207,12 @@ function Interior() {
   );
 }
 
-/** The plane from outside: white body, green tail and stripe, two engines. */
-function Exterior() {
+/** The plane from outside: white body, green tail and stripe, two engines. Parked planes stay still. */
+export function ZumaJet({ parked }: { parked?: boolean }) {
   const ref = useRef<Group>(null);
   useFrame(({ clock }) => {
     const g = ref.current;
-    if (!g) return;
+    if (!g || parked) return;
     const t = clock.getElapsedTime();
     g.position.y = Math.sin(t * 0.8) * 0.15;
     g.rotation.x = Math.sin(t * 0.5) * 0.03;
@@ -267,9 +268,11 @@ function Exterior() {
       {[-1, 1].map((side) => (
         <Box key={side} p={[-16, 1.8, side * 2.6]} s={[2, 0.15, 3.6]} r={[0, -side * 0.3, 0]} c="#d6dbe0" />
       ))}
-      <Html position={[0, 2.6, 2.3]} center zIndexRange={[2, 0]} style={{ pointerEvents: 'none' }}>
-        <div className="plane-livery">{AIRLINE.toUpperCase()}</div>
-      </Html>
+      {!parked && (
+        <Html position={[0, 2.6, 2.3]} center zIndexRange={[2, 0]} style={{ pointerEvents: 'none' }}>
+          <div className="plane-livery">{AIRLINE.toUpperCase()}</div>
+        </Html>
+      )}
     </group>
   );
 }
@@ -296,7 +299,7 @@ export function Cabin() {
       <Sky />
       {out ? (
         <>
-          <Exterior />
+          <ZumaJet />
           <OutCamera />
         </>
       ) : (
@@ -405,14 +408,17 @@ export function Lagos() {
       ))}
 
       {/* Murtala Muhammed Airport */}
+      <Suspense fallback={null}>
+        <AirportModel position={[LAGOS.airport[0] - 8, 0, LAGOS.airport[1] - 6]} />
+      </Suspense>
+      <ParkedJets at={[LAGOS.airport[0] - 8, LAGOS.airport[1] - 6]} />
+      {/* Departures canopy: where you check in */}
       <Tappable id="mmia">
-        <Box p={[LAGOS.airport[0], 1.8, LAGOS.airport[1]]} s={[14, 3.6, 7]} c="#d9dde2" />
-        <Box p={[LAGOS.airport[0], 3.8, LAGOS.airport[1]]} s={[15, 0.4, 8]} c="#7a8692" />
-        <Box p={[LAGOS.airport[0], 1.6, LAGOS.airport[1] + 3.52]} s={[12, 2.2, 0.05]} c="#7fb0d0" />
-        <Box p={[LAGOS.airport[0] + 8, 4.5, LAGOS.airport[1] - 2]} s={[1.6, 9, 1.6]} c="#c7ccd2" />
-        <Box p={[LAGOS.airport[0] + 8, 9.3, LAGOS.airport[1] - 2]} s={[2.6, 1.2, 2.6]} c="#3d5a73" />
+        <Box p={[LAGOS.airport[0], 2.4, LAGOS.airport[1] + 3.2]} s={[6, 0.15, 2.4]} c="#118a4c" />
+        {[-2.8, 2.8].map((dx) => <Cyl key={dx} p={[LAGOS.airport[0] + dx, 1.2, LAGOS.airport[1] + 4.2]} r={0.08} h={2.4} c="#c7ccd2" />)}
+        <Box p={[LAGOS.airport[0], 0.55, LAGOS.airport[1] + 3]} s={[3, 1.1, 0.7]} c="#d9dde2" />
       </Tappable>
-      <Sign p={[LAGOS.airport[0], 4.6, LAGOS.airport[1] + 3.6]} text="✈️ MURTALA MUHAMMED AIRPORT" />
+      <Sign p={[LAGOS.airport[0], 3.3, LAGOS.airport[1] + 3.6]} text="✈️ MURTALA MUHAMMED AIRPORT" />
       <Flag x={LAGOS.airport[0] - 4} z={LAGOS.airport[1] + 5} h={4} />
 
       {/* Danfo park */}
@@ -475,6 +481,19 @@ export function Lagos() {
 
       <Walkers walkers={low ? LAGOS_WALKERS.slice(0, 2) : LAGOS_WALKERS} />
     </group>
+  );
+}
+
+/** Zuma Air jets parked on the apron behind a terminal centred at `at`, noses to the gates. */
+export function ParkedJets({ at }: { at: [number, number] }) {
+  return (
+    <>
+      {[-9, 4].map((dx) => (
+        <group key={dx} position={[at[0] + dx, 0.45, at[1] - 7.5]} rotation={[0, -Math.PI / 2, 0]} scale={0.13}>
+          <ZumaJet parked />
+        </group>
+      ))}
+    </>
   );
 }
 
