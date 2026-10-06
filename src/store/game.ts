@@ -292,6 +292,7 @@ const BOUNDS: Record<Place, { minX: number; maxX: number; minZ: number; maxZ: nu
   unilib: { minX: -8.5, maxX: 8.5, minZ: -4.5, maxZ: 5.6 },
   cabin: { minX: -11, maxX: 9.6, minZ: -0.25, maxZ: 0.25 },
   lagos: { minX: -27, maxX: 30, minZ: -15, maxZ: 10.2 },
+  benin: { minX: -27, maxX: 29, minZ: -14, maxZ: 11 },
   road: { minX: -CELL_X / 2, maxX: CELL_X / 2, minZ: ROAD_Z - ROAD_HALF, maxZ: ROAD_Z + ROAD_HALF },
 };
 
@@ -497,12 +498,15 @@ let companionCheck: (() => string | undefined) | null = null;
 /** Lets multiplayer tell the game which friend (if any) is in the same place. */
 export const setCompanionCheck = (fn: typeof companionCheck) => (companionCheck = fn);
 
+/** Out of Abuja: how to get back. */
+const awayNote = (p: Place) => (p === 'benin' ? 'You dey Benin City 👑 Take luxury bus or flight back to Abuja first' : 'You dey Lagos 🌊 Fly back to Abuja first (Murtala Airport)');
+
 export function blockReason(a: Activity, s: BlockState): string | null {
   if (a.locked) return a.locked;
   // Out of Abuja: only what dey here (and your phone)
   if (s.place && isAway(s.place)) {
     const here = activityPlace(a.id);
-    if (here !== s.place && (here || a.travelTo || a.away)) return s.place === 'cabin' ? 'You dey inside plane o ✈️ Wait make we land' : 'You dey Lagos 🌊 Fly back to Abuja first (Murtala Airport)';
+    if (here !== s.place && (here || a.travelTo || a.away)) return s.place === 'cabin' ? 'You dey inside plane o ✈️ Wait make we land' : awayNote(s.place);
   }
   if (s.rentLocked && activityPlace(a.id) === 'home' && !a.travelTo) return 'Landlord don lock your door 🔒 Pay rent for phone';
   const waived = s.unlocks?.includes(a.id);
@@ -790,7 +794,7 @@ export const useGame = create<GameState>()(
           if (!fx) get().toast(`${a.emoji} Done: ${a.label}`);
         }
         set({ active: null, ...(a.away ? { pos: exitSpot(s.place, s.area) } : {}) });
-        if (fx?.flight) set({ flight: newFlight(fx.flight.to, fx.flight.cls, clock(), fastActivitiesOn(), Math.random) });
+        if (fx?.flight) set({ flight: newFlight(fx.flight.from ?? 'ABV', fx.flight.to, fx.flight.cls, clock(), fastActivitiesOn(), Math.random) });
         if (a.travelTo) {
           set({ place: a.travelTo, pos: entrySpot(a.travelTo, s.area), target: null, route: [], cell: null, driving: false });
           // You drove there: your car is parked by the entrance
@@ -828,7 +832,13 @@ export const useGame = create<GameState>()(
         const to = LAND_PLACE[f.to];
         set({ flight: null, place: to, pos: entrySpot(to, s.area), cell: null, target: null, route: [], pose: null, pending: null });
         bump(`visit-${to}`, 'flights');
-        get().toast(f.to === 'LOS' ? '🛬 Welcome to Lagos! Eko o ni baje 🌊 Explore, then fly back from Murtala Airport' : '🛬 Welcome back to Abuja! Taxi dey outside to carry you home');
+        get().toast(
+          f.to === 'LOS'
+            ? '🛬 Welcome to Lagos! Eko o ni baje 🌊 Explore, then fly back from Murtala Airport'
+            : f.to === 'BNI'
+              ? '🛬 Welcome to Benin City! Oba gha to kpere 👑 Visit the palace, then fly or take bus back'
+              : '🛬 Welcome back to Abuja! Taxi dey outside to carry you home',
+        );
       };
 
       /** First meeting adds a contact; meeting again gets you closer. Returns a chip for the UI. */
@@ -1989,7 +1999,7 @@ export const useGame = create<GameState>()(
           const there = cellOfPlace(to, s.area);
           if (!there || s.active) return;
           if (isAway(s.place)) {
-            get().toast(s.place === 'cabin' ? '✈️ You dey inside plane o' : '🌊 You dey Lagos. Fly back to Abuja first (Murtala Airport)');
+            get().toast(s.place === 'cabin' ? '✈️ You dey inside plane o' : awayNote(s.place));
             return;
           }
           if (!here) {

@@ -3,6 +3,7 @@ import type { AreaId } from './housing';
 import { homePoint } from './homeLayout';
 import { CAMPUS } from './campus';
 import { CABIN_SEATS, LAGOS_SEATS } from './flights';
+import { BENIN_SEATS } from './benin';
 
 /**
  * Every real thing you can sit on: benches, stools, chairs, lecture benches.
@@ -83,6 +84,7 @@ const FIXED: Partial<Record<Place, Seat[]>> = {
     .map(([x, z]) => facingBack(x, z + 0.75, LIB_CHAIR_TOP)),
   cabin: CABIN_SEATS,
   lagos: LAGOS_SEATS,
+  benin: BENIN_SEATS,
   campus: [...CAMPUS_BENCHES.flatMap(benchSeats), ...CAFE_TABLES.slice(1).flatMap(([x, z]) => [facingBack(x, z + 0.8, CAFE_CHAIR_TOP), { x, z: z - 0.85, y: CAFE_CHAIR_TOP, rot: 0 }])],
 };
 

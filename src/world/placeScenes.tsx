@@ -13,7 +13,7 @@ import { Airport, Asokoro, Garki, Maitama, Mararaba, Nyanya, Utako } from './pla
 import { Park, Stadium } from './places/Landmarks';
 import { UniGate } from './places/Campus';
 
-const PLACES: Place[] = ['home', 'street', 'wuse', 'jabi', 'secretariat', 'lounge', 'hospital', 'maitama', 'asokoro', 'garki', 'nyanya', 'airport', 'utako', 'mararaba', 'park', 'stadium', 'uniabuja', 'campus', 'lt', 'unilib', 'road', 'cabin', 'lagos'];
+const PLACES: Place[] = ['home', 'street', 'wuse', 'jabi', 'secretariat', 'lounge', 'hospital', 'maitama', 'asokoro', 'garki', 'nyanya', 'airport', 'utako', 'mararaba', 'park', 'stadium', 'uniabuja', 'campus', 'lt', 'unilib', 'road', 'cabin', 'lagos', 'benin'];
 
 /** Each place gets its own neighbourhood layout. */
 export const SEEDS = Object.fromEntries(PLACES.map((p, i) => [p, 11 + i * 37])) as Record<Place, number>;

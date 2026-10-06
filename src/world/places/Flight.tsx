@@ -12,6 +12,7 @@ import { Box, Cyl, Tappable } from '../Room';
 import { Danfo, Keke, Tree, Walkers, type Walker } from '../Street';
 import { groundMap } from '../groundTex';
 import { Flag } from './common';
+import { Benin } from './Benin';
 import { FlyingJet, Terminal } from '../Terminal';
 
 /** Inside the cabin or outside looking at the plane. */
@@ -411,4 +412,4 @@ export function Lagos() {
   );
 }
 
-export const FLIGHT_SCENES = { cabin: Cabin, lagos: Lagos } as const;
+export const FLIGHT_SCENES = { cabin: Cabin, lagos: Lagos, benin: Benin } as const;
