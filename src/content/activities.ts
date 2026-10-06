@@ -3,6 +3,7 @@ import { DRIVES, HAILING_JOB } from './cars';
 import { CHOP_ITEMS, RIDES, TREKS } from './phoneapps';
 import { TRAVEL_INTERACTABLES } from './travel';
 import { DISTRICT_INTERACTABLES, NEW_ROUTES } from './districts';
+import { CAMPUS_INTERACTABLES } from './campus';
 import { CLASS_ACTIVITIES, GYM_WORKOUT, SKILL_JOBS } from './learning';
 
 export * from './common';
@@ -26,6 +27,7 @@ export const EXIT_SPOT: Record<Place, [number, number]> = {
   mararaba: [4.4, 2.6],
   park: [4.4, 2.6],
   stadium: [4.4, 2.6],
+  uniabuja: [4.4, 2.6],
   road: [0, 7],
 };
 /** Where you appear when you arrive at a place. */
@@ -46,6 +48,7 @@ export const ENTRY_SPOT: Record<Place, [number, number]> = {
   mararaba: [3.8, 2.0],
   park: [3.8, 2.0],
   stadium: [3.8, 2.0],
+  uniabuja: [3.8, 2.0],
   road: [0, 7],
 };
 
@@ -263,7 +266,7 @@ const HOME_AND_STREET: Interactable[] = [
   },
 ];
 
-export const INTERACTABLES: Interactable[] = [...HOME_AND_STREET, ...TRAVEL_INTERACTABLES, ...DISTRICT_INTERACTABLES].map((i) =>
+export const INTERACTABLES: Interactable[] = [...HOME_AND_STREET, ...TRAVEL_INTERACTABLES, ...DISTRICT_INTERACTABLES, ...CAMPUS_INTERACTABLES].map((i) =>
   NEW_ROUTES[i.id] ? { ...i, activities: [...i.activities, ...NEW_ROUTES[i.id]] } : i,
 );
 

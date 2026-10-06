@@ -2,19 +2,22 @@ import { Html } from '@react-three/drei';
 import type { ThreeEvent } from '@react-three/fiber';
 import { useMemo } from 'react';
 import { PLACE_NAMES, type Place } from '../content/activities';
-import { AREA_OF_CELL, CELL_X, CELL_Z, COLS, currentCell, inGrid, placeAt, ROAD_HALF, ROAD_Z, ROWS, type Cell } from '../content/worldmap';
+import { AREA_OF_CELL, landmarkAt, LANDMARK_NAMES, CELL_X, CELL_Z, COLS, currentCell, inGrid, placeAt, ROAD_HALF, ROAD_Z, ROWS, type Cell } from '../content/worldmap';
 import { AREAS, placeLabel, type AreaId } from '../content/housing';
 import { useGame } from '../store/game';
 import { useSettings } from '../settings';
 import { Neighborhood, type HoodStyle, type Rect } from './Neighborhood';
 import { CLEAR, hoodStyle, SCENES } from './placeScenes';
+import { LANDMARK_SCENES } from './places/CityLandmarks';
 import { CellCtx } from './origin';
+import { groundMap, type GroundKind } from './groundTex';
 import { Tree } from './Street';
 import { CarModel } from './CarModel';
 import { carById } from '../content/cars';
 
 const ROAD_W = ROAD_HALF * 2 + 0.4;
-const GROUND: Record<HoodStyle, string> = { rich: '#6f9a52', mixed: '#b0703f', poor: '#b58d5c', city: '#a99a7c' };
+/** Real ground: grass in most of town, red earth with grass in the poorer edges. */
+const GROUND: Record<HoodStyle, GroundKind> = { rich: 'grass', mixed: 'grass', poor: 'earth', city: 'grass' };
 
 /** Tap anywhere on the ground or road: walk there along the roads. */
 function useWalkHere() {
@@ -30,11 +33,9 @@ function useWalkHere() {
 /** Blocks between places: whose area it is decides the houses. */
 function cellStyle(cell: Cell, place: Place | null, area: AreaId): HoodStyle {
   if (place) return hoodStyle(place, area);
-  // Richer up north and east (Maitama, Asokoro), poorer at the edges
-  const [c, r] = cell;
-  if (r === 0 && c >= 4) return 'rich';
-  if ((c === 4 || c === 5) && r <= 2) return 'city';
-  if (r >= 3 || c === 0) return 'poor';
+  // Somebody else's area street looks like that area: mansions in Maitama, face-me-I-face-you in Nyanya
+  const other = AREA_OF_CELL[cell.join(',')] as AreaId | undefined;
+  if (other) return hoodStyle('street', other);
   return 'mixed';
 }
 
@@ -42,14 +43,16 @@ function Block({ cell, offset, current, full, area }: { cell: Cell; offset: [num
   const low = useSettings((s) => s.quality === 'low');
   const walk = useWalkHere();
   const place = inGrid(cell) ? placeAt(cell, area) : null;
-  const PlaceScene = place ? SCENES[place] : undefined;
-  const style = cellStyle(cell, place, area);
+  const landmark = inGrid(cell) && !place ? landmarkAt(cell) : null;
+  const PlaceScene = place ? SCENES[place] : landmark ? LANDMARK_SCENES[landmark] : undefined;
+  const style = landmark ? 'rich' : cellStyle(cell, place, area);
   const info = useMemo(() => ({ current, ground: [CELL_X, CELL_Z] as [number, number] }), [current]);
   const seed = 101 + cell[0] * 53 + cell[1] * 211;
-  const clear: Rect[] = place ? (CLEAR[place] ?? [[-8.6, -8, 8.6, 4.6]]) : [];
+  // Landmarks keep their grounds open; only a few houses at the edges
+  const clear: Rect[] = place ? (CLEAR[place] ?? [[-8.6, -8, 8.6, 4.6]]) : landmark ? [[-12, -15, 12, 6]] : [];
   // Big name over every block so you know where you dey
   const other = AREA_OF_CELL[cell.join(',')] as AreaId | undefined;
-  const name = place ? placeLabel(place, area, PLACE_NAMES) : other ? `${AREAS[other].name} street` : null;
+  const name = place ? placeLabel(place, area, PLACE_NAMES) : landmark ? LANDMARK_NAMES[landmark] : other ? `${AREAS[other].name} street` : null;
   return (
     <group position={[offset[0], 0, offset[1]]}>
       {name && (
@@ -64,7 +67,7 @@ function Block({ cell, offset, current, full, area }: { cell: Cell; offset: [num
           <>
             <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.03, 0]} receiveShadow onClick={walk}>
               <planeGeometry args={[CELL_X, CELL_Z]} />
-              <meshStandardMaterial color="#7d9a4f" />
+              <meshStandardMaterial map={groundMap('grass', CELL_X, CELL_Z)} color="#e6f0d8" roughness={1} />
             </mesh>
             {Array.from({ length: 10 }, (_, i) => (
               <Tree key={i} p={[((seed * (i + 3)) % 40) - 20, 0, ((seed * (i + 7)) % 34) - 17]} s={1 + (i % 3) * 0.3} />
@@ -72,12 +75,14 @@ function Block({ cell, offset, current, full, area }: { cell: Cell; offset: [num
           </>
         ) : (
           <>
-            {PlaceScene && full ? (
+            {/* Landmarks are light and tall: always drawn, so you see them from down the road */}
+            {landmark && PlaceScene && <PlaceScene />}
+            {place && PlaceScene && full ? (
               <PlaceScene />
             ) : (
               <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.03, 0]} receiveShadow onClick={walk}>
                 <planeGeometry args={[CELL_X, CELL_Z]} />
-                <meshStandardMaterial color={GROUND[style]} />
+                <meshStandardMaterial map={groundMap(GROUND[style], CELL_X, CELL_Z)} roughness={1} />
               </mesh>
             )}
             <Neighborhood
@@ -183,6 +188,11 @@ export function WorldCells() {
       ))}
       <Roads center={center} />
       <ParkedCar center={center} />
+      {/* Bush all the way to the horizon, so no sky shows under the far blocks */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.08, 0]}>
+        <planeGeometry args={[CELL_X * 9, CELL_Z * 9]} />
+        <meshStandardMaterial map={groundMap('grass', CELL_X * 9, CELL_Z * 9)} color="#dfe9d0" roughness={1} />
+      </mesh>
     </>
   );
 }

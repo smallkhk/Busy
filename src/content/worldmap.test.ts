@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CELL_X, CELL_Z, HOME_CELLS, PLACE_CELLS, placeAt, ROAD_HALF, ROAD_Z, route, snapWalkable, type Rect } from './worldmap';
+import { CELL_X, CELL_Z, HOME_CELLS, LANDMARK_CELLS, landmarkAt, PLACE_CELLS, placeAt, ROAD_HALF, ROAD_Z, route, snapWalkable, type Rect } from './worldmap';
 import type { Place } from './common';
 
 const PLAZA: Rect = { minX: -13, maxX: 13, minZ: -1.8, maxZ: 3.6 };
@@ -23,7 +23,14 @@ describe('connected Abuja', () => {
   });
 
   it('walks straight inside one plaza', () => {
-    expect(route([0, 0], [5, 1], 'kubwa', plaza)).toEqual([[5, 1]]);
+    const x = HOME_CELLS.kubwa[0] * CELL_X;
+    expect(route([x, 0], [x + 5, 1], 'kubwa', plaza)).toEqual([[x + 5, 1]]);
+  });
+
+  it('landmarks have their own blocks, apart from places and streets', () => {
+    const taken = new Set([...Object.values(PLACE_CELLS), ...Object.values(HOME_CELLS)].map((c) => c!.join(',')));
+    for (const c of Object.values(LANDMARK_CELLS)) expect(taken.has(c.join(',')), c.join(',')).toBe(false);
+    expect(landmarkAt(LANDMARK_CELLS.mosque)).toBe('mosque');
   });
 
   it('goes down to the road, along, and up into the next place on the same row', () => {
@@ -39,7 +46,7 @@ describe('connected Abuja', () => {
   });
 
   it('changes rows on a cross road between blocks', () => {
-    const from: [number, number] = [0, 0];
+    const from: [number, number] = [HOME_CELLS.kubwa[0] * CELL_X, 0];
     const garki = PLACE_CELLS.garki!;
     const to: [number, number] = [garki[0] * CELL_X, garki[1] * CELL_Z];
     const path = route(from, to, 'kubwa', plaza);
@@ -53,7 +60,8 @@ describe('connected Abuja', () => {
   });
 
   it('a tap inside houses snaps onto the nearest road or plaza', () => {
-    const p = snapWalkable([10, -15], 'kubwa', plaza);
-    expect(onRoadGrid(p) || (p[0] >= -13 && p[0] <= 13 && p[1] >= -1.8)).toBe(true);
+    const x = HOME_CELLS.kubwa[0] * CELL_X;
+    const p = snapWalkable([x + 10, -15], 'kubwa', plaza);
+    expect(onRoadGrid(p) || (p[0] >= x - 13 && p[0] <= x + 13 && p[1] >= -1.8)).toBe(true);
   });
 });

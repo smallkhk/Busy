@@ -12,8 +12,8 @@ import type { AreaId } from './housing';
  */
 export const CELL_X = 36;
 export const CELL_Z = 32;
-export const COLS = 6;
-export const ROWS = 4;
+export const COLS = 7;
+export const ROWS = 5;
 /** Local z of the east-west road in front of every block. */
 export const ROAD_Z = 7;
 /** Half the width of the walkable strip along a road. */
@@ -23,42 +23,87 @@ export type Cell = [number, number];
 
 /**
  * Where each place stands on the grid ([column west→east, row north→south]).
- * Every block holds something, so the next place is always one street away:
+ * Every block holds a place, an area's street or a landmark:
  *
- *   Kubwa st    Gwarinpa st  Jabi Lake    Maitama st   Maitama     Park
- *   Stadium     Utako        Wuse Market  Wuse 2       Wuse 2 st   Asokoro st
- *   Kuje st     Hospital     Secretariat  Garki st     Asokoro     Guzape st
- *   Airport     Garki        Nyanya st    Nyanya       Mararaba    Mararaba st
+ *   Zuma Rock   Kubwa st     Gwarinpa st  Jabi Lake    Maitama st   Maitama      Millennium Park
+ *   Stadium     Utako        Wuse Market  Banex        Wuse 2       Hilton       Unity Fountain
+ *   Kuje st     Hospital     Nat. Mosque  Secretariat  Christ. Ctr  Wuse 2 st    Aso Rock
+ *   UniAbuja    Garki st     Eagle Sq.    CBN          Garki        Asokoro      Asokoro st
+ *   Airport     City Gate    Guzape st    Nyanya st    Nyanya       Mararaba     Mararaba st
  */
 export const PLACE_CELLS: Partial<Record<Place, Cell>> = {
-  jabi: [2, 0],
-  maitama: [4, 0],
-  park: [5, 0],
+  jabi: [3, 0],
+  maitama: [5, 0],
+  park: [6, 0],
   stadium: [0, 1],
   utako: [1, 1],
   wuse: [2, 1],
-  lounge: [3, 1],
+  lounge: [4, 1],
   hospital: [1, 2],
-  secretariat: [2, 2],
-  asokoro: [4, 2],
-  airport: [0, 3],
-  garki: [1, 3],
-  nyanya: [3, 3],
-  mararaba: [4, 3],
+  secretariat: [3, 2],
+  uniabuja: [0, 3],
+  garki: [4, 3],
+  asokoro: [5, 3],
+  airport: [0, 4],
+  nyanya: [4, 4],
+  mararaba: [5, 4],
 };
 
 /** Your own street (the "street" place) is the block of the area you live in. */
 export const HOME_CELLS: Record<AreaId, Cell> = {
-  kubwa: [0, 0],
-  gwarinpa: [1, 0],
-  maitama: [3, 0],
-  wuse2: [4, 1],
-  asokoro: [5, 1],
+  kubwa: [1, 0],
+  gwarinpa: [2, 0],
+  maitama: [4, 0],
   kuje: [0, 2],
-  garki: [3, 2],
-  guzape: [5, 2],
-  nyanya: [2, 3],
-  mararaba: [5, 3],
+  wuse2: [5, 2],
+  garki: [1, 3],
+  asokoro: [6, 3],
+  guzape: [2, 4],
+  nyanya: [3, 4],
+  mararaba: [6, 4],
+};
+
+/** Abuja landmarks: blocks to see (and walk through) on the way. */
+export type Landmark = 'zuma' | 'banex' | 'hilton' | 'fountain' | 'mosque' | 'church' | 'asorock' | 'eagle' | 'cbn' | 'citygate';
+export const LANDMARK_CELLS: Record<Landmark, Cell> = {
+  zuma: [0, 0],
+  banex: [3, 1],
+  hilton: [5, 1],
+  fountain: [6, 1],
+  mosque: [2, 2],
+  church: [4, 2],
+  asorock: [6, 2],
+  eagle: [2, 3],
+  cbn: [3, 3],
+  citygate: [1, 4],
+};
+export const LANDMARK_NAMES: Record<Landmark, string> = {
+  zuma: 'Zuma Rock',
+  banex: 'Banex Plaza',
+  hilton: 'Transcorp Hilton',
+  fountain: 'Unity Fountain',
+  mosque: 'National Mosque',
+  church: 'National Christian Centre',
+  asorock: 'Aso Rock (Villa)',
+  eagle: 'Eagle Square',
+  cbn: 'Central Bank (CBN)',
+  citygate: 'Abuja City Gate',
+};
+
+export function landmarkAt(cell: Cell): Landmark | null {
+  for (const [l, c] of Object.entries(LANDMARK_CELLS)) if (c[0] === cell[0] && c[1] === cell[1]) return l as Landmark;
+  return null;
+}
+
+/** Forecourts you can walk onto (the rocks and the Villa are off limits). */
+const LANDMARK_WALK: Partial<Record<Landmark, { minX: number; maxX: number; minZ: number; maxZ: number }>> = {
+  banex: { minX: -9, maxX: 9, minZ: -2.5, maxZ: 7 },
+  hilton: { minX: -8, maxX: 8, minZ: -1, maxZ: 7 },
+  fountain: { minX: -8, maxX: 8, minZ: -7, maxZ: 7 },
+  mosque: { minX: -9, maxX: 9, minZ: -0.5, maxZ: 7 },
+  church: { minX: -8, maxX: 8, minZ: -0.5, maxZ: 7 },
+  eagle: { minX: -11, maxX: 11, minZ: -3.5, maxZ: 7 },
+  cbn: { minX: -7, maxX: 7, minZ: -0.5, maxZ: 7 },
 };
 
 /** Names for the blocks between places, so the HUD can say where you are. */
@@ -113,6 +158,10 @@ function walkables(area: AreaId, plaza: (p: Place) => Rect | null): Rect[] {
       const oz = r * CELL_Z;
       out.push({ minX: ox + b.minX, maxX: ox + b.maxX, minZ: oz + b.minZ, maxZ: oz + ROAD_Z });
     }
+  for (const [l, [c, r]] of Object.entries(LANDMARK_CELLS)) {
+    const b = LANDMARK_WALK[l as Landmark];
+    if (b) out.push({ minX: c * CELL_X + b.minX, maxX: c * CELL_X + b.maxX, minZ: r * CELL_Z + b.minZ, maxZ: r * CELL_Z + b.maxZ });
+  }
   return out;
 }
 

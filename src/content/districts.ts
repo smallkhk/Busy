@@ -455,6 +455,8 @@ export const DISTRICT_INTERACTABLES: Interactable[] = [
 /** Extra public routes from the older parks to the new districts. */
 export const NEW_ROUTES: Record<string, ReturnType<typeof ride>[]> = {
   'nyanya-park': [ride('nyanya-mr', 'Bus go Mararaba', '🚌', 'mararaba', 15, 200, [4.4, 2.6])],
+  'airport-rank': [ride('air-uni', 'Taxi go UniAbuja (Gwagwalada)', '🎓', 'uniabuja', 25, 2500, [4.4, 2.6])],
+  busstop: [ride('to-uni', 'Bus go UniAbuja (Gwagwalada)', '🎓', 'uniabuja', 90, 1500, [1.0, 2.6], true)],
   'jabi-park': [ride('jabi-utako', 'Taxi go Utako', '🚕', 'utako', 10, 1000, [4.4, 2.4]), ride('jabi-stadium', 'Taxi go National Stadium', '🏟️', 'stadium', 12, 1200, [4.4, 2.4])],
   'maitama-park': [ride('mai-pk', 'Taxi go Millennium Park', '🌳', 'park', 6, 800, [4.4, 2.6])],
   'utako-park': [ride('utako-st', 'Taxi go National Stadium', '🏟️', 'stadium', 12, 1000, [4.4, 2.6])],

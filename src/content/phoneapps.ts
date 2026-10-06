@@ -10,7 +10,7 @@ export const CHOP_ITEMS: Activity[] = [
 ];
 
 // ---------------- Ride app: door to door ----------------
-export const RIDE_PLACES: Place[] = ['street', 'wuse', 'jabi', 'secretariat', 'lounge', 'hospital', 'maitama', 'asokoro', 'garki', 'nyanya', 'airport', 'utako', 'mararaba', 'park', 'stadium'];
+export const RIDE_PLACES: Place[] = ['street', 'wuse', 'jabi', 'secretariat', 'lounge', 'hospital', 'maitama', 'asokoro', 'garki', 'nyanya', 'airport', 'utako', 'mararaba', 'park', 'stadium', 'uniabuja'];
 
 /** Rough road distance in km. 'street' is your area, measured from Kubwa (closer areas scale it down). */
 const KM: Record<string, number> = {
@@ -46,6 +46,8 @@ const KM: Record<string, number> = {
   'street-park': 21, 'wuse-park': 6, 'jabi-park': 9, 'secretariat-park': 5, 'lounge-park': 4, 'hospital-park': 7, 'maitama-park': 2,
   'asokoro-park': 7, 'garki-park': 7, 'nyanya-park': 20, 'airport-park': 41, 'utako-park': 8, 'mararaba-park': 25, 'park-stadium': 13,
   'street-stadium': 20, 'wuse-stadium': 7, 'jabi-stadium': 6, 'secretariat-stadium': 8, 'lounge-stadium': 9, 'hospital-stadium': 6, 'maitama-stadium': 11,
+  'street-uniabuja': 55, 'wuse-uniabuja': 48, 'jabi-uniabuja': 46, 'secretariat-uniabuja': 47, 'lounge-uniabuja': 50, 'hospital-uniabuja': 45, 'maitama-uniabuja': 52,
+  'asokoro-uniabuja': 50, 'garki-uniabuja': 44, 'nyanya-uniabuja': 60, 'airport-uniabuja': 20, 'utako-uniabuja': 45, 'mararaba-uniabuja': 62, 'park-uniabuja': 52, 'stadium-uniabuja': 40,
   'asokoro-stadium': 11, 'garki-stadium': 7, 'nyanya-stadium': 22, 'airport-stadium': 28, 'utako-stadium': 6, 'mararaba-stadium': 26,
 };
 

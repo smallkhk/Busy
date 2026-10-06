@@ -5,7 +5,7 @@ import { sendChat } from './multiplayer';
 import { useNet } from './useNet';
 import { useAdmin } from './admin';
 
-const ROOM_NAMES: Record<string, string> = { wuse: 'Wuse Market', jabi: 'Jabi Lake', secretariat: 'Secretariat', lounge: 'the lounge', hospital: 'hospital', maitama: 'Maitama', asokoro: 'Asokoro', garki: 'Area 1', nyanya: 'Nyanya', airport: 'the airport', utako: 'Utako', mararaba: 'Mararaba', park: 'Millennium Park', stadium: 'the stadium' };
+const ROOM_NAMES: Record<string, string> = { wuse: 'Wuse Market', jabi: 'Jabi Lake', secretariat: 'Secretariat', lounge: 'the lounge', hospital: 'hospital', maitama: 'Maitama', asokoro: 'Asokoro', garki: 'Area 1', nyanya: 'Nyanya', airport: 'the airport', utako: 'Utako', mararaba: 'Mararaba', park: 'Millennium Park', stadium: 'the stadium', uniabuja: 'UniAbuja' };
 const roomName = (r: string) => (r.startsWith('road-') ? 'this road' : r.startsWith('street-') ? `${AREAS[r.slice(7) as AreaId]?.name ?? r.slice(7)} street` : ROOM_NAMES[r] ?? r);
 
 /** Online count, recent messages and a chat box for the place you dey. */

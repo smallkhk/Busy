@@ -253,6 +253,7 @@ const BOUNDS: Record<Place, { minX: number; maxX: number; minZ: number; maxZ: nu
   mararaba: { minX: -13, maxX: 13, minZ: -1.8, maxZ: 3.6 },
   park: { minX: -13, maxX: 13, minZ: -1.8, maxZ: 3.6 },
   stadium: { minX: -13, maxX: 13, minZ: -1.8, maxZ: 3.6 },
+  uniabuja: { minX: -13, maxX: 13, minZ: -1.8, maxZ: 3.6 },
   road: { minX: -CELL_X / 2, maxX: CELL_X / 2, minZ: ROAD_Z - ROAD_HALF, maxZ: ROAD_Z + ROAD_HALF },
 };
 
