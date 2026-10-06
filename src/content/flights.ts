@@ -7,12 +7,14 @@ import type { Seat } from './seats';
  * the other city. Lagos is its own small map (`lagos`) for now.
  */
 export const AIRLINE = 'Zuma Air';
-export type Airport = 'ABV' | 'LOS';
+export type Airport = 'ABV' | 'LOS' | 'BNI';
 export type FlightClass = 'economy' | 'business';
 
-export const CITY_NAMES: Record<Airport, string> = { ABV: 'Abuja', LOS: 'Lagos' };
+export const CITY_NAMES: Record<Airport, string> = { ABV: 'Abuja', LOS: 'Lagos', BNI: 'Benin City' };
 /** Where you come out after landing. */
-export const LAND_PLACE: Record<Airport, Place> = { ABV: 'airport', LOS: 'lagos' };
+export const LAND_PLACE: Record<Airport, Place> = { ABV: 'airport', LOS: 'lagos', BNI: 'benin' };
+/** Minutes in the air from Abuja (the board shows these). */
+const ROUTE_MINUTES: Record<Airport, number> = { ABV: 70, LOS: 70, BNI: 55 };
 export const FARES: Record<FlightClass, number> = { economy: 95000, business: 320000 };
 /** Game minutes the flight shows (ABV–LOS is about 1h10). */
 export const FLIGHT_MINUTES = 70;
@@ -30,17 +32,19 @@ export type Flight = {
   /** Turbulence comes (once) on this flight. */
   bumpy: boolean;
   shook?: boolean;
+  /** Minutes the flight shows (older saves: 70). */
+  mins?: number;
 };
 
-export function newFlight(to: Airport, cls: FlightClass, now: number, fast: boolean, rand: () => number): Flight {
-  const from: Airport = to === 'LOS' ? 'ABV' : 'LOS';
+export function newFlight(from: Airport, to: Airport, cls: FlightClass, now: number, fast: boolean, rand: () => number): Flight {
   // Odd numbers fly out of Abuja, even numbers fly back
   const n = 100 + Math.floor(rand() * 400);
-  return { no: `ZA ${to === 'LOS' ? n | 1 : n & ~1}`, from, to, cls, start: now, dur: flightSeconds(fast) * 1000, bumpy: rand() < 0.5 };
+  const mins = ROUTE_MINUTES[to === 'ABV' ? from : to];
+  return { no: `ZA ${from === 'ABV' ? n | 1 : n & ~1}`, from, to, cls, start: now, dur: flightSeconds(fast) * 1000 * (mins / 70), bumpy: rand() < 0.5, mins };
 }
 
 export const flightProgress = (f: Flight, now: number) => Math.min(1, Math.max(0, (now - f.start) / f.dur));
-export const minutesToLanding = (f: Flight, now: number) => Math.ceil((1 - flightProgress(f, now)) * FLIGHT_MINUTES);
+export const minutesToLanding = (f: Flight, now: number) => Math.ceil((1 - flightProgress(f, now)) * (f.mins ?? FLIGHT_MINUTES));
 
 /** What the captain and the seatbelt sign are saying. */
 export function flightStatus(f: Flight, now: number): string {
@@ -105,22 +109,27 @@ export const LAGOS_SEATS: Seat[] = [
   ...BUKA_BENCHES.flatMap(([x, z]) => [-0.45, 0.45].map((dx) => ({ x: x + dx, z: z + 0.05, y: 0.45, rot: Math.PI }))),
 ];
 
-const fly = (id: string, to: Airport, cls: FlightClass, spot: [number, number]): Activity => ({
+export const fly = (id: string, from: Airport, to: Airport, cls: FlightClass, spot: [number, number], fare = FARES[cls]): Activity => ({
   id,
   label: `✈️ Fly to ${CITY_NAMES[to]} · ${cls === 'economy' ? 'Economy' : 'Business 🥂'}`,
   doing: cls === 'economy' ? 'Check-in, security, boarding 🛂' : 'Business lounge, then priority boarding 🥂',
   emoji: '✈️',
   minutes: 40,
-  cost: FARES[cls],
+  cost: fare,
   gains: cls === 'business' ? { food: 20, fun: 15 } : { energy: -5 },
   hours: [6, 22],
   travelTo: 'cabin',
-  effects: { flight: { to, cls } },
+  effects: { flight: { from, to, cls } },
   spot,
 });
 
 /** Booking desks at both airports. */
-export const FLY_FROM_ABUJA: Activity[] = [fly('fly-los-eco', 'LOS', 'economy', [-4.2, -1.3]), fly('fly-los-biz', 'LOS', 'business', [-4.2, -1.3])];
+export const FLY_FROM_ABUJA: Activity[] = [
+  fly('fly-los-eco', 'ABV', 'LOS', 'economy', [-4.2, -1.3]),
+  fly('fly-los-biz', 'ABV', 'LOS', 'business', [-4.2, -1.3]),
+  fly('fly-bni-eco', 'ABV', 'BNI', 'economy', [-4.2, -1.3], 75000),
+  fly('fly-bni-biz', 'ABV', 'BNI', 'business', [-4.2, -1.3], 250000),
+];
 
 const front = (p: [number, number], d = 4): [number, number] => [p[0], p[1] + d];
 const label = (p: [number, number], h = 4.5): [number, number, number] => [p[0], h, p[1]];
@@ -168,7 +177,7 @@ export const FLIGHT_INTERACTABLES: Interactable[] = [
     name: 'Murtala Muhammed Airport',
     emoji: '🛫',
     label: label(LAGOS.airport, 5.5),
-    activities: [fly('fly-abv-eco', 'ABV', 'economy', front(LAGOS.airport, 5)), fly('fly-abv-biz', 'ABV', 'business', front(LAGOS.airport, 5))],
+    activities: [fly('fly-abv-eco', 'LOS', 'ABV', 'economy', front(LAGOS.airport, 5)), fly('fly-abv-biz', 'LOS', 'ABV', 'business', front(LAGOS.airport, 5))],
   },
   {
     id: 'danfo-park',
@@ -229,5 +238,5 @@ export const FLIGHT_INTERACTABLES: Interactable[] = [
 ];
 
 /** Places outside the Abuja map: no buses, no car, no Abuja jobs. */
-export const AWAY_PLACES: Place[] = ['cabin', 'lagos'];
+export const AWAY_PLACES: Place[] = ['cabin', 'lagos', 'benin'];
 export const isAway = (p: Place) => AWAY_PLACES.includes(p);

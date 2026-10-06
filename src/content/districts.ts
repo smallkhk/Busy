@@ -320,6 +320,7 @@ export const DISTRICT_INTERACTABLES: Interactable[] = [
       ride('utako-wuse', 'Taxi go Wuse Market', '🚕', 'wuse', 12, 1000, PARK),
       ride('utako-jabi', 'Taxi go Jabi Lake Mall', '🚕', 'jabi', 10, 1000, PARK),
       ride('utako-sec', 'Bus go Federal Secretariat', '🏛️', 'secretariat', 25, 300, PARK),
+      ride('utako-benin', 'Luxury bus go Benin City (8 hrs)', '🚌', 'benin', 480, 12000, PARK),
     ],
   },
 

@@ -22,6 +22,7 @@ const AMBIENCE = {
   stadium: 'murmur',
   cabin: 'murmur',
   lagos: 'market',
+  benin: 'street',
 } as const;
 
 function ambienceFor(place: string, minutes: number) {
