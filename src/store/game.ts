@@ -5,6 +5,7 @@ import { entrySpot, exitSpot, homeBounds, homeSpot } from '../content/homeLayout
 import { CELL_X, CELL_Z, cellOfPlace, currentCell, HOME_CELLS, inGrid, placeAt, ROAD_HALF, ROAD_Z, route, type Cell } from '../content/worldmap';
 import { AD_BIZ_BOOST } from '../content/billboards';
 import { appointChance, CAMPAIGN_DAYS, canRun, electionWon, MOVES, moveSupport, NO_POLITICS, OFFICES, startingSupport, TERM_DAYS, type CampaignMove, type Politics } from '../content/politics';
+import { admissible, cgpaOf, examGrade, gradPay, jambScore, LECTURES_PER_LEVEL, levelName, MAX_STUDY, NO_SCHOOL, PASS_GP, programmeById, RUNS_COST, RUNS_POINTS, RUNS_SCAM, schoolBlock, STRIKE_CHANCE, STRIKE_DAYS, degreeClass, type ProgrammeId, type School, type SchoolNeed } from '../content/school';
 import { courseById, GYM_DAYS, GYM_FEE, sickDodge, workEnergyFactor, type CourseId } from '../content/learning';
 import { festivalOn } from '../content/festivals';
 import { EDUCATIONS, familyById, ORIGINS, type Birth } from '../content/birth';
@@ -34,7 +35,7 @@ export const setClockSource = (fn: () => number) => (clock = fn);
 
 export type Txn = { at: number; label: string; amount: number };
 export type Toast = { id: number; text: string };
-export type PhoneApp = 'home' | 'bank' | 'jobs' | 'chat' | 'map' | 'gram' | 'house' | 'contacts' | 'chop' | 'ride' | 'news' | 'goals' | 'biz' | 'cars' | 'gist' | 'love' | 'account' | 'rankings' | 'style' | 'learn' | 'politics' | 'admin';
+export type PhoneApp = 'home' | 'bank' | 'jobs' | 'chat' | 'map' | 'gram' | 'house' | 'contacts' | 'chop' | 'ride' | 'news' | 'goals' | 'biz' | 'cars' | 'gist' | 'love' | 'account' | 'rankings' | 'style' | 'learn' | 'school' | 'politics' | 'admin';
 
 /** `total` is the actual duration (rush hour makes trips longer); old saves may lack it. */
 type Active = { id: string; remaining: number; gen: boolean; total?: number; eventAt?: number; /** Mini-game score 0–1. */ bonus?: number };
@@ -83,6 +84,8 @@ export type GameState = {
   courses: Partial<Record<CourseId, number>>;
   /** Courses you don finish. */
   skills: CourseId[];
+  /** UniAbuja full-time: JAMB, admission, levels, results. */
+  school?: School;
   /** 0–100: how fit you be. */
   fitness: number;
   /** Last game day your gym membership covers. */
@@ -154,6 +157,12 @@ export type GameState = {
   start: (name: string, shirt: string, look?: Look, birth?: Birth) => void;
   buyOutfit: (id: Outfit) => void;
   enroll: (id: CourseId) => void;
+  /** Accept admission into a UniAbuja programme. */
+  admit: (id: ProgrammeId) => void;
+  /** Pay this session's school fees. */
+  payFees: () => void;
+  /** Pay somebody to "sort" your JAMB score (sometimes na scam). */
+  sortAdmission: () => void;
   /** Buy the nomination form (or lobby for an appointment). */
   declare: (target: number) => void;
   campaign: (move: CampaignMove) => void;
@@ -391,7 +400,7 @@ const initial = () => ({
 });
 
 /** Why an activity can't start right now, or null if it can. */
-export type BlockState = Pick<GameState, 'time' | 'money' | 'power' | 'active' | 'packaging' | 'pantry' | 'cv' | 'area' | 'rentLocked'> & { unlocks?: string[]; grade?: number; hasCar?: boolean; car?: { id: string; fuel?: number; condition?: number } | null; carId?: string; carFuel?: number; sick?: Sickness | null; contacts?: Record<string, ContactState>; weather?: Weather; news?: ActiveNews[]; homeUps?: string[]; courses?: Partial<Record<CourseId, number>>; skills?: CourseId[]; gymUntil?: number };
+export type BlockState = Pick<GameState, 'time' | 'money' | 'power' | 'active' | 'packaging' | 'pantry' | 'cv' | 'area' | 'rentLocked'> & { unlocks?: string[]; grade?: number; hasCar?: boolean; car?: { id: string; fuel?: number; condition?: number } | null; carId?: string; carFuel?: number; sick?: Sickness | null; contacts?: Record<string, ContactState>; weather?: Weather; news?: ActiveNews[]; homeUps?: string[]; courses?: Partial<Record<CourseId, number>>; skills?: CourseId[]; gymUntil?: number; school?: School };
 
 /** Everything events look at to decide if and how they happen. */
 export function eventContext(s: GameState, trip?: string | null): EventContext {
@@ -459,6 +468,10 @@ export function blockReason(a: Activity, s: BlockState): string | null {
   if (a.effects?.fuel && !(s.hasCar ?? !!s.car)) return 'You no get car to put fuel';
   if (s.sick && (a.pay || a.id === OFFICE_SHIFT_ID)) return `You dey sick (${SICKNESS[s.sick].name}). Treat am first 🤒`;
   if (a.usesPantry && s.pantry < a.usesPantry) return 'No foodstuff. Buy for Wuse Market';
+  if (a.requires?.school) {
+    const why = schoolBlock(s.school, a.requires.school as SchoolNeed, clockParts(s.time).day);
+    if (why) return why;
+  }
   if (a.requires?.course && s.courses?.[a.requires.course as CourseId] === undefined) return `Enroll for ${courseById(a.requires.course)?.name ?? 'the course'} first (📚 Learn app)`;
   if (a.requires?.course && s.skills?.includes(a.requires.course as CourseId)) return 'You don finish this course already 🎓';
   if (a.requires?.skill && !s.skills?.includes(a.requires.skill as CourseId)) return `You need ${courseById(a.requires.skill)?.name ?? 'training'} first (📚 Learn app)`;
@@ -530,6 +543,52 @@ export const useGame = create<GameState>()(
         for (const g of fresh) get().toast(`🏆 ${g.title}!${g.reward ? ` +${formatNaira(g.reward)}` : ''}`);
       };
 
+      /** UniAbuja: what finishing a school activity does to your record. */
+      const schoolDone = (id: string) => {
+        const s = get();
+        const sc = s.school ?? NO_SCHOOL;
+        if (id === 'jamb') {
+          const score = jambScore(s.cv, Math.random);
+          const best = Math.max(score, sc.jamb ?? 0);
+          set({ school: { ...sc, jamb: best } });
+          const can = admissible(best);
+          get().toast(`🖥️ JAMB result: ${score}/400. ${can.length ? `You fit enter ${can.length} course(s)! Check 🎓 UniAbuja portal` : 'E no reach any cut-off. Read more, write again 💪🏾'}`);
+        } else if (id === 'uni-lecture') {
+          set({ school: { ...sc, lectures: sc.lectures + 1 } });
+          get().toast(`📝 Lecture ${sc.lectures + 1}/${LECTURES_PER_LEVEL} for ${levelName(sc.level)}`);
+        } else if (id === 'library-read' && sc.programme && !sc.finalist) {
+          set({ school: { ...sc, study: Math.min(MAX_STUDY, sc.study + 1) } });
+        } else if (id === 'uni-exam') {
+          const p = programmeById(sc.programme);
+          if (!p) return;
+          const gp = examGrade(sc, s.fitness ?? 0, Math.random);
+          const results = [...sc.results, gp];
+          if (gp < PASS_GP) {
+            // Carry over: repeat the level, pay fees again
+            set({ school: { ...sc, results, lectures: 0, study: 0, feesPaid: false } });
+            get().toast(`😭 ${levelName(sc.level)} result: GP ${gp.toFixed(2)}. Carryover! You go repeat the level.`);
+          } else if (sc.level >= p.years) {
+            set({ school: { ...sc, results, lectures: 0, study: 0, finalist: true } });
+            get().toast(`🎉 Final exams passed! CGPA ${cgpaOf(results).toFixed(2)}. Go UniAbuja for convocation 🎓`);
+          } else {
+            set({ school: { ...sc, results, level: sc.level + 1, lectures: 0, study: 0, feesPaid: false } });
+            get().toast(`✅ ${levelName(sc.level)} result: GP ${gp.toFixed(2)}. You don enter ${levelName(sc.level + 1)}! Pay new session fees.`);
+          }
+        } else if (id === 'convocation') {
+          const p = programmeById(sc.programme);
+          if (!p) return;
+          const cgpa = cgpaOf(sc.results);
+          const cls = degreeClass(cgpa);
+          set({
+            school: { ...sc, finalist: false, graduated: { programme: p.id, cgpa } },
+            skills: s.skills.includes('degree') ? s.skills : [...s.skills, 'degree'],
+            packaging: clamp(s.packaging + p.packaging),
+            cv: s.cv + 10,
+          });
+          get().toast(`🎓 Congrats graduate! ${p.name}, ${cls.name} (${cgpa.toFixed(2)}). Check 💼 Jobs: ${p.job.label}`);
+        }
+      };
+
       const finish = (a: Activity) => {
         const s = get();
         const fx = a.effects;
@@ -549,6 +608,7 @@ export const useGame = create<GameState>()(
           }
         }
         if (fx?.fitness) set({ fitness: Math.min(100, (get().fitness ?? 0) + fx.fitness) });
+        schoolDone(a.id);
         // Doing things with a real friend nearby feels better
         const buddy = !a.travelTo && !a.away ? companionCheck?.() : undefined;
         if (buddy) {
@@ -617,6 +677,7 @@ export const useGame = create<GameState>()(
         }
         const bonus = s.active?.bonus;
         let pay = payFor(a, s.grade);
+        if (pay && a.id.startsWith('grad-')) pay = gradPay(pay, s.school);
         if (bonus !== undefined && a.minigame) {
           if (pay) pay = Math.round(pay * (0.7 + 0.6 * bonus));
           const n = get().needs;
@@ -1389,6 +1450,44 @@ export const useGame = create<GameState>()(
           get().toast(`${m.emoji} Support +${gain}%! (${Math.min(95, c.support + gain)}%)`);
         },
 
+        admit: (id) => {
+          const s = get();
+          const sc = s.school ?? NO_SCHOOL;
+          const p = programmeById(id);
+          if (!p || sc.programme || !admissible(sc.jamb).some((x) => x.id === id)) return;
+          set({ school: { ...sc, programme: id, level: 1, feesPaid: false, lectures: 0, study: 0, results: [] } });
+          get().toast(`🎉 Admission! You don enter UniAbuja for ${p.name}. Pay school fees to start 100 Level.`);
+        },
+
+        payFees: () => {
+          const s = get();
+          const sc = s.school ?? NO_SCHOOL;
+          const p = programmeById(sc.programme);
+          if (!p || sc.feesPaid || sc.finalist || sc.graduated || s.money < p.fees) return;
+          const day = clockParts(s.time).day;
+          // Sometimes the new session opens straight into ASUU strike
+          const strike = Math.random() < STRIKE_CHANCE ? day + STRIKE_DAYS[0] + Math.floor(Math.random() * (STRIKE_DAYS[1] - STRIKE_DAYS[0] + 1)) : undefined;
+          set({
+            money: s.money - p.fees,
+            school: { ...sc, feesPaid: true, strikeUntil: strike },
+            txns: [{ at: s.time, label: `UniAbuja school fees (${levelName(sc.level)})`, amount: -p.fees }, ...s.txns].slice(0, 40),
+          });
+          get().toast(strike ? `😩 Fees paid, but ASUU don declare strike till Day ${strike}. Read for library meanwhile.` : `✅ ${levelName(sc.level)} fees paid. Go attend lectures!`);
+        },
+
+        sortAdmission: () => {
+          const s = get();
+          const sc = s.school ?? NO_SCHOOL;
+          if (sc.programme || sc.jamb === undefined || s.money < RUNS_COST) return;
+          const scam = Math.random() < RUNS_SCAM;
+          set({
+            money: s.money - RUNS_COST,
+            school: scam ? sc : { ...sc, jamb: Math.min(400, sc.jamb + RUNS_POINTS) },
+            txns: [{ at: s.time, label: 'Admission "runs"', amount: -RUNS_COST }, ...s.txns].slice(0, 40),
+          });
+          get().toast(scam ? '😭 The "admission officer" don block your number. Na scam!' : `🤫 Your score don "increase" to ${Math.min(400, sc.jamb + RUNS_POINTS)}. Check portal.`);
+        },
+
         enroll: (id) => {
           const s = get();
           const c = courseById(id);
@@ -1765,7 +1864,11 @@ export const useGame = create<GameState>()(
           const s = get();
           const here = currentCell(s);
           const there = cellOfPlace(to, s.area);
-          if (!here || !there || s.active) return;
+          if (!there || s.active) return;
+          if (!here) {
+            get().toast('🚪 Comot outside first, then waka go there');
+            return;
+          }
           const e = to === 'street' ? ([0, 2] as [number, number]) : entrySpot(to, s.area);
           set({ phone: null, menu: null });
           get().walkTo(e[0] + (there[0] - here[0]) * CELL_X, e[1] + (there[1] - here[1]) * CELL_Z);
@@ -1930,6 +2033,7 @@ export const useGame = create<GameState>()(
         politics: s.politics,
         lastDay: s.lastDay,
         skills: s.skills,
+        school: s.school,
         fitness: s.fitness,
         gymUntil: s.gymUntil,
         wardrobe: s.wardrobe,

@@ -544,3 +544,10 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
 /* Name of each block in the connected city */
 .block-name { background: rgba(14, 33, 28, 0.82); color: #f1e3c8; border: 1px solid rgba(232, 176, 75, 0.6); border-radius: 10px; padding: 4px 10px; font-weight: 800; font-size: 14px; white-space: nowrap; letter-spacing: 0.2px; }
 .block-name.here { background: #e8b04b; color: #1b1a14; border-color: #e8b04b; }
+
+/* UniAbuja portal */
+.school-title { font-size: 22px; font-weight: 800; margin: 4px 0; }
+.school-cert { text-align: center; border: 2px solid #e8b04b; }
+.school-strike { margin-top: 6px; color: #ffb4a8; }
+.school-fail { color: #ff8a7a; font-size: 13px; }
+.contact > .bar { flex: none; width: 100%; }
