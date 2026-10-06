@@ -1,6 +1,7 @@
 import { useFrame, type ThreeEvent } from '@react-three/fiber';
 import { Suspense, useContext, useRef } from 'react';
 import { CellCtx } from './origin';
+import { groundMap } from './groundTex';
 import type { Group } from 'three';
 import { clockParts, daylight } from '../engine/clock';
 import { carById } from '../content/cars';
@@ -295,7 +296,11 @@ export function Street() {
       {/* Red Abuja laterite ground */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.02, 0]} receiveShadow onClick={onGround}>
         <planeGeometry args={cell ? cell.ground : [80, 80]} />
-        <meshStandardMaterial color={rich ? '#6f9a52' : '#b0703f'} />
+        {cell ? (
+          <meshStandardMaterial map={groundMap(rich ? 'grass' : 'earth', cell.ground[0], cell.ground[1])} roughness={1} />
+        ) : (
+          <meshStandardMaterial color={rich ? '#6f9a52' : '#b0703f'} />
+        )}
       </mesh>
       {/* Road */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0.4]} receiveShadow onClick={onGround}>

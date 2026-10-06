@@ -2,13 +2,16 @@ import type { ThreeEvent } from '@react-three/fiber';
 import { useContext } from 'react';
 import { useGame } from '../../store/game';
 import { CellCtx } from '../origin';
+import { groundMap, kindForColor } from '../groundTex';
 
 /** Walkable ground plane: tapping it walks the player there. */
 export function Ground({ color, size = [80, 80], pos = [0, -0.02, 0] }: { color: string; size?: [number, number]; pos?: [number, number, number] }) {
   const walkTo = useGame((s) => s.walkTo);
   // In the connected city the big ground only covers this block
   const cell = useContext(CellCtx);
-  if (cell && size[0] >= 60) size = cell.ground;
+  // The big ground of a place in town is real grass or earth, not flat colour
+  const real = !!cell && size[0] >= 60;
+  if (real) size = cell.ground;
   const onDown = (e: ThreeEvent<MouseEvent>) => {
     e.stopPropagation();
     // A drag moves the camera; only a tap counts
@@ -18,7 +21,7 @@ export function Ground({ color, size = [80, 80], pos = [0, -0.02, 0] }: { color:
   return (
     <mesh rotation={[-Math.PI / 2, 0, 0]} position={pos} receiveShadow onClick={onDown}>
       <planeGeometry args={size} />
-      <meshStandardMaterial color={color} />
+      {real ? <meshStandardMaterial map={groundMap(kindForColor(color), size[0], size[1])} roughness={1} /> : <meshStandardMaterial color={color} />}
     </mesh>
   );
 }

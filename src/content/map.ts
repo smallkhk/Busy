@@ -47,6 +47,7 @@ export const MAP_SPOTS: MapSpot[] = [
   { id: 'citygate', name: 'Abuja City Gate', emoji: '🚪', x: 140, y: 276, landmark: true, note: '"Welcome to Abuja" arch on Airport Road.' },
   { id: 'zuma', name: 'Zuma Rock', emoji: '🪨', x: 22, y: 26, landmark: true, note: 'The giant rock with face for Madalla. Na the gate to Abuja from the north.' },
   { id: 'lugbe', name: 'Lugbe', emoji: '🏘️', x: 92, y: 290, note: 'Coming soon' },
+  { id: 'uniabuja', name: 'University of Abuja (Gwagwalada)', short: 'UniAbuja', emoji: '🎓', x: 70, y: 352, label: 'right', place: 'uniabuja', note: 'Lectures, library and hostel life' },
   { id: 'airport', name: 'Nnamdi Azikiwe Airport', short: 'Airport', emoji: '✈️', x: 40, y: 336, label: 'right', place: 'airport', note: 'Japa route ✈️' },
 ];
 

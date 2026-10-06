@@ -89,12 +89,12 @@ function house(x: number, z: number, r: () => number, box: BoxPart[], cone: Cone
     if (name) {
       const [w, , d] = (kit === 'suburban' ? SUBURBAN : COMMERCIAL)[name];
       const max = kit === 'suburban' ? (style === 'rich' ? 2.1 : 1.9) : 2.3;
-      const s = Math.min(max, 3.0 / Math.max(w, d));
+      const s = Math.min(max, 3.6 / Math.max(w, d));
       kenney.push({ kit, name, paint: Math.floor(r() * (kit === 'suburban' ? HOUSE_PAINTS : BLOCK_PAINTS).length), x, z, rot, s });
       // Most Abuja houses sit inside a fenced compound with a gate
       if (kit === 'suburban' && r() < (style === 'rich' ? 0.9 : 0.6)) {
-        const fw = Math.min(3.25, w * s + 0.7);
-        const fd = Math.min(3.3, d * s + 0.9);
+        const fw = Math.min(4.0, w * s + 1.0);
+        const fd = Math.min(3.9, d * s + 1.2);
         const fc = pick(['#cbbd9d', '#d8cdb5', '#b9a98a', '#e3d9c6', '#f1ece2']);
         const h = style === 'rich' ? 1.25 : 0.9 + r() * 0.3;
         const gz = front ? z - fd / 2 : z + fd / 2;
@@ -211,15 +211,18 @@ export function Neighborhood({ seed, clear = [], extent = 26, near = -5.5, far =
     const blocked = (x: number, z: number) => clear.some(([x0, z0, x1, z1]) => x > x0 - 1.6 && x < x1 + 1.6 && z > z0 - 1.6 && z < z1 + 1.6);
     const lots: [number, number][] = [];
     // Back rows (behind the scene) and front rows (across the road)
-    for (let z = near - 1.6; z >= far; z -= 3.4) for (let x = -extent; x <= extent; x += 3.3) lots.push([x + (r() - 0.5) * 0.6, z + (r() - 0.5) * 0.5]);
-    for (let z = front + 1.6; z <= frontFar; z += 3.4) for (let x = -extent; x <= extent; x += 3.3) lots.push([x + (r() - 0.5) * 0.6, z + (r() - 0.5) * 0.5]);
+    // Houses get their own compound with space around them, not jam-packed
+    for (let z = near - 1.6; z >= far; z -= 4.2) for (let x = -extent; x <= extent; x += 4.4) lots.push([x + (r() - 0.5) * 0.6, z + (r() - 0.5) * 0.5]);
+    for (let z = front + 1.6; z <= frontFar; z += 4.2) for (let x = -extent; x <= extent; x += 4.4) lots.push([x + (r() - 0.5) * 0.6, z + (r() - 0.5) * 0.5]);
     for (const [x, z] of lots) {
       if (blocked(x, z)) continue;
-      if (r() < 0.12) {
-        // Empty plot with trees and a "This land is not for sale" sign
-        for (let i = 0; i < 3; i++) trees.push({ x: x + (r() - 0.5) * 2, z: z + (r() - 0.5) * 2, s: 0.6 + r() * 0.5, c: TREES[Math.floor(r() * TREES.length)] });
-        box.push({ p: [x, 0.5, z + 1.2], s: [0.06, 1.0, 0.06], c: '#555' });
-        box.push({ p: [x, 1.0, z + 1.2], s: [0.9, 0.4, 0.04], c: '#f4f4f4' });
+      if (r() < 0.2) {
+        // Open plot with trees; some carry a "This land is not for sale" sign
+        for (let i = 0; i < 3; i++) trees.push({ x: x + (r() - 0.5) * 2.4, z: z + (r() - 0.5) * 2.4, s: 0.6 + r() * 0.5, c: TREES[Math.floor(r() * TREES.length)] });
+        if (r() < 0.4) {
+          box.push({ p: [x, 0.5, z + 1.2], s: [0.06, 1.0, 0.06], c: '#555' });
+          box.push({ p: [x, 1.0, z + 1.2], s: [0.9, 0.4, 0.04], c: '#f4f4f4' });
+        }
         continue;
       }
       house(x, z, r, box, cone, cyl, glass, trees, style, kenney, roadZ);

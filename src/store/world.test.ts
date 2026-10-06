@@ -26,15 +26,16 @@ describe('walking and driving round Abuja', () => {
   });
 
   it('walking into a place block puts you in that place', () => {
-    // From Kubwa (0,0): one block south is the stadium
+    // From Kubwa street: one block south is Utako
     useGame.getState().shiftCell(0, 1);
-    expect(PLACE_CELLS.stadium).toEqual([0, 1]);
-    expect(useGame.getState().place).toBe('stadium');
+    expect(PLACE_CELLS.utako).toEqual([HOME_CELLS.kubwa[0], HOME_CELLS.kubwa[1] + 1]);
+    expect(useGame.getState().place).toBe('utako');
     expect(useGame.getState().cell).toBeNull();
   });
 
   it('you cannot walk off the edge of the city', () => {
-    useGame.getState().shiftCell(-1, 0);
+    // Kubwa is on the top row: nothing further north
+    useGame.getState().shiftCell(0, -1);
     expect(useGame.getState().place).toBe('street');
   });
 
