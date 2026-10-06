@@ -2,6 +2,7 @@ import { Html } from '@react-three/drei';
 import type { ThreeEvent } from '@react-three/fiber';
 import type { ReactElement } from 'react';
 import { CAMPUS } from '../../content/campus';
+import { CAFE_CHAIR_TOP, CAFE_TABLES, CAMPUS_BENCH_TOP, CAMPUS_BENCHES, EXAM_CHAIR_TOP, LIB_CHAIR_TOP, LIB_TAKEN, LT_TAKEN, ltSeat, SEAT_BASE, type Seat } from '../../content/seats';
 import { useGame } from '../../store/game';
 import { useSettings } from '../../settings';
 import { Person } from '../Avatar';
@@ -82,6 +83,39 @@ function Path({ a, b, w = 2.4 }: { a: P2; b: P2; w?: number }) {
       <planeGeometry args={[len, w]} />
       <meshStandardMaterial color="#d9d3c4" />
     </mesh>
+  );
+}
+
+/** A wooden bench with two legs (top at `top`). */
+function Bench({ x, z, top, rot = 0, len = 1.6 }: { x: number; z: number; top: number; rot?: number; len?: number }) {
+  return (
+    <group position={[x, 0, z]} rotation={[0, rot, 0]}>
+      <Box p={[0, top - 0.03, 0]} s={[len, 0.06, 0.38]} c="#8a6a45" />
+      <Box p={[0, top + 0.25, -0.2]} s={[len, 0.4, 0.05]} c="#7a5a3a" />
+      {[-len / 2 + 0.1, len / 2 - 0.1].map((dx) => (
+        <Box key={dx} p={[dx, (top - 0.06) / 2, 0]} s={[0.07, top - 0.06, 0.34]} c="#5b3a21" />
+      ))}
+    </group>
+  );
+}
+
+/** A plastic chair (top at `top`), facing −z when `back`. */
+function Chair({ x, z, top, back = true, c = '#c0392b' }: { x: number; z: number; top: number; back?: boolean; c?: string }) {
+  return (
+    <group position={[x, 0, z]} rotation={[0, back ? Math.PI : 0, 0]}>
+      <Box p={[0, top - 0.03, 0]} s={[0.42, 0.06, 0.42]} c={c} />
+      <Box p={[0, top + 0.25, -0.2]} s={[0.42, 0.45, 0.05]} c={c} />
+      {[-0.17, 0.17].flatMap((dx) => [-0.17, 0.17].map((dz) => <Box key={`${dx}${dz}`} p={[dx, (top - 0.06) / 2, dz]} s={[0.04, top - 0.06, 0.04]} c={c} />))}
+    </group>
+  );
+}
+
+/** A student sitting on a real seat. */
+function SeatedStudent({ seat, shirt, woman }: { seat: Seat; shirt: string; woman?: boolean }) {
+  return (
+    <group position={[seat.x, seat.y - SEAT_BASE, seat.z]} rotation={[0, seat.rot, 0]}>
+      <Person shirt={shirt} woman={woman} trousers={woman ? undefined : '#2d2d2d'} move="Sit" />
+    </group>
   );
 }
 
@@ -332,6 +366,17 @@ export function CampusGrounds() {
           </group>
         ))}
 
+      {/* Benches to sit on, and chairs round the cafeteria tables */}
+      {CAMPUS_BENCHES.map(([x, z, back]) => (
+        <Bench key={`${x}${z}`} x={x} z={z} top={CAMPUS_BENCH_TOP} rot={back ? Math.PI : 0} />
+      ))}
+      {CAFE_TABLES.flatMap(([x, z]) => [
+        <Chair key={`a${x}`} x={x} z={z + 0.8} top={CAFE_CHAIR_TOP} />,
+        <Chair key={`b${x}`} x={x} z={z - 0.85} top={CAFE_CHAIR_TOP} back={false} c="#f1c40f" />,
+      ])}
+      <SeatedStudent seat={{ x: CAFE_TABLES[0][0], z: CAFE_TABLES[0][1] + 0.85, y: CAFE_CHAIR_TOP, rot: Math.PI }} shirt="#2980b9" />
+      <SeatedStudent seat={{ x: CAFE_TABLES[0][0], z: CAFE_TABLES[0][1] - 0.85, y: CAFE_CHAIR_TOP, rot: 0 }} shirt="#e74c3c" woman />
+
       {/* Students about */}
       <Walkers walkers={low ? STROLLERS.slice(0, 2) : STROLLERS} />
       <Students
@@ -411,6 +456,7 @@ export function LectureHall() {
           <group key={`${x}${z}`}>
             <Box p={[x, 0.7, z]} s={[0.9, 0.06, 0.6]} c="#8a6a45" />
             <Box p={[x, 0.35, z]} s={[0.1, 0.7, 0.1]} c="#555" />
+            <Chair x={x} z={z + 0.55} top={EXAM_CHAIR_TOP} c="#3a3d42" />
           </group>
         )))}
       </Tappable>
@@ -420,23 +466,10 @@ export function LectureHall() {
       <Sign p={[7.6, 1.6, 5.8]} text="🚪 EXIT" />
       <Outside />
 
-      <Students
-        sit
-        list={[
-          ...([
-          { p: [-1.8, 0.1, -0.3], shirt: '#2980b9' },
-          { p: [0.4, 0.1, -0.3], shirt: '#e74c3c', woman: true },
-          { p: [4, 0.2, 1.2], shirt: '#27ae60' },
-          { p: [6.2, 0.2, 1.2], shirt: '#f1c40f', woman: true },
-          ] as Student[]),
-          ...(low ? [] : ([
-            { p: [-0.6, 0.3, 2.7], shirt: '#9b59b6', woman: true },
-            { p: [3.4, 0.3, 2.7], shirt: '#34495e' },
-            { p: [5.4, 0.4, 4.2], shirt: '#16a085' },
-            { p: [-2, 0.4, 4.2], shirt: '#e67e22', woman: true },
-          ] as Student[])),
-        ]}
-      />
+      {/* Students in their seats, on the benches */}
+      {(low ? LT_TAKEN.slice(0, 4) : LT_TAKEN).map(([row, x, shirt, woman]) => (
+        <SeatedStudent key={`${row}${x}`} seat={ltSeat(row, x)} shirt={shirt} woman={woman} />
+      ))}
     </group>
   );
 }
@@ -504,19 +537,10 @@ export function LibraryHall() {
       </Tappable>
       <Sign p={[7.6, 1.6, 5.4]} text="🚪 EXIT" />
       <Outside />
-      <Students
-        sit
-        list={[
-          ...([
-          { p: [-3.5, 0, 0.4], shirt: '#2980b9', rot: Math.PI },
-          { p: [-1, 0, -1.3], shirt: '#e74c3c', woman: true, rot: 0 },
-          ] as Student[]),
-          ...(low ? [] : ([
-            { p: [-0.2, 0, 3.0], shirt: '#27ae60', rot: Math.PI },
-            { p: [-6.2, 0, 2.4], shirt: '#f1c40f', woman: true, rot: -Math.PI / 2 },
-          ] as Student[])),
-        ]}
-      />
+      {/* Readers in the chairs at the tables */}
+      {(low ? LIB_TAKEN.slice(0, 2) : LIB_TAKEN).map(([x, z, shirt, woman]) => (
+        <SeatedStudent key={`${x}${z}`} seat={{ x, z: z + 0.8, y: LIB_CHAIR_TOP, rot: Math.PI }} shirt={shirt} woman={woman} />
+      ))}
     </group>
   );
 }

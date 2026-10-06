@@ -31,8 +31,8 @@ const url = (k: HumanKind) => `${import.meta.env.BASE_URL}models/${k}.glb`;
 /** Sitting pose: how far the thighs and knees bend, and how far down the body goes. */
 const SIT_HIP = 1.45;
 const SIT_KNEE = 1.5;
-const SIT_DROP = 0.42;
-const KNEEL_DROP = 0.5;
+const SIT_DROP = 0.36;
+const KNEEL_DROP = 0.38;
 const SWAY = new Quaternion();
 const AXIS = new Vector3();
 const PARENT_Q = new Quaternion();
@@ -42,6 +42,34 @@ const BEND = new Quaternion();
 function side(root: Object3D) {
   root.getWorldQuaternion(PARENT_Q);
   AXIS.set(1, 0, 0).applyQuaternion(PARENT_Q);
+}
+
+const KNEE = new Vector3();
+const FOOT = new Vector3();
+const FWD = new Vector3();
+
+/** Shin length in world units, read from the standing pose before we bend anything. */
+function shinLength(knee: Object3D | null, foot: Object3D | null) {
+  if (!knee || !foot) return 0;
+  knee.updateWorldMatrix(true, false);
+  foot.updateWorldMatrix(true, false);
+  return knee.getWorldPosition(KNEE).distanceTo(foot.getWorldPosition(FOOT));
+}
+
+/**
+ * Put a foot one shin-length from its knee. `lean` is how far forward (+) the
+ * shin tips; -1 lays it flat behind the knee (kneeling).
+ */
+function plantFoot(knee: Object3D | null, foot: Object3D | null, len: number, lean: number) {
+  if (!knee || !foot || !foot.parent || !len) return;
+  knee.updateWorldMatrix(true, false);
+  knee.getWorldPosition(KNEE);
+  // Facing direction is the side axis turned a quarter round
+  FWD.set(-AXIS.z, 0, AXIS.x).normalize();
+  if (lean < 0) FOOT.copy(KNEE).addScaledVector(FWD, -len).setY(KNEE.y - 0.02);
+  else FOOT.copy(KNEE).addScaledVector(FWD, lean * len).setY(KNEE.y - len);
+  foot.parent.updateWorldMatrix(true, false);
+  foot.position.copy(foot.parent.worldToLocal(FOOT));
 }
 
 /** Bend a bone around the side axis, whatever way the bone itself is pointing. */
@@ -157,7 +185,7 @@ export function HumanModel({ kind, skin, tint, hat, move = 'Idle' }: { kind: Hum
   const bones = useMemo(() => {
     const get = (n: string) => model.getObjectByName(n) ?? null;
     const hips = get('Hips');
-    return { hips, hipsRest: hips?.quaternion.clone(), legL: get('UpperLegL'), legR: get('UpperLegR'), kneeL: get('LowerLegL'), kneeR: get('LowerLegR'), body: get('Body') };
+    return { hips, hipsRest: hips?.quaternion.clone(), legL: get('UpperLegL'), legR: get('UpperLegR'), kneeL: get('LowerLegL'), kneeR: get('LowerLegR'), footL: get('FootL'), footR: get('FootR'), body: get('Body'), shin: 0 };
   }, [model]);
   const t = useRef(Math.random() * 10);
   useFrame((_, dt) => {
@@ -165,16 +193,28 @@ export function HumanModel({ kind, skin, tint, hat, move = 'Idle' }: { kind: Hum
     if (!g) return;
     t.current += dt;
     if (move === 'Sit') {
-      // Thighs forward, shins down, bottom on the seat
+      // Bottom on the seat, thighs forward, shins hanging down to the floor
+      // Measured once, on the first frame, from the standing pose
+      if (!bones.shin) bones.shin = shinLength(bones.kneeL, bones.footL);
+      const shin = bones.shin;
+      g.position.y = lift - SIT_DROP;
+      g.updateWorldMatrix(true, true);
       side(g);
       for (const b of [bones.legL, bones.legR]) bend(b, -SIT_HIP);
       for (const b of [bones.kneeL, bones.kneeR]) bend(b, SIT_KNEE);
-      g.position.y = lift - SIT_DROP;
+      // The feet are pinned by the rig, not the knees: move them under the knees
+      plantFoot(bones.kneeL, bones.footL, shin, 0.06);
+      plantFoot(bones.kneeR, bones.footR, shin, 0.06);
     } else if (move === 'Kneel') {
-      // Kneel down to greet: knees on the floor, body upright
-      side(g);
-      for (const b of [bones.kneeL, bones.kneeR]) bend(b, 1.55);
+      // Kneel down to greet: knees on the floor, shins flat behind, body upright
+      if (!bones.shin) bones.shin = shinLength(bones.kneeL, bones.footL);
+      const shin = bones.shin;
       g.position.y = lift - KNEEL_DROP;
+      g.updateWorldMatrix(true, true);
+      side(g);
+      for (const b of [bones.kneeL, bones.kneeR]) bend(b, 1.5);
+      plantFoot(bones.kneeL, bones.footL, shin, -1);
+      plantFoot(bones.kneeR, bones.footR, shin, -1);
     } else if (move === 'Dance') {
       const k = t.current * 7;
       g.position.y = lift + Math.abs(Math.sin(k)) * 0.08;
