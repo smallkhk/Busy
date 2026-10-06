@@ -1,8 +1,9 @@
+import { Html } from '@react-three/drei';
 import type { ThreeEvent } from '@react-three/fiber';
 import { useMemo } from 'react';
-import type { Place } from '../content/activities';
-import { CELL_X, CELL_Z, COLS, currentCell, inGrid, placeAt, ROAD_HALF, ROAD_Z, ROWS, type Cell } from '../content/worldmap';
-import type { AreaId } from '../content/housing';
+import { PLACE_NAMES, type Place } from '../content/activities';
+import { AREA_OF_CELL, CELL_X, CELL_Z, COLS, currentCell, inGrid, placeAt, ROAD_HALF, ROAD_Z, ROWS, type Cell } from '../content/worldmap';
+import { AREAS, placeLabel, type AreaId } from '../content/housing';
 import { useGame } from '../store/game';
 import { useSettings } from '../settings';
 import { Neighborhood, type HoodStyle, type Rect } from './Neighborhood';
@@ -46,8 +47,17 @@ function Block({ cell, offset, current, full, area }: { cell: Cell; offset: [num
   const info = useMemo(() => ({ current, ground: [CELL_X, CELL_Z] as [number, number] }), [current]);
   const seed = 101 + cell[0] * 53 + cell[1] * 211;
   const clear: Rect[] = place ? (CLEAR[place] ?? [[-8.6, -8, 8.6, 4.6]]) : [];
+  // Big name over every block so you know where you dey
+  const other = AREA_OF_CELL[cell.join(',')] as AreaId | undefined;
+  const name = place ? placeLabel(place, area, PLACE_NAMES) : other ? `${AREAS[other].name} street` : null;
   return (
     <group position={[offset[0], 0, offset[1]]}>
+      {name && (
+        // Standing at the corner of the block, by the road
+        <Html position={[-CELL_X / 2 + 6, 3.2, ROAD_Z - 2.4]} center zIndexRange={[2, 0]} style={{ pointerEvents: 'none' }}>
+          <div className={`block-name ${current ? 'here' : ''}`}>{name}</div>
+        </Html>
+      )}
       <CellCtx.Provider value={info}>
         {!inGrid(cell) ? (
           // Bush beyond the city
@@ -74,7 +84,7 @@ function Block({ cell, offset, current, full, area }: { cell: Cell; offset: [num
               seed={seed}
               style={style}
               clear={clear}
-              extent={low ? 18 : 21}
+              extent={CELL_X / 2 - (low ? 4 : 2.5)}
               near={place ? -5.5 : ROAD_Z - 2.6}
               far={-CELL_Z / 2 + 1.5}
               front={ROAD_Z + 2.2}
@@ -163,12 +173,13 @@ export function WorldCells() {
     for (let dc = -1; dc <= 1; dc++) {
       // Low quality skips the corner blocks
       if (low && dc !== 0 && dr !== 0) continue;
+      if (!inGrid([center[0] + dc, center[1] + dr]) && dc !== 0 && dr !== 0) continue;
       blocks.push({ cell: [center[0] + dc, center[1] + dr], dc, dr });
     }
   return (
     <>
       {blocks.map(({ cell, dc, dr }) => (
-        <Block key={cell.join(',')} cell={cell} offset={[dc * CELL_X, dr * CELL_Z]} current={dc === 0 && dr === 0} full={dc === 0 || dr === 0} area={area} />
+        <Block key={cell.join(',')} cell={cell} offset={[dc * CELL_X, dr * CELL_Z]} current={dc === 0 && dr === 0} full={(dc === 0 && dr === 0) || (!low && (dc === 0 || dr === 0))} area={area} />
       ))}
       <Roads center={center} />
       <ParkedCar center={center} />

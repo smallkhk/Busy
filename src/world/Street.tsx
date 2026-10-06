@@ -133,6 +133,12 @@ function Pedestrians({ rich }: { rich: boolean }) {
 
 /** NPCs pacing back and forth along x. */
 export function Walkers({ walkers }: { walkers: Walker[] }) {
+  // Only the block you stand in has people walking about
+  const cell = useContext(CellCtx);
+  return cell && !cell.current ? null : <WalkersHere walkers={walkers} />;
+}
+
+function WalkersHere({ walkers }: { walkers: Walker[] }) {
   const refs = useRef<(Group | null)[]>([]);
   useFrame(({ clock }) => {
     const t = clock.getElapsedTime();
@@ -400,7 +406,9 @@ export function Street() {
       <Tree p={[-10.5, 0, -4.4]} s={1.2} />
       <Tree p={[5.6, 0, 3.9]} s={0.9} />
 
-      {/* Distant Abuja hills and granite rock */}
+      {/* Distant Abuja hills and granite rock (the next street sits there in town) */}
+      {!cell && (
+      <>
       <mesh position={[-12, 1.6, -16]} scale={[4, 2.8, 2.5]}>
         <dodecahedronGeometry args={[1, 0]} />
         <meshStandardMaterial color="#7d7468" flatShading />
@@ -413,6 +421,8 @@ export function Street() {
         <dodecahedronGeometry args={[1, 0]} />
         <meshStandardMaterial color="#6c8a52" flatShading />
       </mesh>
+      </>
+      )}
 
       <PowerLine />
       <MyCar />

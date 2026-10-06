@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
-import { activityById, activityPlace, PLACE_NAMES, type Activity, type Place } from '../content/activities';
+import { activityById, activityPlace, ENTRY_SPOT, PLACE_NAMES, type Activity, type Place } from '../content/activities';
 import { entrySpot, exitSpot, homeBounds, homeSpot } from '../content/homeLayout';
 import { CELL_X, CELL_Z, cellOfPlace, currentCell, HOME_CELLS, inGrid, placeAt, ROAD_HALF, ROAD_Z, route, type Cell } from '../content/worldmap';
 import { AD_BIZ_BOOST } from '../content/billboards';
@@ -167,6 +167,8 @@ export type GameState = {
   walkTo: (x: number, z: number) => void;
   /** You walked across a block edge: move the origin to the next block. */
   shiftCell: (dc: number, dr: number) => void;
+  /** Walk (or drive, if you are in your car) through town to a place, following the roads. */
+  headTo: (place: Place) => void;
   /** Get into your car (walks you to it first if it is parked away). */
   enterCar: () => void;
   /** Park where you are and get out. */
@@ -1758,6 +1760,17 @@ export const useGame = create<GameState>()(
           if (here && here !== s.place) get().toast(`📍 ${placeLabel(here, s.area, PLACE_NAMES)}`);
         },
 
+        headTo: (to) => {
+          const s = get();
+          const here = currentCell(s);
+          const there = cellOfPlace(to, s.area);
+          if (!here || !there || s.active) return;
+          const e = to === 'street' ? ([0, 2] as [number, number]) : entrySpot(to, s.area);
+          set({ phone: null, menu: null });
+          get().walkTo(e[0] + (there[0] - here[0]) * CELL_X, e[1] + (there[1] - here[1]) * CELL_Z);
+          get().toast(`${s.driving ? '🚗' : '🚶'} Heading to ${placeLabel(to, s.area, PLACE_NAMES)}. Follow the road!`);
+        },
+
         enterCar: () => {
           const s = get();
           if (!s.car || s.place === 'home' || s.active || s.driving) return;
@@ -1875,6 +1888,13 @@ export const useGame = create<GameState>()(
       name: 'abuja-life-save-v1',
       version: 1,
       storage: createJSONStorage(() => localStorage),
+      // The city grid got smaller: anybody left on a road or parked off the new grid goes back to their street
+      merge: (persisted, current) => {
+        const p = { ...(persisted as Partial<GameState>) };
+        if (p.place === 'road' && !(p.cell && inGrid(p.cell))) Object.assign(p, { place: 'street', cell: null, pos: ENTRY_SPOT.street });
+        if (p.parked && !inGrid(p.parked.cell)) p.parked = null;
+        return { ...current, ...p };
+      },
       partialize: (s) => ({
         started: s.started,
         name: s.name,

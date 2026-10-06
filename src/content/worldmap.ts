@@ -10,10 +10,10 @@ import type { AreaId } from './housing';
  * Positions in the game stay local to the block you are in, so every place keeps
  * its own coordinates; walking across a block edge shifts the origin.
  */
-export const CELL_X = 48;
-export const CELL_Z = 40;
-export const COLS = 8;
-export const ROWS = 5;
+export const CELL_X = 36;
+export const CELL_Z = 32;
+export const COLS = 6;
+export const ROWS = 4;
 /** Local z of the east-west road in front of every block. */
 export const ROAD_Z = 7;
 /** Half the width of the walkable strip along a road. */
@@ -21,36 +21,44 @@ export const ROAD_HALF = 1.3;
 
 export type Cell = [number, number];
 
-/** Where each place stands on the grid ([column west→east, row north→south]). */
+/**
+ * Where each place stands on the grid ([column west→east, row north→south]).
+ * Every block holds something, so the next place is always one street away:
+ *
+ *   Kubwa st    Gwarinpa st  Jabi Lake    Maitama st   Maitama     Park
+ *   Stadium     Utako        Wuse Market  Wuse 2       Wuse 2 st   Asokoro st
+ *   Kuje st     Hospital     Secretariat  Garki st     Asokoro     Guzape st
+ *   Airport     Garki        Nyanya st    Nyanya       Mararaba    Mararaba st
+ */
 export const PLACE_CELLS: Partial<Record<Place, Cell>> = {
-  maitama: [5, 0],
-  park: [6, 0],
-  jabi: [1, 1],
-  utako: [2, 1],
-  wuse: [3, 1],
-  lounge: [4, 1],
-  stadium: [1, 2],
-  hospital: [2, 2],
-  secretariat: [3, 2],
-  asokoro: [5, 2],
-  garki: [3, 3],
-  nyanya: [5, 3],
-  mararaba: [6, 4],
-  airport: [0, 4],
+  jabi: [2, 0],
+  maitama: [4, 0],
+  park: [5, 0],
+  stadium: [0, 1],
+  utako: [1, 1],
+  wuse: [2, 1],
+  lounge: [3, 1],
+  hospital: [1, 2],
+  secretariat: [2, 2],
+  asokoro: [4, 2],
+  airport: [0, 3],
+  garki: [1, 3],
+  nyanya: [3, 3],
+  mararaba: [4, 3],
 };
 
 /** Your own street (the "street" place) is the block of the area you live in. */
 export const HOME_CELLS: Record<AreaId, Cell> = {
   kubwa: [0, 0],
   gwarinpa: [1, 0],
-  maitama: [4, 0],
-  wuse2: [5, 1],
-  asokoro: [6, 2],
-  kuje: [0, 3],
-  garki: [2, 3],
-  guzape: [4, 3],
-  nyanya: [6, 3],
-  mararaba: [5, 4],
+  maitama: [3, 0],
+  wuse2: [4, 1],
+  asokoro: [5, 1],
+  kuje: [0, 2],
+  garki: [3, 2],
+  guzape: [5, 2],
+  nyanya: [2, 3],
+  mararaba: [5, 3],
 };
 
 /** Names for the blocks between places, so the HUD can say where you are. */
