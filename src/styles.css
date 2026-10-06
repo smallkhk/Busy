@@ -580,3 +580,8 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
 .flight-fill { height: 100%; border-radius: 3px; background: #f2c230; transition: width 0.5s linear; }
 .flight-plane { position: absolute; top: 50%; transform: translate(-50%, -55%); font-size: 16px; transition: left 0.5s linear; }
 
+
+/* ---------------- Login ---------------- */
+.login-fields { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+.login-error { color: #ff8a7a; margin: 0; }
+.link-btn { background: none; border: none; color: #f2c230; padding: 6px 0; text-decoration: underline; cursor: pointer; align-self: flex-start; }

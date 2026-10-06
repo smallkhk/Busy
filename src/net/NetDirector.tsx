@@ -8,6 +8,7 @@ import { DEFAULT_LOOK, encodeLook } from '../content/fashion';
 import { initSocial, setCashHandler, setIncomingHandler, useSocial } from './social';
 import { useNet } from './useNet';
 import { startCloud } from './cloud';
+import { refreshAccount, useAccount } from './account';
 import { initAdmin, setAnnounceHandler } from './admin';
 import { newsById } from '../content/world';
 
@@ -53,6 +54,20 @@ export function NetDirector() {
     void initSocial(s.name, s.shirt).then(() => {
       startCloud();
       void initAdmin();
+      void refreshAccount().then(() => {
+        // Guests: remind them (once a day) to protect their life with a login
+        const today = new Date().toDateString();
+        let last: string | null = null;
+        try {
+          last = localStorage.getItem('abuja-login-nudge');
+          if (!useAccount.getState().username && last !== today) {
+            localStorage.setItem('abuja-login-nudge', today);
+            useGame.getState().toast('🔐 Make username & password for 📱 Phone → ⚙️ Account, so you no go lose this life');
+          }
+        } catch {
+          /* private mode: no reminder */
+        }
+      });
     });
     joinRoom(roomFor(s.place, s.area, s.cell));
     const unsub = useGame.subscribe((n, p) => {
