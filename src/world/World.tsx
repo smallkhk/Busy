@@ -13,6 +13,8 @@ import { CellCtx } from './origin';
 import { groundMap, type GroundKind } from './groundTex';
 import { Tree } from './Street';
 import { CarModel } from './CarModel';
+import { Person } from './Avatar';
+import { Box } from './Room';
 import { carById } from '../content/cars';
 
 const ROAD_W = ROAD_HALF * 2 + 0.4;
@@ -188,6 +190,7 @@ export function WorldCells() {
       ))}
       <Roads center={center} />
       <ParkedCar center={center} />
+      <MissionMarker center={center} />
       {/* Bush all the way to the horizon, so no sky shows under the far blocks */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.08, 0]}>
         <planeGeometry args={[CELL_X * 9, CELL_Z * 9]} />
@@ -218,6 +221,46 @@ function ParkedCar({ center }: { center: Cell }) {
       }}
     >
       <CarModel kind={c.model} paint={car?.paint ?? c.color} />
+    </group>
+  );
+}
+
+/** Hustle job on the map: a glowing beam where to go, the passenger waiting by the road. */
+function MissionMarker({ center }: { center: Cell }) {
+  const m = useGame((s) => s.mission);
+  if (!m) return null;
+  const stop = m.stage === 'pickup' ? m.pickup : m.dropoff;
+  const x = stop.at[0] - center[0] * CELL_X;
+  const z = stop.at[1] - center[1] * CELL_Z;
+  // Only draw it in the blocks we draw
+  if (Math.abs(x) > CELL_X * 1.6 || Math.abs(z) > CELL_Z * 1.6) return null;
+  const color = m.stage === 'pickup' ? '#2ecc71' : '#e8b04b';
+  return (
+    <group position={[x, 0, z]}>
+      <mesh position={[0, 3, 0]}>
+        <cylinderGeometry args={[0.9, 0.9, 6, 20, 1, true]} />
+        <meshBasicMaterial color={color} transparent opacity={0.28} depthWrite={false} />
+      </mesh>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.03, 0]}>
+        <ringGeometry args={[1.1, 1.5, 32]} />
+        <meshBasicMaterial color={color} />
+      </mesh>
+      {m.stage === 'pickup' && !m.food && (
+        <group position={[0, 0, -1.6]}>
+          <Person shirt="#8e44ad" woman={m.who.name.includes('Aunty') || m.who.name.includes('Mama') || m.who.name.includes('Hajia') || m.who.name.includes('girl')} move="Wave" />
+        </group>
+      )}
+      {m.stage === 'pickup' && m.food && (
+        <group position={[0, 0, -1.6]}>
+          <Box p={[0, 0.45, 0]} s={[1.2, 0.9, 0.6]} c="#7a5a3a" />
+          <Box p={[0, 1.05, 0]} s={[0.4, 0.3, 0.4]} c="#e8692c" />
+        </group>
+      )}
+      <Html position={[0, 6.6, 0]} center zIndexRange={[3, 0]} style={{ pointerEvents: 'none' }}>
+        <div className={`block-name mission-tag ${m.stage}`}>
+          {m.stage === 'pickup' ? (m.food ? `🥡 Collect: ${m.food}` : `${m.who.emoji} Pick ${m.who.name}`) : `📍 Drop: ${m.dropoff.name}`}
+        </div>
+      </Html>
     </group>
   );
 }

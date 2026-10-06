@@ -23,6 +23,7 @@ import { GoalsApp } from './Goals';
 import { totalUnread, useSocial } from '../net/social';
 import { MapView } from './MapView';
 import { SchoolApp } from './SchoolApp';
+import { HustleApp } from './Hustle';
 
 const APPS: { id: PhoneApp; name: string; emoji: string; color: string }[] = [
   // Everyday
@@ -32,6 +33,7 @@ const APPS: { id: PhoneApp; name: string; emoji: string; color: string }[] = [
   { id: 'ride', name: 'Ride', emoji: '🚘', color: '#1f8a4c' },
   // Money and growth
   { id: 'jobs', name: 'Jobs', emoji: '💼', color: '#c27c1a' },
+  { id: 'hustle', name: 'Hustle', emoji: '🛵', color: '#e8692c' },
   { id: 'biz', name: 'Business', emoji: '🏪', color: '#0e7c86' },
   { id: 'learn', name: 'Learn & Gym', emoji: '📚', color: '#2f6b4a' },
   { id: 'school', name: 'UniAbuja', emoji: '🎓', color: '#1f4f7a' },
@@ -573,6 +575,8 @@ function AppBody({ app }: { app: PhoneApp }) {
       return <LearnApp />;
     case 'school':
       return <SchoolApp />;
+    case 'hustle':
+      return <HustleApp />;
     case 'politics':
       return <PoliticsApp />;
     case 'account':

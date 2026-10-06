@@ -12,6 +12,8 @@ import { homePoint } from '../content/homeLayout';
 import { HumanModel, type Hat, type HumanKind, type Move } from './HumanModel';
 import { dressFor } from './dress';
 import { CarModel } from './CarModel';
+import { HustleKeke, HustleOkada } from './Vehicles';
+import { hustleById } from '../content/missions';
 import { carById } from '../content/cars';
 import { clockParts, daylight } from '../engine/clock';
 
@@ -264,6 +266,12 @@ export function Avatar() {
   const driving = useGame((s) => s.driving);
   const car = useGame((s) => s.car);
   const carDef = car ? carById(car.id) : undefined;
+  // Hustle shift: which hired ride you are on, and what you carry right now
+  const ride = useGame((s) => {
+    const v = s.shift ? hustleById(s.shift.kind)?.vehicle : undefined;
+    return v === 'okada' || v === 'keke' ? v : null;
+  });
+  const carrying = useGame((s) => (s.mission?.stage === 'dropoff' ? (s.mission.food ? 'food' : 'passenger') : null));
   const night = useGame((s) => daylight(clockParts(Math.floor(s.time / 30) * 30).minuteOfDay) < 0.3);
 
   useFrame((_, dt) => {
@@ -351,7 +359,14 @@ export function Avatar() {
 
   return (
     <group ref={group} visible={!hidden}>
-      {driving && carDef ? (
+      {driving && ride ? (
+        // On a hustle with a hired okada or keke
+        ride === 'keke' ? (
+          <HustleKeke shirt={shirt} look={look} passenger={carrying === 'passenger'} />
+        ) : (
+          <HustleOkada shirt={shirt} look={look} passenger={carrying === 'passenger'} food={carrying === 'food'} />
+        )
+      ) : driving && carDef ? (
         // Your own motor, nose forward (car models face +x, you face +z)
         <group rotation={[0, -Math.PI / 2, 0]}>
           <CarModel kind={carDef.model} paint={car?.paint ?? carDef.color} lights={night} />
