@@ -338,8 +338,8 @@ export function Lagos() {
       ))}
 
       {/* Murtala Muhammed Airport */}
-      <group position={[LAGOS.airport[0], 0, LAGOS.airport[1] + 2.5]}>
-        <Terminal name="MURTALA MUHAMMED AIRPORT" towerX={-15} />
+      <group position={[LAGOS.airport[0] + 3, 0, LAGOS.airport[1] + 2.5]}>
+        <Terminal name="MURTALA MUHAMMED AIRPORT" tower={[6, -8]} jetSide={-1} />
       </group>
       {/* Check-in counter under the canopy */}
       <Tappable id="mmia">

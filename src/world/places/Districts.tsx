@@ -373,7 +373,7 @@ export function Airport() {
       <Ground color="#7fa856" />
       <Ground color="#cfd2d6" size={[16, 6]} pos={[0, 0, 0.6]} />
       {/* Terminal, control tower, apron and our jets */}
-      <group position={[0, 0, -3.5]}>
+      <group position={[-4, 0, -3.5]}>
         <Terminal name="NNAMDI AZIKIWE INTERNATIONAL AIRPORT" />
       </group>
 
