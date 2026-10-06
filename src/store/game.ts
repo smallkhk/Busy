@@ -3,6 +3,7 @@ import { createJSONStorage, persist } from 'zustand/middleware';
 import { activityById, activityPlace, ENTRY_SPOT, PLACE_NAMES, type Activity, type Place } from '../content/activities';
 import { entrySpot, exitSpot, homeBounds, homeSpot } from '../content/homeLayout';
 import { CAMPUS_PLACES } from '../content/campus';
+import { CITY_NAMES, flightProgress, isAway, LAND_PLACE, MY_SEAT, newFlight, type Flight } from '../content/flights';
 import { ACTIVITY_SEAT_REACH, nearestSeat, SIT_REACH } from '../content/seats';
 import { ARRIVE_RANGE, CHECKPOINT_BRIBE, CHECKPOINT_CHANCE, CHECKPOINT_DELAY, hustleById, newMission, riderLevel, TRIP_XP, tripPay, type HustleKind, type Mission } from '../content/missions';
 import { CELL_X, CELL_Z, cellOfPlace, currentCell, HOME_CELLS, inGrid, placeAt, ROAD_HALF, ROAD_Z, route, type Cell } from '../content/worldmap';
@@ -16,7 +17,7 @@ import { DEFAULT_LOOK, HAIR_COST, OUTFITS, type Hair, type Look, type Outfit } f
 import { driveWear } from '../content/minigames';
 import { areaAllows, genCostFor, homeItemById, TV_ACTIVITIES, WIFI_FREE } from '../content/homeup';
 import { AREAS, homeTier, moveCost, placeLabel, PROPERTY_SELL_FEE, propertyValue, RENT_CYCLE_DAYS, RENT_GRACE_DAYS, rentOwed, type AreaId, type Property } from '../content/housing';
-import { activityRealSeconds, clockParts, formatNaira, inHours, realMinutes, watMidnight } from '../engine/clock';
+import { activityRealSeconds, clockParts, fastActivitiesOn, formatNaira, inHours, realMinutes, watMidnight } from '../engine/clock';
 import { CALL_COST, contactById, FIRST_MEET_REL, GIFT_COST, longLeg, type ContactState } from '../content/contacts';
 import { badDayChance, businessById, dailyNet, MAX_BIZ_LEVEL, MAX_STAFF, upgradeCost, wageOf, type OwnedBusiness } from '../content/business';
 import { GRADES, OFFICE_SHIFT_ID, payFor, promotionBlock } from '../content/career';
@@ -145,6 +146,8 @@ export type GameState = {
   mission: Mission | null;
   /** Police don stop you on the road. */
   checkpoint: boolean;
+  /** In the air between Abuja and Lagos. */
+  flight: Flight | null;
   /** Sitting, waving or dancing where you stand (cleared when you move or start something). */
   pose: Pose | null;
   /** Where you left your car (null: at your gate at home). Position is local to the block. */
@@ -287,6 +290,8 @@ const BOUNDS: Record<Place, { minX: number; maxX: number; minZ: number; maxZ: nu
   campus: { minX: -32, maxX: 32, minZ: -26, maxZ: 13.5 },
   lt: { minX: -8.5, maxX: 8.5, minZ: -3.5, maxZ: 5.8 },
   unilib: { minX: -8.5, maxX: 8.5, minZ: -4.5, maxZ: 5.6 },
+  cabin: { minX: -11, maxX: 9.6, minZ: -0.25, maxZ: 0.25 },
+  lagos: { minX: -27, maxX: 30, minZ: -15, maxZ: 10.2 },
   road: { minX: -CELL_X / 2, maxX: CELL_X / 2, minZ: ROAD_Z - ROAD_HALF, maxZ: ROAD_Z + ROAD_HALF },
 };
 
@@ -425,6 +430,7 @@ const initial = () => ({
   shift: null as { kind: HustleKind } | null,
   mission: null as Mission | null,
   checkpoint: false,
+  flight: null as Flight | null,
   parked: null as { cell: Cell; pos: [number, number]; rot: number } | null,
   pending: null,
   active: null,
@@ -442,7 +448,7 @@ const initial = () => ({
 });
 
 /** Why an activity can't start right now, or null if it can. */
-export type BlockState = Pick<GameState, 'time' | 'money' | 'power' | 'active' | 'packaging' | 'pantry' | 'cv' | 'area' | 'rentLocked'> & { unlocks?: string[]; grade?: number; hasCar?: boolean; car?: { id: string; fuel?: number; condition?: number } | null; carId?: string; carFuel?: number; sick?: Sickness | null; contacts?: Record<string, ContactState>; weather?: Weather; news?: ActiveNews[]; homeUps?: string[]; courses?: Partial<Record<CourseId, number>>; skills?: CourseId[]; gymUntil?: number; school?: School };
+export type BlockState = Pick<GameState, 'time' | 'money' | 'power' | 'active' | 'packaging' | 'pantry' | 'cv' | 'area' | 'rentLocked'> & { unlocks?: string[]; grade?: number; hasCar?: boolean; car?: { id: string; fuel?: number; condition?: number } | null; carId?: string; carFuel?: number; sick?: Sickness | null; contacts?: Record<string, ContactState>; weather?: Weather; news?: ActiveNews[]; homeUps?: string[]; courses?: Partial<Record<CourseId, number>>; skills?: CourseId[]; gymUntil?: number; school?: School; place?: Place };
 
 /** Everything events look at to decide if and how they happen. */
 export function eventContext(s: GameState, trip?: string | null): EventContext {
@@ -493,6 +499,11 @@ export const setCompanionCheck = (fn: typeof companionCheck) => (companionCheck 
 
 export function blockReason(a: Activity, s: BlockState): string | null {
   if (a.locked) return a.locked;
+  // Out of Abuja: only what dey here (and your phone)
+  if (s.place && isAway(s.place)) {
+    const here = activityPlace(a.id);
+    if (here !== s.place && (here || a.travelTo || a.away)) return s.place === 'cabin' ? 'You dey inside plane o ✈️ Wait make we land' : 'You dey Lagos 🌊 Fly back to Abuja first (Murtala Airport)';
+  }
   if (s.rentLocked && activityPlace(a.id) === 'home' && !a.travelTo) return 'Landlord don lock your door 🔒 Pay rent for phone';
   const waived = s.unlocks?.includes(a.id);
   if (!waived && a.requires?.packaging && s.packaging < a.requires.packaging) return `Need 👔 Packaging ${a.requires.packaging} (you get ${Math.round(s.packaging)})`;
@@ -779,6 +790,7 @@ export const useGame = create<GameState>()(
           if (!fx) get().toast(`${a.emoji} Done: ${a.label}`);
         }
         set({ active: null, ...(a.away ? { pos: exitSpot(s.place, s.area) } : {}) });
+        if (fx?.flight) set({ flight: newFlight(fx.flight.to, fx.flight.cls, clock(), fastActivitiesOn(), Math.random) });
         if (a.travelTo) {
           set({ place: a.travelTo, pos: entrySpot(a.travelTo, s.area), target: null, route: [], cell: null, driving: false });
           // You drove there: your car is parked by the entrance
@@ -788,7 +800,35 @@ export const useGame = create<GameState>()(
             set({ parked: a.travelTo === 'street' || a.travelTo === 'home' || !c ? null : { cell: c, pos: [e[0] + 1.6, e[1] + 1.4], rot: 0 } });
           }
           get().toast(`📍 ${placeLabel(a.travelTo, s.area, PLACE_NAMES)}`);
+          // On board: straight to the seat on your boarding pass
+          const f = get().flight;
+          if (a.travelTo === 'cabin' && f) {
+            const seat = MY_SEAT[f.cls];
+            set({ pos: [seat.x, seat.z], pose: 'sit' });
+            get().toast(`💺 ${f.no} to ${CITY_NAMES[f.to]}. ${f.cls === 'business' ? 'Business seat 2A. Enjoy 🥂' : 'Seat 23F, by the window'}`);
+          }
         }
+      };
+
+      /** In the air: turbulence, then land in the other city. */
+      const flightStep = () => {
+        const s = get();
+        const f = s.flight;
+        // Lost your flight (old save)? The plane lands you back at Abuja airport
+        if (!f) {
+          set({ place: 'airport', pos: ENTRY_SPOT.airport, pose: null, target: null, route: [] });
+          return;
+        }
+        const p = flightProgress(f, clock());
+        if (f.bumpy && !f.shook && p >= 0.45) {
+          set({ flight: { ...f, shook: true } });
+          get().toast('⚠️ Turbulence! The plane dey shake. Return to your seat 😬');
+        }
+        if (p < 1 || s.active) return;
+        const to = LAND_PLACE[f.to];
+        set({ flight: null, place: to, pos: entrySpot(to, s.area), cell: null, target: null, route: [], pose: null, pending: null });
+        bump(`visit-${to}`, 'flights');
+        get().toast(f.to === 'LOS' ? '🛬 Welcome to Lagos! Eko o ni baje 🌊 Explore, then fly back from Murtala Airport' : '🛬 Welcome back to Abuja! Taxi dey outside to carry you home');
       };
 
       /** First meeting adds a contact; meeting again gets you closer. Returns a chip for the UI. */
@@ -1655,6 +1695,7 @@ export const useGame = create<GameState>()(
           const s = get();
           if (!s.started || s.event || s.eventResult || s.minigame) return;
           if (s.shift && s.mission && !s.checkpoint) missionStep();
+          if (s.flight || s.place === 'cabin') flightStep();
           const dtReal = Math.min(realSeconds, 0.25);
           const a = s.active ? activityById(s.active.id) : undefined;
 
@@ -1692,7 +1733,7 @@ export const useGame = create<GameState>()(
             if (s.sick) needs = { ...needs, energy: clamp(needs.energy - (SICK_DRAIN.energy! * step) / 60), fun: clamp(needs.fun - (SICK_DRAIN.fun! * step) / 60) };
             time = real ?? time + step;
             set({ needs, time });
-            if (!s.target && !s.menu && !s.phone && time >= s.nextEventCheck) {
+            if (!s.target && !s.menu && !s.phone && !s.flight && time >= s.nextEventCheck) {
               set({ nextEventCheck: time + (real !== null ? 10 : 60) });
               if (Math.random() < IDLE_EVENT_CHANCE) fireEvent('idle');
             }
@@ -1947,6 +1988,10 @@ export const useGame = create<GameState>()(
           const here = currentCell(s);
           const there = cellOfPlace(to, s.area);
           if (!there || s.active) return;
+          if (isAway(s.place)) {
+            get().toast(s.place === 'cabin' ? '✈️ You dey inside plane o' : '🌊 You dey Lagos. Fly back to Abuja first (Murtala Airport)');
+            return;
+          }
           if (!here) {
             get().toast(CAMPUS_PLACES.includes(s.place) && to === 'uniabuja' ? '🎓 You dey campus already' : CAMPUS_PLACES.includes(s.place) ? '🚪 Comot from campus through the main gate first' : '🚪 Comot outside first, then waka go there');
             return;
@@ -2046,6 +2091,7 @@ export const useGame = create<GameState>()(
         enterCar: () => {
           const s = get();
           if (!s.car || s.place === 'home' || s.active || s.driving) return;
+          if (isAway(s.place)) return get().toast('🚗 Your motor dey Abuja');
           if ((s.car.fuel ?? START_FUEL) <= 0) {
             get().toast('⛽ No fuel for tank. Buy fuel for phone first.');
             return;
@@ -2193,6 +2239,7 @@ export const useGame = create<GameState>()(
         near: s.near,
         parked: s.parked,
         hustle: s.hustle,
+        flight: s.flight,
         needs: s.needs,
         packaging: s.packaging,
         pantry: s.pantry,

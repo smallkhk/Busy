@@ -1,3 +1,4 @@
+import { FLY_FROM_ABUJA } from './flights';
 import { ride, type Interactable } from './common';
 
 /**
@@ -245,6 +246,7 @@ export const DISTRICT_INTERACTABLES: Interactable[] = [
     label: [-4.2, 3.2, -2.6],
     activities: [
       { id: 'planespot', label: 'Watch planes, dream of japa', doing: 'Watching planes take off ✈️', emoji: '🛫', minutes: 45, gains: { fun: 12 }, hours: [6, 22], spot: A },
+      ...FLY_FROM_ABUJA,
       { id: 'porter', label: 'Help travellers carry bags (4 hrs)', doing: 'Pushing luggage trolley', emoji: '🧳', minutes: 240, pay: 6000, gains: { energy: -20, social: 10 }, hours: [6, 22], spot: A },
     ],
   },

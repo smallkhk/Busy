@@ -2,6 +2,7 @@ import type { Place } from './common';
 import type { AreaId } from './housing';
 import { homePoint } from './homeLayout';
 import { CAMPUS } from './campus';
+import { CABIN_SEATS, LAGOS_SEATS } from './flights';
 
 /**
  * Every real thing you can sit on: benches, stools, chairs, lecture benches.
@@ -80,6 +81,8 @@ const FIXED: Partial<Record<Place, Seat[]>> = {
   unilib: LIB_TABLES.flatMap(([x, z]) => [-0.5, 0.5].map((dx) => [x + dx, z] as [number, number]))
     .filter(([x, z]) => !LIB_TAKEN.some(([tx, tz]) => Math.abs(tx - x) < 0.2 && Math.abs(tz - z) < 0.2))
     .map(([x, z]) => facingBack(x, z + 0.75, LIB_CHAIR_TOP)),
+  cabin: CABIN_SEATS,
+  lagos: LAGOS_SEATS,
   campus: [...CAMPUS_BENCHES.flatMap(benchSeats), ...CAFE_TABLES.slice(1).flatMap(([x, z]) => [facingBack(x, z + 0.8, CAFE_CHAIR_TOP), { x, z: z - 0.85, y: CAFE_CHAIR_TOP, rot: 0 }])],
 };
 

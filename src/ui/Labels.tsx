@@ -7,6 +7,7 @@ import { clockParts } from '../engine/clock';
 import { useGame } from '../store/game';
 import { registerLabel } from '../world/labels';
 import { homeTier } from '../content/housing';
+import { useFlightView } from '../world/places/Flight';
 
 /** Emoji chips over furniture and the player's name tag. Positioned by LabelSync in the scene. */
 export function Labels() {
@@ -25,6 +26,9 @@ export function Labels() {
   const now = Date.now();
   const { hour, day } = clockParts(useGame.getState().time);
   const npcs = npcsAt(place, hour, day);
+  // Looking at the plane from outside: no chips floating in the sky
+  const outside = useFlightView((s) => s.out) && place === 'cabin';
+  if (outside) return null;
   return (
     <div className="labels">
       {INTERACTABLES.filter((i) => i.place === place && (!i.mansion || mansion)).map((i) => (

@@ -1,6 +1,6 @@
 import type { Needs } from '../engine/needs';
 
-export type Place = 'home' | 'street' | 'wuse' | 'jabi' | 'secretariat' | 'lounge' | 'hospital' | 'maitama' | 'asokoro' | 'garki' | 'nyanya' | 'airport' | 'utako' | 'mararaba' | 'park' | 'stadium' | 'uniabuja' | 'campus' | 'lt' | 'unilib' | 'road';
+export type Place = 'home' | 'street' | 'wuse' | 'jabi' | 'secretariat' | 'lounge' | 'hospital' | 'maitama' | 'asokoro' | 'garki' | 'nyanya' | 'airport' | 'utako' | 'mararaba' | 'park' | 'stadium' | 'uniabuja' | 'campus' | 'lt' | 'unilib' | 'road' | 'cabin' | 'lagos';
 
 export const PLACE_NAMES: Record<Place, string> = {
   home: 'Your compound',
@@ -24,6 +24,8 @@ export const PLACE_NAMES: Record<Place, string> = {
   lt: 'Lecture Theatre (LT 1000)',
   unilib: 'University library',
   road: 'On the road',
+  cabin: 'On board Zuma Air',
+  lagos: 'Lagos',
 };
 
 export type Activity = {
@@ -55,7 +57,7 @@ export type Activity = {
   requires?: { packaging?: number; cv?: number; car?: boolean; longLeg?: number; /** House upgrade you must own. */ homeItem?: string; /** Enrolled in this course. */ course?: string; /** Finished this course. */ skill?: string; /** Active gym membership. */ gym?: boolean; /** Only for mansion houses. */ mansion?: boolean; /** UniAbuja student status (see school.ts). */ school?: string };
   /** Applied when it finishes. */
   /** `cure` lists sicknesses it treats (all of them if true); `net` buys a mosquito net. */
-  effects?: { packaging?: number; pantry?: number; cv?: number; meet?: string; cure?: true | ('malaria' | 'typhoid' | 'food')[]; net?: boolean; carFix?: number; /** Litres into your car tank. */ fuel?: number; /** Chance the fuel na adulterated and damages the engine. */ badFuel?: number; /** Fitness points. */ fitness?: number };
+  effects?: { packaging?: number; pantry?: number; cv?: number; meet?: string; cure?: true | ('malaria' | 'typhoid' | 'food')[]; net?: boolean; carFix?: number; /** Litres into your car tank. */ fuel?: number; /** Chance the fuel na adulterated and damages the engine. */ badFuel?: number; /** Fitness points. */ fitness?: number; /** Board a flight (see flights.ts). */ flight?: { to: 'ABV' | 'LOS'; cls: 'economy' | 'business' } };
   /** Play a quick mini-game first; how well you do changes the result. */
   minigame?: 'pos' | 'wash' | 'cook' | 'timing' | 'predict' | 'drive';
   /** Sit down while you do it (and stay visible), instead of standing. */

@@ -4,6 +4,7 @@ import { CHOP_ITEMS, RIDES, TREKS } from './phoneapps';
 import { TRAVEL_INTERACTABLES } from './travel';
 import { DISTRICT_INTERACTABLES, NEW_ROUTES } from './districts';
 import { CAMPUS_INTERACTABLES } from './campus';
+import { FLIGHT_INTERACTABLES } from './flights';
 import { CLASS_ACTIVITIES, GYM_WORKOUT, SKILL_JOBS } from './learning';
 import { GRAD_JOBS } from './school';
 
@@ -33,6 +34,8 @@ export const EXIT_SPOT: Record<Place, [number, number]> = {
   lt: [7.5, 5.2],
   unilib: [7.5, 4.8],
   road: [0, 7],
+  cabin: [-2.55, 1.55],
+  lagos: [-17, -1.5],
 };
 /** Where you appear when you arrive at a place. */
 export const ENTRY_SPOT: Record<Place, [number, number]> = {
@@ -57,6 +60,8 @@ export const ENTRY_SPOT: Record<Place, [number, number]> = {
   lt: [7, 4.6],
   unilib: [7, 4.2],
   road: [0, 7],
+  cabin: [-2.55, 1.55],
+  lagos: [-17, -1.5],
 };
 
 const HOME_AND_STREET: Interactable[] = [
@@ -276,7 +281,7 @@ const HOME_AND_STREET: Interactable[] = [
 /** Things you do sitting down: class, exams, reading, eating at the buka, watching ball, gist on the bench. */
 const SEATED = new Set(['uni-lecture', 'lecture', 'uni-exam', 'library-read', 'group-study', 'e-library', 'uni-jollof', 'tutorial', 'debate', 'rice', 'tuwo', 'epl', 'neighbours', 'bole', 'continental', 'pastry', 'airport-coffee', 'fellowship', 'hostel-gist', 'meetup', 'freelance']);
 
-export const INTERACTABLES: Interactable[] = [...HOME_AND_STREET, ...TRAVEL_INTERACTABLES, ...DISTRICT_INTERACTABLES, ...CAMPUS_INTERACTABLES].map((i) => {
+export const INTERACTABLES: Interactable[] = [...HOME_AND_STREET, ...TRAVEL_INTERACTABLES, ...DISTRICT_INTERACTABLES, ...CAMPUS_INTERACTABLES, ...FLIGHT_INTERACTABLES].map((i) => {
   const withRoutes = NEW_ROUTES[i.id] ? { ...i, activities: [...i.activities, ...NEW_ROUTES[i.id]] } : i;
   return { ...withRoutes, activities: withRoutes.activities.map((a) => (SEATED.has(a.id) && !a.away ? { ...a, pose: 'sit' as const } : a)) };
 });
