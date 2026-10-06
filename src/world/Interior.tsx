@@ -35,7 +35,7 @@ export function paint(key: string, draw: (g: CanvasRenderingContext2D, r: () => 
     t = new CanvasTexture(c);
     t.wrapS = t.wrapT = RepeatWrapping;
     t.colorSpace = SRGBColorSpace;
-    t.anisotropy = 4;
+    t.anisotropy = 8;
     textures.set(key, t);
   }
   return t;

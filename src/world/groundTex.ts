@@ -76,7 +76,7 @@ export function groundMap(kind: GroundKind, w: number, h: number): Texture | nul
   t.wrapS = t.wrapT = RepeatWrapping;
   t.repeat.set(w / TILE, h / TILE);
   t.colorSpace = SRGBColorSpace;
-  t.anisotropy = 4;
+  t.anisotropy = 8;
   maps.set(key, t);
   return t;
 }

@@ -14,6 +14,8 @@ import { QuestPill } from './ui/Goals';
 import { Labels } from './ui/Labels';
 import { Phone } from './ui/Phone';
 import { Start } from './ui/Start';
+import { Loader } from './ui/Loader';
+import { usePreload } from './preload';
 import { lazy, Suspense, useEffect } from 'react';
 import { useGame } from './store/game';
 import { Scene } from './world/Scene';
@@ -54,13 +56,16 @@ export default function App() {
     return () => document.removeEventListener('visibilitychange', back);
   }, [started]);
   // The 3D map replaces the scene while open (one WebGL canvas at a time on phones).
+  const loaded = usePreload((s) => s.ready);
   const mapOpen = useGame((s) => s.phone === 'map');
   const showroomOpen = useGame((s) => s.phone === 'cars');
   const wardrobeOpen = useGame((s) => s.phone === 'style');
   return (
     <div className="app-root">
+      <Loader />
       <AudioDirector />
-      {!mapOpen && !showroomOpen && !wardrobeOpen && <Scene />}
+      {/* The 3D world starts once everything is downloaded, so the download gets the whole phone */}
+      {loaded && !mapOpen && !showroomOpen && !wardrobeOpen && <Scene />}
       {started ? (
         <>
           <NetDirector />
