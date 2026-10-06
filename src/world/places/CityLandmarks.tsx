@@ -1,7 +1,7 @@
 import { Person } from '../Avatar';
-import { Box, Cyl, Tappable } from '../Room';
-import { Car, Tree, Walkers, type Walker } from '../Street';
-import { Flag, Ground } from './common';
+import { Box, Cyl } from '../Room';
+import { Car, Tree } from '../Street';
+import { Flag } from './common';
 
 /*
  * Abuja landmarks that stand in their own block of the connected city, plus the
@@ -254,65 +254,6 @@ export function CityGate() {
       {[-12, -9, 9, 12].map((x) => (
         <Tree key={x} p={[x, 0, -3]} s={1.1} />
       ))}
-    </group>
-  );
-}
-
-const STUDENTS: Walker[] = [
-  { from: -7, to: 6, z: 1.6, speed: 0.7, shirt: '#2c5e8a' },
-  { from: 6, to: -6, z: 2.4, speed: 0.6, shirt: '#c0392b', woman: true },
-  { from: -5, to: 7, z: 0.6, speed: 0.55, shirt: '#16a085' },
-];
-
-/** University of Abuja: lecture theatre, library, school buka and the campus gate. */
-export function UniAbuja() {
-  return (
-    <group>
-      <Ground color="#7aa555" />
-      <Ground color="#d6d0c2" size={[16, 6]} pos={[0, 0, 0.8]} />
-
-      <Tappable id="lecture-theatre">
-        <Box p={[-4.2, 1.4, -4.6]} s={[3.6, 2.8, 2.6]} c="#e8dcc4" />
-        <Box p={[-4.2, 2.95, -4.6]} s={[3.8, 0.2, 2.8]} c="#7a2b2b" />
-        <Windows xs={[-5.3, -4.2, -3.1]} ys={[1.1, 2.1]} z={-3.28} c="#5d7d96" w={0.6} h={0.5} />
-        <Box p={[-4.2, 0.6, -3.28]} s={[1, 1.2, 0.04]} c="#5b4636" />
-      </Tappable>
-
-      <Tappable id="uni-library">
-        <Box p={[-0.6, 1.9, -4.8]} s={[3.2, 3.8, 2.6]} c="#d4c6a8" />
-        {[-1.8, -1.0, -0.2, 0.6].map((x) => (
-          <Cyl key={x} p={[x, 1.5, -3.4]} r={0.13} h={3} c="#f1ece0" />
-        ))}
-        <Box p={[-0.6, 3.1, -3.4]} s={[3.2, 0.3, 0.4]} c="#f1ece0" />
-        <Box p={[-0.6, 3.7, -3.48]} s={[2.4, 0.4, 0.04]} c="#1f4f7a" />
-      </Tappable>
-
-      <Tappable id="uni-buka">
-        <Box p={[2.8, 1, -3.4]} s={[2.4, 2, 1.8]} c="#f0d7a0" />
-        <Box p={[2.8, 2.1, -2.6]} s={[2.6, 0.08, 1]} c="#c0392b" r={[0.2, 0, 0]} />
-        <Box p={[2.8, 0.45, -1.9]} s={[1.6, 0.08, 0.6]} c="#7a5a3c" />
-        <group position={[3.6, 0, -2.3]}>
-          <Person shirt="#e67e22" skin="#5a3825" woman hat={{ type: 'gele', color: '#1f8a4c', band: '#e67e22' }} move="Interact" />
-        </group>
-      </Tappable>
-
-      <Tappable id="uni-gate">
-        {/* Gate arch with the school name, hostel block behind, campus bus */}
-        {[3.4, 6.6].map((x) => (
-          <Box key={x} p={[x, 1.6, 4.4]} s={[0.5, 3.2, 0.5]} c="#e9e2d0" />
-        ))}
-        <Box p={[5, 3.3, 4.4]} s={[3.8, 0.6, 0.5]} c="#1f4f7a" />
-        <Box p={[5, 3.3, 4.68]} s={[3.2, 0.2, 0.03]} c="#f4f4f4" />
-        <Box p={[6.8, 1.8, -1.2]} s={[2.4, 3.6, 2]} c="#efe0c8" />
-        <Windows xs={[6.2, 7.0, 7.8]} ys={[1.2, 2.4]} z={-0.18} c="#8a6a45" w={0.4} h={0.5} />
-        <group position={[5, 0, 2.6]}>
-          <Box p={[0, 0.7, 0]} s={[2.6, 1.1, 1]} c="#1f4f7a" />
-          <Box p={[0, 0.95, 0]} s={[2.62, 0.3, 1.02]} c="#9ad0ec" />
-        </group>
-      </Tappable>
-
-      <Palms xs={[-8, -6.6, 8.6]} z={2.8} />
-      <Walkers walkers={STUDENTS} />
     </group>
   );
 }

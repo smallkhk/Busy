@@ -28,7 +28,10 @@ export const EXIT_SPOT: Record<Place, [number, number]> = {
   mararaba: [4.4, 2.6],
   park: [4.4, 2.6],
   stadium: [4.4, 2.6],
-  uniabuja: [4.4, 2.6],
+  uniabuja: [0, 5.2],
+  campus: [0, 12],
+  lt: [7.5, 5.2],
+  unilib: [7.5, 4.8],
   road: [0, 7],
 };
 /** Where you appear when you arrive at a place. */
@@ -49,7 +52,10 @@ export const ENTRY_SPOT: Record<Place, [number, number]> = {
   mararaba: [3.8, 2.0],
   park: [3.8, 2.0],
   stadium: [3.8, 2.0],
-  uniabuja: [3.8, 2.0],
+  uniabuja: [0, 5.6],
+  campus: [0, 11],
+  lt: [7, 4.6],
+  unilib: [7, 4.2],
   road: [0, 7],
 };
 

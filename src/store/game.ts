@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import { activityById, activityPlace, ENTRY_SPOT, PLACE_NAMES, type Activity, type Place } from '../content/activities';
 import { entrySpot, exitSpot, homeBounds, homeSpot } from '../content/homeLayout';
+import { CAMPUS_PLACES } from '../content/campus';
 import { CELL_X, CELL_Z, cellOfPlace, currentCell, HOME_CELLS, inGrid, placeAt, ROAD_HALF, ROAD_Z, route, type Cell } from '../content/worldmap';
 import { AD_BIZ_BOOST } from '../content/billboards';
 import { appointChance, CAMPAIGN_DAYS, canRun, electionWon, MOVES, moveSupport, NO_POLITICS, OFFICES, startingSupport, TERM_DAYS, type CampaignMove, type Politics } from '../content/politics';
@@ -262,7 +263,10 @@ const BOUNDS: Record<Place, { minX: number; maxX: number; minZ: number; maxZ: nu
   mararaba: { minX: -13, maxX: 13, minZ: -1.8, maxZ: 3.6 },
   park: { minX: -13, maxX: 13, minZ: -1.8, maxZ: 3.6 },
   stadium: { minX: -13, maxX: 13, minZ: -1.8, maxZ: 3.6 },
-  uniabuja: { minX: -13, maxX: 13, minZ: -1.8, maxZ: 3.6 },
+  uniabuja: { minX: -6, maxX: 6, minZ: 3, maxZ: 6 },
+  campus: { minX: -32, maxX: 32, minZ: -26, maxZ: 13.5 },
+  lt: { minX: -8.5, maxX: 8.5, minZ: -3.5, maxZ: 5.8 },
+  unilib: { minX: -8.5, maxX: 8.5, minZ: -4.5, maxZ: 5.6 },
   road: { minX: -CELL_X / 2, maxX: CELL_X / 2, minZ: ROAD_Z - ROAD_HALF, maxZ: ROAD_Z + ROAD_HALF },
 };
 
@@ -299,7 +303,7 @@ export function carSpot(s: { place: Place; area: AreaId; cell?: Cell | null; par
 }
 
 /** Ride apps and the map treat the road as the place you were last near. */
-export const ridePlace = (s: { place: Place; near?: Place }): Place => (s.place === 'road' ? (s.near ?? 'street') : s.place);
+export const ridePlace = (s: { place: Place; near?: Place }): Place => (s.place === 'road' ? (s.near ?? 'street') : CAMPUS_PLACES.includes(s.place) ? 'uniabuja' : s.place);
 
 /** Chance per idle game hour that something happens. */
 const IDLE_EVENT_CHANCE = 0.3;
@@ -1866,7 +1870,7 @@ export const useGame = create<GameState>()(
           const there = cellOfPlace(to, s.area);
           if (!there || s.active) return;
           if (!here) {
-            get().toast('🚪 Comot outside first, then waka go there');
+            get().toast(CAMPUS_PLACES.includes(s.place) && to === 'uniabuja' ? '🎓 You dey campus already' : CAMPUS_PLACES.includes(s.place) ? '🚪 Comot from campus through the main gate first' : '🚪 Comot outside first, then waka go there');
             return;
           }
           const e = to === 'street' ? ([0, 2] as [number, number]) : entrySpot(to, s.area);

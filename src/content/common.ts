@@ -1,6 +1,6 @@
 import type { Needs } from '../engine/needs';
 
-export type Place = 'home' | 'street' | 'wuse' | 'jabi' | 'secretariat' | 'lounge' | 'hospital' | 'maitama' | 'asokoro' | 'garki' | 'nyanya' | 'airport' | 'utako' | 'mararaba' | 'park' | 'stadium' | 'uniabuja' | 'road';
+export type Place = 'home' | 'street' | 'wuse' | 'jabi' | 'secretariat' | 'lounge' | 'hospital' | 'maitama' | 'asokoro' | 'garki' | 'nyanya' | 'airport' | 'utako' | 'mararaba' | 'park' | 'stadium' | 'uniabuja' | 'campus' | 'lt' | 'unilib' | 'road';
 
 export const PLACE_NAMES: Record<Place, string> = {
   home: 'Your compound',
@@ -20,6 +20,9 @@ export const PLACE_NAMES: Record<Place, string> = {
   park: 'Millennium Park',
   stadium: 'National Stadium',
   uniabuja: 'University of Abuja',
+  campus: 'UniAbuja campus',
+  lt: 'Lecture Theatre (LT 1000)',
+  unilib: 'University library',
   road: 'On the road',
 };
 

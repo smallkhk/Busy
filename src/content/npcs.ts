@@ -109,6 +109,37 @@ export const NPCS: Record<string, Npc> = {
       close: '"You na my boy! Come Monday, we go discuss that supply contract."',
     },
   },
+  amaka: {
+    shirt: '#7a1f3d',
+    trousers: '#1b1a22',
+    look: { woman: true },
+    spots: [
+      { place: 'lt', pos: [-2.5, 2.4], hours: [9, 14], days: WEEKDAYS },
+      { place: 'unilib', pos: [-3.6, 2.6], hours: [15, 21] },
+      { place: 'campus', pos: [15, 9], hours: [16, 20], days: [5, 6] },
+    ],
+    lines: {
+      stranger: '"Hi! You dey this lecture too? Abeg you get biro? Mine don finish."',
+      cold: '"Oh hey. You read for the test?"',
+      warm: '"Coursemate! Come join our study group for library tonight."',
+      close: '"My padi! When I become SAN, you go be my first client 😂"',
+    },
+  },
+  tunde: {
+    shirt: '#16a085',
+    trousers: '#2d2d2d',
+    spots: [
+      { place: 'campus', pos: [-9, 9], hours: [12, 15] },
+      { place: 'unilib', pos: [3, 2.8], hours: [9, 12], days: WEEKDAYS },
+      { place: 'lt', pos: [3.2, 3.6], hours: [14, 17], days: WEEKDAYS },
+    ],
+    lines: {
+      stranger: '"Bros, you be fresher? Vote Tunde for SUG next session o! 😎"',
+      cold: '"Ah, how far? You don register your courses?"',
+      warm: '"My guy! I get gist about the HOD. Come cafeteria make we yarn."',
+      close: '"Chairman! Anything you need for this school, na me and you."',
+    },
+  },
 };
 
 /** Contacts standing at `place` at this hour of this day. */

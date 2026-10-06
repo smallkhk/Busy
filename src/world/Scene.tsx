@@ -2,6 +2,7 @@ import { MapControls, OrbitControls, OrthographicCamera, PerspectiveCamera } fro
 import type { MapControls as MapControlsImpl, OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 import { Neighborhood } from './Neighborhood';
 import { WorldCells } from './World';
+import { CAMPUS_SCENES } from './places/Campus';
 import { onOriginShift } from './origin';
 import { CLEAR, hoodStyle, SEEDS } from './placeScenes';
 import { Room } from './Room';
@@ -66,6 +67,12 @@ function LabelSync() {
  * Camera for the connected city: isometric, follows you down the road, and you
  * fit drag to look around or pinch to see more of town.
  */
+/** Inside a building: frame the whole room instead of following you. */
+const ROOM_VIEW: Partial<Record<Place, { center: [number, number]; span: number }>> = {
+  lt: { center: [0, 0.8], span: 21 },
+  unilib: { center: [0, 0.3], span: 21 },
+};
+
 function WorldCamera() {
   const { size, camera } = useThree();
   const controls = useRef<MapControlsImpl>(null);
@@ -89,11 +96,36 @@ function WorldCamera() {
     [camera],
   );
 
+  // Arriving somewhere new (bus, door, map): jump the view there. Rooms get framed whole.
+  const lastPlace = useRef(useGame.getState().place);
+  const snap = useRef(0.6);
+  const frame = (x: number, z: number, zm: number) => {
+    const c = controls.current;
+    if (!c) return;
+    c.target.set(x, 0, z);
+    camera.position.set(x + 12, 11, z + 12);
+    camera.zoom = zm;
+    camera.updateProjectionMatrix();
+    c.update();
+  };
+
   // Keep you on screen while you walk, and settle on you for a moment after
   const settle = useRef(0);
   useFrame((_, dt) => {
     const c = controls.current;
     if (!c) return;
+    const place = useGame.getState().place;
+    if (place !== lastPlace.current) {
+      lastPlace.current = place;
+      snap.current = 0.6;
+    }
+    if (snap.current > 0) {
+      snap.current -= dt;
+      const room = ROOM_VIEW[place];
+      if (room) frame(room.center[0], room.center[1], Math.min(size.width / room.span, size.height / (room.span * 0.72)));
+      else if (Math.hypot(avatarLabelPos.x - c.target.x, avatarLabelPos.z - c.target.z) > 8) frame(avatarLabelPos.x, avatarLabelPos.z, zoom);
+      return;
+    }
     if (useGame.getState().target) settle.current = 1.2;
     else if (settle.current > 0) settle.current -= dt;
     else return;
@@ -378,6 +410,7 @@ export function Scene() {
   const wet = weather === 'rain' || weather === 'storm';
   const tier = useGame((s) => (place === 'home' ? homeTier(s.area) : 'x'));
   const style = useGame((s) => hoodStyle(place, s.area));
+  const CampusScene = CAMPUS_SCENES[place as keyof typeof CAMPUS_SCENES];
   return (
     <Canvas key={low ? 'low' : 'high'} shadows={low ? true : 'soft'} dpr={low ? 1 : [1, 2]} gl={{ antialias: !low, powerPreference: 'high-performance' }} className="scene">
       {place === 'home' ? <HomeCamera key={tier} /> : <WorldCamera />}
@@ -390,6 +423,8 @@ export function Scene() {
           <Room />
           <Neighborhood key={`home${tier}`} style={style} extent={low ? 15 : 26} far={low ? -13 : -19} frontFar={low ? 11 : 17} seed={SEEDS.home} clear={tier === 'mansion' ? [[-10, -4.5, 9, 7]] : tier === 'flat' ? [[-8, -4.5, 9, 7]] : CLEAR.home} near={-4.6} />
         </>
+      ) : CampusScene ? (
+        <CampusScene />
       ) : (
         <WorldCells />
       )}
