@@ -3,6 +3,7 @@ import { createJSONStorage, persist } from 'zustand/middleware';
 import { activityById, activityPlace, ENTRY_SPOT, PLACE_NAMES, type Activity, type Place } from '../content/activities';
 import { entrySpot, exitSpot, homeBounds, homeSpot } from '../content/homeLayout';
 import { CAMPUS_PLACES } from '../content/campus';
+import { ACTIVITY_SEAT_REACH, nearestSeat, SIT_REACH } from '../content/seats';
 import { CELL_X, CELL_Z, cellOfPlace, currentCell, HOME_CELLS, inGrid, placeAt, ROAD_HALF, ROAD_Z, route, type Cell } from '../content/worldmap';
 import { AD_BIZ_BOOST } from '../content/billboards';
 import { appointChance, CAMPAIGN_DAYS, canRun, electionWon, MOVES, moveSupport, NO_POLITICS, OFFICES, startingSupport, TERM_DAYS, type CampaignMove, type Politics } from '../content/politics';
@@ -297,6 +298,8 @@ export const HOME_PARK: [number, number] = [-5.6, -1.75];
 export const KM_PER_UNIT = 0.1;
 /** Pending action meaning "get into the car when you reach it". */
 const ENTER_CAR = '__car';
+/** Pending action meaning "sit on the seat when you reach it". */
+const SIT_DOWN = '__sit';
 
 /** Where your parked car is, relative to the block you are in (null when it is not on the grid near you). */
 export function carSpot(s: { place: Place; area: AreaId; cell?: Cell | null; parked?: { cell: Cell; pos: [number, number]; rot: number } | null }): { pos: [number, number]; rot: number } | null {
@@ -1904,8 +1907,18 @@ export const useGame = create<GameState>()(
         setPose: (pose) => {
           const s = get();
           if (pose && (s.active || s.driving || s.target)) return;
+          // Only real seats: walk to the nearest bench, chair or stool and sit on it
+          if (pose === 'sit' && s.pose !== 'sit') {
+            const me = live.pos ?? s.pos;
+            const seat = nearestSeat(s.place, s.area, me, SIT_REACH);
+            if (!seat) {
+              get().toast('🪑 No chair or bench near you. Find somewhere to sit.');
+              return;
+            }
+            set({ pose: null, target: [seat.x, seat.z], route: [], pending: SIT_DOWN, menu: null });
+            return;
+          }
           set({ pose: s.pose === pose ? null : pose });
-          if (pose === 'sit' && s.pose !== 'sit') get().toast('🪑 You sit down. Energy dey come back small small.');
           // Kneel to greet somebody you know who dey near you: respect is reciprocal
           if (pose === 'kneel' && s.pose !== 'kneel') {
             const { hour, day } = clockParts(s.time);
@@ -1975,7 +1988,12 @@ export const useGame = create<GameState>()(
             get().toast(`😕 ${reason}`);
             return;
           }
-          const spot = a.spot ? (activityPlace(a.id) === 'home' ? homeSpot(s.area, a.id, a.spot) : a.spot) : a.away ? exitSpot(s.place, s.area) : null;
+          let spot = a.spot ? (activityPlace(a.id) === 'home' ? homeSpot(s.area, a.id, a.spot) : a.spot) : a.away ? exitSpot(s.place, s.area) : null;
+          // Sit-down activities take the nearest real seat (or you do am standing)
+          if (spot && a.pose === 'sit') {
+            const seat = nearestSeat(s.place, s.area, spot, ACTIVITY_SEAT_REACH);
+            if (seat) spot = [seat.x, seat.z];
+          }
           if (spot) {
             const path = planWalk(s, spot[0], spot[1]);
             if (path && path.length) set({ target: path[0], route: path.slice(1), pending: a.id });
@@ -2006,7 +2024,10 @@ export const useGame = create<GameState>()(
             return;
           }
           set({ pos, target: null });
-          if (pending === ENTER_CAR) {
+          if (pending === SIT_DOWN) {
+            set({ pending: null, pose: 'sit' });
+            get().toast('🪑 You sit down. Energy dey come back small small.');
+          } else if (pending === ENTER_CAR) {
             set({ pending: null });
             get().enterCar();
           } else if (pending) startActivity(pending);

@@ -10,6 +10,7 @@ import { placeLabel } from '../content/housing';
 import { activityRealSeconds, clockParts, formatClock, formatNaira, formatSeconds } from '../engine/clock';
 import { mood, moodFace, NEED_KEYS, NEED_META } from '../engine/needs';
 import { blockReason, useGame, carSpot, type Pose } from '../store/game';
+import { nearestSeat, SIT_REACH } from '../content/seats';
 import { activityDetail } from './detail';
 
 export function TopBar() {
@@ -163,6 +164,8 @@ export function PoseBar() {
   const free = useGame((s) => s.started && !s.active && !s.driving && !s.target);
   const pose = useGame((s) => s.pose);
   const setPose = useGame((s) => s.setPose);
+  // Only offer a seat when there is a real one nearby
+  const seatNear = useGame((s) => !!nearestSeat(s.place, s.area, s.pos, SIT_REACH));
   if (!free) return null;
   const btn = (p: Pose, label: string) => (
     <button className={`pose-btn ${pose === p ? 'on' : ''}`} onClick={() => setPose(p)}>
@@ -171,7 +174,7 @@ export function PoseBar() {
   );
   return (
     <div className="pose-bar">
-      {btn('sit', pose === 'sit' ? '🧍 Stand up' : '🪑 Sit')}
+      {(seatNear || pose === 'sit') && btn('sit', pose === 'sit' ? '🧍 Stand up' : '🪑 Sit')}
       {btn('wave', '👋 Wave')}
       {btn('dance', '💃 Dance')}
       {btn('kneel', '🙏 Greet')}

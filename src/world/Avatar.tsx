@@ -7,6 +7,7 @@ import { SKINS, type Hair, type Outfit } from '../content/fashion';
 import { avatarLabelPos } from './labels';
 import { CELL_X, CELL_Z, currentCell } from '../content/worldmap';
 import { CellCtx, shiftOrigin } from './origin';
+import { nearestSeat, SEAT_BASE } from '../content/seats';
 import { homePoint } from '../content/homeLayout';
 import { HumanModel, type Hat, type HumanKind, type Move } from './HumanModel';
 import { dressFor } from './dress';
@@ -254,7 +255,12 @@ export function Avatar() {
   const hidden = !!activity?.away;
   const sleeping = !!activity?.sleep;
   const pose = useGame((s) => s.pose);
-  const seated = activity?.pose === 'sit' || (!active && pose === 'sit');
+  // Sitting only happens on a real seat under you; with no seat you stand
+  const wantsSeat = activity?.pose === 'sit' || (!active && pose === 'sit');
+  const seat = useGame((s) => (wantsSeat && !s.target ? nearestSeat(s.place, s.area, s.pos, 0.35) : null));
+  const seated = !!seat;
+  const seatRef = useRef(seat);
+  seatRef.current = seat;
   const driving = useGame((s) => s.driving);
   const car = useGame((s) => s.car);
   const carDef = car ? carById(car.id) : undefined;
@@ -334,6 +340,12 @@ export function Avatar() {
     const swing = target && !inCar ? Math.sin(walkPhase.current) * 0.5 : 0;
     legs.current.forEach((l, i) => l && (l.rotation.x = i % 2 === 0 ? swing : -swing));
     g.position.y = target && !inCar ? Math.abs(Math.sin(walkPhase.current)) * 0.04 : 0;
+    // On a seat: right on it, at its height, facing the way the seat faces
+    const st = seatRef.current;
+    if (st && !target) {
+      g.position.set(st.x, st.y - SEAT_BASE, st.z);
+      g.rotation.y = st.rot;
+    }
     avatarLabelPos.set(g.position.x, 1.75, g.position.z);
   });
 

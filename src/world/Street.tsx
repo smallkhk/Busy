@@ -340,6 +340,11 @@ export function Street() {
             {/* Mama Put in her wrapper and gele */}
             <Person shirt="#e67e22" skin="#5a3825" woman hat={{ type: 'gele', color: '#e67e22', band: '#c0392b' }} move="Interact" />
           </group>
+          {/* Customers' bench in front of the table */}
+          <Box p={[0.5, 0.41, 1.9]} s={[1.5, 0.06, 0.34]} c="#7a5a3c" />
+          {[-0.15, 1.15].map((x) => (
+            <Box key={x} p={[x, 0.2, 1.9]} s={[0.07, 0.4, 0.3]} c="#5b3a21" />
+          ))}
         </Shop>
       </Tappable>
       <Tappable id="barber">
