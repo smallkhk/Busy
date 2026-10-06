@@ -140,6 +140,112 @@ export const NPCS: Record<string, Npc> = {
       close: '"Chairman! Anything you need for this school, na me and you."',
     },
   },
+  // ---------------- People around Abuja ----------------
+  iyabo: {
+    shirt: '#e67e22',
+    look: { woman: true, hat: { type: 'gele', color: '#e67e22', band: '#27ae60' } },
+    spots: [{ place: 'wuse', pos: [-2.6, 1.6], hours: [7, 18] }],
+    lines: {
+      stranger: '"Customer! Wetin you wan buy? Rice, beans, garri, I get everything!"',
+      cold: '"Ehen, you don come back. Your foodstuff don finish?"',
+      warm: '"My customer! I keep the fresh tomato for you today."',
+      close: '"My own pikin! Take this extra pepper, no pay."',
+    },
+  },
+  nkechi: {
+    shirt: '#ffffff',
+    look: { woman: true },
+    spots: [{ place: 'hospital', pos: [1.4, 1.6], hours: [8, 17], days: WEEKDAYS }],
+    lines: {
+      stranger: '"Hello, you dey okay? You look like person wey never sleep."',
+      cold: '"You again? Hope say you dey take the drugs well."',
+      warm: '"How body? Come, make I check your BP small."',
+      close: '"My favourite patient! Anything you feel, call me straight."',
+    },
+  },
+  yakubu: {
+    shirt: '#1f3a5f',
+    trousers: '#1f3a5f',
+    look: { hat: { type: 'cap', color: '#1f3a5f' } },
+    spots: [{ place: 'garki', pos: [1.8, 1.8], hours: [9, 18] }],
+    lines: {
+      stranger: '"Oga, where you dey go? Show me your particulars."',
+      cold: '"Ehen, na you. You dey behave yourself?"',
+      warm: '"My friend! This area dey calm today, no wahala."',
+      close: '"My guy! If anybody disturb you for Abuja, just call Yakubu."',
+    },
+  },
+  hauwa: {
+    shirt: '#16a085',
+    look: { woman: true },
+    spots: [{ place: 'nyanya', pos: [-2.4, 1.6], hours: [8, 19] }],
+    lines: {
+      stranger: '"Salaam! You wan join our adashe? Na ₦2,000 every week."',
+      cold: '"You don pay this week contribution?"',
+      warm: '"My person! Your turn for adashe dey near o."',
+      close: '"My person! You be the most faithful member for the whole group."',
+    },
+  },
+  obinna: {
+    shirt: '#2d3436',
+    spots: [{ place: 'utako', pos: [1.4, 1.8], hours: [9, 19] }],
+    lines: {
+      stranger: '"Bros, you need phone? iPhone, Samsung, I get all, UK used!"',
+      cold: '"You don ready to change that your phone?"',
+      warm: '"My customer! New stock land this morning, come check."',
+      close: '"My padi! For you, na wholesale price."',
+    },
+  },
+  bala: {
+    shirt: '#27ae60',
+    trousers: '#1e1e1e',
+    spots: [
+      { place: 'stadium', pos: [-2.2, 1.6], hours: [7, 11] },
+      { place: 'stadium', pos: [-2.2, 1.6], hours: [16, 19] },
+    ],
+    lines: {
+      stranger: '"You get leg? Run two rounds make I see!"',
+      cold: '"You still dey come training? Belle don dey come out o."',
+      warm: '"Captain! Your first touch don improve well well."',
+      close: '"My star player! Scout dey come next week, be ready."',
+    },
+  },
+  zainab: {
+    shirt: '#9b59b6',
+    look: { woman: true },
+    spots: [
+      { place: 'park', pos: [1.6, 1.8], hours: [9, 18], days: [0, 6] },
+      { place: 'park', pos: [1.6, 1.8], hours: [13, 18] },
+    ],
+    lines: {
+      stranger: '"Hi! You like art? This one na Zuma Rock at sunset."',
+      cold: '"You don come check my new painting?"',
+      warm: '"Come siddon, let me sketch you small."',
+      close: '"My muse! Your portrait na my best work."',
+    },
+  },
+  ifeanyi: {
+    shirt: '#ffffff',
+    trousers: '#1b2633',
+    look: { hat: { type: 'cap', color: '#1b2633' } },
+    spots: [{ place: 'airport', pos: [1.2, 1.8], hours: [6, 20] }],
+    lines: {
+      stranger: '"Good day. You dey travel today? Zuma Air flight dey on time o."',
+      cold: '"Ah, the passenger again. Where you dey fly go this time?"',
+      warm: '"My friend! Next time wey you fly, tell me, I go greet you for cockpit."',
+      close: '"Co-pilot! Anything you need for this airport, na my side."',
+    },
+  },
+  dauda: {
+    shirt: '#c0392b',
+    spots: [{ place: 'mararaba', pos: [-2.4, 1.6], hours: [7, 20] }],
+    lines: {
+      stranger: '"Who be this? You no be from this side. Wetin you want?"',
+      cold: '"Ehen, you again. You don pay your ticket for union?"',
+      warm: '"My person! Any boy disturb you, tell me."',
+      close: '"Chairman friend! This Mararaba na your house."',
+    },
+  },
 };
 
 /** Contacts standing at `place` at this hour of this day. */

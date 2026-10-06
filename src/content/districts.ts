@@ -138,7 +138,7 @@ export const DISTRICT_INTERACTABLES: Interactable[] = [
     emoji: '🏧',
     label: [-0.6, 2.0, -2.2],
     activities: [
-      { id: 'pos-agent', minigame: 'pos', label: 'Run POS stand (5 hrs)', doing: 'Counting cash, "network no dey"', emoji: '🏧', minutes: 300, pay: 7500, gains: { energy: -15, social: 12, fun: -5 }, hours: [8, 18], spot: B },
+      { id: 'pos-agent', minigame: 'pos', label: 'Run POS stand (5 hrs)', doing: 'Counting cash, "network no dey"', emoji: '🏧', minutes: 300, pay: 7500, gains: { energy: -15, social: 12, fun: -5 }, effects: { meet: 'yakubu' }, hours: [8, 18], spot: B },
     ],
   },
   {
@@ -188,7 +188,7 @@ export const DISTRICT_INTERACTABLES: Interactable[] = [
     emoji: '🍲',
     label: [-4.2, 2.2, -2.4],
     activities: [
-      { id: 'mamaput', label: 'Eba & egusi', doing: 'Chopping with hand', emoji: '🍲', minutes: 25, cost: 1200, gains: { food: 50, social: 8 }, hours: [7, 21], spot: A },
+      { id: 'mamaput', label: 'Eba & egusi', doing: 'Chopping with hand', emoji: '🍲', minutes: 25, cost: 1200, gains: { food: 50, social: 8 }, effects: { meet: 'hauwa' }, hours: [7, 21], spot: A },
     ],
   },
   {
@@ -245,7 +245,7 @@ export const DISTRICT_INTERACTABLES: Interactable[] = [
     emoji: '✈️',
     label: [-4.2, 3.2, -2.6],
     activities: [
-      { id: 'planespot', label: 'Watch planes, dream of japa', doing: 'Watching planes take off ✈️', emoji: '🛫', minutes: 45, gains: { fun: 12 }, hours: [6, 22], spot: A },
+      { id: 'planespot', label: 'Watch planes, dream of japa', doing: 'Watching planes take off ✈️', emoji: '🛫', minutes: 45, gains: { fun: 12 }, effects: { meet: 'ifeanyi' }, hours: [6, 22], spot: A },
       ...FLY_FROM_ABUJA,
       { id: 'porter', label: 'Help travellers carry bags (4 hrs)', doing: 'Pushing luggage trolley', emoji: '🧳', minutes: 240, pay: 6000, gains: { energy: -20, social: 10 }, hours: [6, 22], spot: A },
     ],
@@ -294,7 +294,7 @@ export const DISTRICT_INTERACTABLES: Interactable[] = [
     label: [-0.6, 3.2, -2.8],
     activities: [
       { id: 'freelance', label: 'Freelance gig for foreign client (6 hrs)', doing: 'Coding with hub WiFi', emoji: '💻', minutes: 360, pay: 26000, gains: { energy: -25, fun: -5, social: 5 }, hours: [8, 20], requires: { packaging: 20 }, spot: B },
-      { id: 'meetup', label: 'Tech meetup (free pizza 🍕)', doing: 'Networking with founders', emoji: '🍕', minutes: 120, gains: { food: 25, fun: 15, social: 25 }, effects: { packaging: 1 }, hours: [17, 21], spot: B },
+      { id: 'meetup', label: 'Tech meetup (free pizza 🍕)', doing: 'Networking with founders', emoji: '🍕', minutes: 120, gains: { food: 25, fun: 15, social: 25 }, effects: { meet: 'obinna', packaging: 1 }, hours: [17, 21], spot: B },
     ],
   },
   {
@@ -352,7 +352,7 @@ export const DISTRICT_INTERACTABLES: Interactable[] = [
     emoji: '🏍️',
     label: [2.8, 2.2, -2.4],
     activities: [
-      { id: 'okada', label: 'Ride okada (banned for FCT, allowed here) (5 hrs)', doing: 'Carrying passengers on okada', emoji: '🏍️', minutes: 300, pay: 7500, gains: { energy: -25, hygiene: -15, fun: 5 }, hours: [6, 19], away: true, spot: C },
+      { id: 'okada', label: 'Ride okada (banned for FCT, allowed here) (5 hrs)', doing: 'Carrying passengers on okada', emoji: '🏍️', minutes: 300, pay: 7500, gains: { energy: -25, hygiene: -15, fun: 5 }, effects: { meet: 'dauda' }, hours: [6, 19], away: true, spot: C },
     ],
   },
   {
@@ -387,7 +387,7 @@ export const DISTRICT_INTERACTABLES: Interactable[] = [
     emoji: '⛲',
     label: [-0.6, 2.4, -2.4],
     activities: [
-      { id: 'photoshoot', label: 'Photoshoot by the fountain 📸', doing: 'Posing like Instagram baddie', emoji: '📸', minutes: 45, cost: 5000, gains: { fun: 20, social: 10 }, effects: { packaging: 2 }, hours: [8, 19], spot: B },
+      { id: 'photoshoot', label: 'Photoshoot by the fountain 📸', doing: 'Posing like Instagram baddie', emoji: '📸', minutes: 45, cost: 5000, gains: { fun: 20, social: 10 }, effects: { meet: 'zainab', packaging: 2 }, hours: [8, 19], spot: B },
       { id: 'photographer', label: 'Snap people for money (4 hrs)', doing: 'Shouting "Snap your picture!"', emoji: '📷', minutes: 240, pay: 7000, gains: { energy: -12, social: 15 }, hours: [9, 18], spot: B },
     ],
   },
@@ -435,7 +435,7 @@ export const DISTRICT_INTERACTABLES: Interactable[] = [
     emoji: '⚽',
     label: [2.8, 1.6, -2.0],
     activities: [
-      { id: 'fivea', label: 'Play 5-a-side with the boys', doing: 'Dribbling like Okocha', emoji: '⚽', minutes: 90, gains: { fun: 35, social: 20, energy: -25, hygiene: -25 }, effects: { fitness: 3 }, hours: [6, 19], spot: C },
+      { id: 'fivea', label: 'Play 5-a-side with the boys', doing: 'Dribbling like Okocha', emoji: '⚽', minutes: 90, gains: { fun: 35, social: 20, energy: -25, hygiene: -25 }, effects: { meet: 'bala', fitness: 3 }, hours: [6, 19], spot: C },
       { id: 'track', label: 'Run for the athletics track', doing: 'Running laps', emoji: '🏃🏾', minutes: 45, gains: { fun: 10, energy: -18, hygiene: -15 }, effects: { fitness: 2, packaging: 1 }, hours: [6, 18], spot: C },
     ],
   },

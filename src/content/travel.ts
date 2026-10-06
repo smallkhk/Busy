@@ -10,7 +10,7 @@ export const TRAVEL_INTERACTABLES: Interactable[] = [
     emoji: '🧺',
     label: [-3.2, 2.5, -2.6],
     activities: [
-      { id: 'foodstuff-big', label: 'Buy foodstuff (6 meals)', doing: 'Pricing rice, beans & pepper', emoji: '🧺', minutes: 30, cost: 9000, gains: { social: 8 }, effects: { pantry: 6 }, hours: [7, 18], spot: [-3.2, -1.4] },
+      { id: 'foodstuff-big', label: 'Buy foodstuff (6 meals)', doing: 'Pricing rice, beans & pepper', emoji: '🧺', minutes: 30, cost: 9000, gains: { social: 8 }, effects: { pantry: 6, meet: 'iyabo' }, hours: [7, 18], spot: [-3.2, -1.4] },
       { id: 'net', label: 'Treated mosquito net', doing: 'Buying mosquito net', emoji: '🦟', minutes: 10, cost: 4000, gains: {}, effects: { net: true }, hours: [7, 18], spot: [-3.2, -1.4] },
       { id: 'foodstuff-small', label: 'Buy small foodstuff (2 meals)', doing: 'Buying small small', emoji: '🍅', minutes: 15, cost: 3500, gains: { social: 4 }, effects: { pantry: 2 }, hours: [7, 18], spot: [-3.2, -1.4] },
     ],
@@ -174,6 +174,7 @@ export const TRAVEL_INTERACTABLES: Interactable[] = [
     activities: [
       { id: 'cocktail', label: 'Small chops & cocktail', doing: 'Enjoying cocktail', emoji: '🍹', minutes: 45, cost: 15000, gains: { fun: 35, social: 20, food: 15 }, hours: [18, 24], requires: { packaging: 25 }, spot: [-4.2, -1.6] },
       { id: 'bottle', label: 'Order bottle (table service) 🍾', doing: 'Popping bottle with sparkler', emoji: '🍾', minutes: 120, cost: 150000, gains: { fun: 55, social: 40 }, effects: { packaging: 12, meet: 'alhaji' }, hours: [20, 24], requires: { packaging: 40 }, spot: [-4.2, -1.6] },
+      { id: 'bartender', label: 'Bartender shift (5 hrs)', doing: 'Mixing Chapman and cocktails for big boys 🍸', emoji: '🍸', minutes: 300, pay: 13000, gains: { energy: -25, social: 20, fun: 5 }, hours: [18, 24], requires: { packaging: 15 }, spot: [-4.2, -1.6] },
     ],
   },
   {
@@ -217,7 +218,8 @@ export const TRAVEL_INTERACTABLES: Interactable[] = [
     label: [-1.5, 3.4, -2.6],
     activities: [
       { id: 'see-doctor', label: 'See doctor', doing: 'Waiting in queue to see doctor', emoji: '🩺', minutes: 150, cost: 15000, gains: { energy: 10, fun: -5 }, effects: { cure: true }, hours: [8, 16], spot: [-1.5, -1.0] },
-      { id: 'checkup', label: 'Full checkup & lab test', doing: 'Doing lab tests', emoji: '🧪', minutes: 240, cost: 30000, gains: { energy: 30, fun: 5 }, effects: { cure: true }, hours: [8, 14], spot: [-1.5, -1.0] },
+      { id: 'checkup', label: 'Full checkup & lab test', doing: 'Doing lab tests', emoji: '🧪', minutes: 240, cost: 30000, gains: { energy: 30, fun: 5 }, effects: { cure: true, meet: 'nkechi' }, hours: [8, 14], spot: [-1.5, -1.0] },
+      { id: 'hospital-porter', label: 'Hospital porter shift (6 hrs)', doing: 'Pushing wheelchairs and stretchers 🏥', emoji: '🧑🏾‍⚕️', minutes: 360, pay: 9500, gains: { energy: -30, social: 10, hygiene: -10 }, hours: [7, 19], spot: [-1.5, -1.0] },
     ],
   },
   {
