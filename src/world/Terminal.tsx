@@ -47,15 +47,6 @@ export function FlyingJet() {
   );
 }
 
-/** A parked jet standing on its wheels, nose toward +z (the gate). */
-export function ParkedJet({ x, z, s = 0.5 }: { x: number; z: number; s?: number }) {
-  return (
-    <group position={[x, WHEELS * s, z]} rotation={[0, -Math.PI / 2, 0]} scale={s}>
-      <ZumaJetModel parked />
-    </group>
-  );
-}
-
 const useNight = () => useGame((s) => daylight(clockParts(Math.floor(s.time / 30) * 30).minuteOfDay) < 0.35);
 
 /** Glass that shows the sky by day and glows warm at night. */
@@ -69,8 +60,8 @@ function Glass({ p, s }: { p: [number, number, number]; s: [number, number, numb
   );
 }
 
-const W = 24;
-const DEPTH = 6;
+const W = 20;
+const DEPTH = 5;
 const H = 3.6;
 
 /** The big curved roof over the hall: an arc of a wide cylinder, overhanging the front. */
@@ -91,13 +82,14 @@ function WaveRoof() {
 }
 
 /**
- * A modern airport terminal, front (glass and doors) facing +z at z = 0:
- * drop-off canopy, curved roof, control tower, pier with jet bridges, and
- * Zuma Air jets parked on the apron behind.
+ * A modern airport terminal, front (glass and doors) facing +z at z = 0, 20 wide
+ * and 5 deep so it fits one city block: drop-off canopy, curved roof, control
+ * tower, and a Zuma Air jet at the gate beside the hall (`jetSide` +1 east, -1 west).
  */
-export function Terminal({ name, towerX = 15 }: { name: string; towerX?: number }) {
+export function Terminal({ name, tower = [-13, -3], jetSide = 1 }: { name: string; tower?: [number, number]; jetSide?: 1 | -1 }) {
   const mullions: ReactElement[] = [];
   for (let x = -W / 2; x <= W / 2 + 0.01; x += 1.2) mullions.push(<Box key={x} p={[x, H / 2, 0.04]} s={[0.07, H, 0.08]} c="#9aa4ad" />);
+  const gate = jetSide * (W / 2);
   return (
     <group>
       {/* Plinth and the hall */}
@@ -108,7 +100,7 @@ export function Terminal({ name, towerX = 15 }: { name: string; towerX?: number 
       <Box p={[0, H - 0.05, 0.08]} s={[W + 0.4, 0.4, 0.14]} c="#118a4c" />
       <Box p={[0, H + 0.2, 0.06]} s={[W + 0.4, 0.1, 0.1]} c="#d8a53a" />
       {/* Sliding doors */}
-      {[-6, 0, 6].map((x) => (
+      {[-5, 0, 5].map((x) => (
         <group key={x}>
           <Box p={[x, 1.15, 0.08]} s={[1.9, 2.3, 0.06]} c="#2b3640" />
           <Box p={[x, 1.15, 0.12]} s={[0.04, 2.2, 0.04]} c="#9aa4ad" />
@@ -118,7 +110,7 @@ export function Terminal({ name, towerX = 15 }: { name: string; towerX?: number 
       {/* Drop-off canopy on slim columns */}
       <Box p={[0, 3.05, 1.2]} s={[W - 2, 0.14, 2.4]} c="#f4f6f8" />
       <Box p={[0, 3.13, 2.38]} s={[W - 2, 0.1, 0.06]} c="#118a4c" />
-      {[-10, -5, 0, 5, 10].map((x) => (
+      {[-8, -4, 0, 4, 8].map((x) => (
         <Cyl key={x} p={[x, 1.5, 2.2]} r={0.08} h={3} c="#c7ccd2" />
       ))}
       <Html position={[0, H + 1.4, 0.4]} center zIndexRange={[2, 0]} style={{ pointerEvents: 'none' }}>
@@ -126,35 +118,25 @@ export function Terminal({ name, towerX = 15 }: { name: string; towerX?: number 
       </Html>
 
       {/* Control tower */}
-      <group position={[towerX, 0, -6]}>
+      <group position={[tower[0], 0, tower[1]]}>
         <Cyl p={[0, 4, 0]} r={0.55} h={8} c="#dfe4e8" />
         <Cyl p={[0, 7.4, 0]} r={1.1} h={0.3} c="#cfd3d6" />
         <Glass p={[0, 8.2, 0]} s={[2.4, 1.2, 2.4]} />
         <Cyl p={[0, 8.95, 0]} r={1.5} h={0.25} c="#eef1f4" />
         <Cyl p={[0, 9.6, 0]} r={0.04} h={1.2} c="#888" />
-        <Box p={[0, 3.2, 0.56]} s={[0.5, 0.5, 0.02]} c="#118a4c" />
       </group>
 
-      {/* Pier along the apron, with two jet bridges */}
-      <Box p={[0, 1.4, -DEPTH - 1.6]} s={[W - 4, 2.8, 2.2]} c="#e6eaed" />
-      <Glass p={[0, 1.6, -DEPTH - 2.72]} s={[W - 5, 1.2, 0.04]} />
-      {[-6, 6].map((x) => (
-        <group key={x}>
-          <Box p={[x, 2.1, -DEPTH - 4.7]} s={[0.9, 0.9, 3.8]} c="#cfd3d6" />
-          <Box p={[x, 1.0, -DEPTH - 6.2]} s={[0.25, 2, 0.25]} c="#6c757d" />
-        </group>
-      ))}
-
-      {/* Apron with lead-in lines, and our jets at the gates */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.012, -DEPTH - 9]}>
-        <planeGeometry args={[W + 12, 16]} />
+      {/* Gate beside the hall: apron, jet bridge and our jet, nose to the terminal */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[gate + jetSide * 5.5, 0.012, -6]}>
+        <planeGeometry args={[11, 12]} />
         <meshStandardMaterial color="#b4b9bf" />
       </mesh>
-      {[-6, 6].map((x) => (
-        <Box key={x} p={[x, 0.02, -DEPTH - 11]} s={[0.12, 0.01, 10]} c="#f2c230" />
-      ))}
-      <ParkedJet x={-6} z={-DEPTH - 11.4} />
-      <ParkedJet x={6} z={-DEPTH - 11.4} />
+      <Box p={[gate + jetSide * 5.5, 0.02, -6]} s={[10, 0.01, 0.12]} c="#f2c230" />
+      <Box p={[gate + jetSide * 0.9, 2.1, -4.6]} s={[1.8, 0.9, 0.9]} c="#cfd3d6" />
+      <Box p={[gate + jetSide * 1.5, 1.0, -4.6]} s={[0.25, 2, 0.25]} c="#6c757d" />
+      <group position={[gate + jetSide * 6.4, WHEELS * 0.5, -6]} rotation={[0, jetSide > 0 ? Math.PI : 0, 0]} scale={0.5}>
+        <ZumaJetModel parked />
+      </group>
     </group>
   );
 }
