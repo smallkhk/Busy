@@ -1,3 +1,6 @@
+import { ParkedJets } from './Flight';
+import { Suspense } from 'react';
+import { AirportModel } from '../AirportModel';
 import { Person } from '../Avatar';
 import { Box, Cyl, Tappable } from '../Room';
 import { Car, Tree, Walkers, type Walker } from '../Street';
@@ -366,31 +369,16 @@ const AIRPORT_WALKERS: Walker[] = [
   { from: 2, to: -6, z: 1.4, speed: 0.45, shirt: '#d35400' },
 ];
 
-function Plane() {
-  return (
-    <group position={[2.0, 1.2, -7.5]} rotation={[0, 0.3, 0.12]}>
-      <Box p={[0, 0, 0]} s={[4.0, 0.5, 0.5]} c="#f4f4f4" />
-      <Box p={[0, 0, 0]} s={[1.0, 0.06, 4.0]} c="#dfe6ea" />
-      <Box p={[-1.8, 0.4, 0]} s={[0.5, 0.7, 0.06]} c="#118a4c" />
-    </group>
-  );
-}
-
 export function Airport() {
   return (
     <group>
       <Ground color="#7fa856" />
       <Ground color="#cfd2d6" size={[16, 6]} pos={[0, 0, 0.6]} />
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[2, 0.01, -8]}>
-        <planeGeometry args={[30, 3]} />
-        <meshStandardMaterial color="#2b2b2b" />
-      </mesh>
-      <Plane />
-
-      {/* Terminal */}
-      <Box p={[-2.4, 1.6, -4.6]} s={[7.6, 3.2, 2.6]} c="#dfe6ea" />
-      <Box p={[-2.4, 3.3, -4.6]} s={[8.0, 0.2, 3.0]} c="#118a4c" />
-      <Box p={[-2.4, 1.6, -3.28]} s={[7.0, 2.4, 0.03]} c="#8fc6e8" />
+      {/* Terminal, control tower and apron */}
+      <Suspense fallback={null}>
+        <AirportModel position={[0, 0, -12.6]} />
+      </Suspense>
+      <ParkedJets at={[0, -12.6]} />
 
       <Tappable id="terminal">
         <Box p={[-4.2, 2.9, -3.24]} s={[2.4, 0.4, 0.04]} c="#f2c230" />
@@ -407,8 +395,6 @@ export function Airport() {
         <Cyl p={[-0.6, 1.1, -2.6]} r={0.08} h={0.2} c="#fff" />
       </Tappable>
 
-      <Box p={[3.4, 1.0, -3.6]} s={[0.4, 2.0, 0.4]} c="#a7c7db" />
-      <Box p={[3.4, 2.4, -3.6]} s={[1.0, 0.8, 1.0]} c="#4a6d82" />
 
       <Tappable id="airport-rank">
         <Box p={[5.0, 0.02, 3.0]} s={[2.8, 0.04, 1.8]} c="#3a3d42" />

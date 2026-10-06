@@ -102,6 +102,13 @@ export function AccountApp() {
         Load my life
       </button>
       {msg && <p className="small">{msg}</p>}
+      <div className="love-section">🙏🏾 Credits</div>
+      <p className="muted small">
+        3D models: Kenney and Quaternius (CC0). Airport terminal: "
+        <a href="https://sketchfab.com/3d-models/airport-d074ebbb587c4d919707a26e9fb14da9" target="_blank" rel="noreferrer">Airport</a>" by{' '}
+        <a href="https://sketchfab.com/mamontnikita62" target="_blank" rel="noreferrer">mamont nikita</a>, licensed under{' '}
+        <a href="http://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noreferrer">CC-BY-4.0</a> (cut down and simplified).
+      </p>
     </>
   );
 }
