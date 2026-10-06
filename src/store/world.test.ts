@@ -15,21 +15,21 @@ describe('walking and driving round Abuja', () => {
     useGame.setState({ area: 'kubwa', place: 'street', pos: [0, 2], nextEventCheck: Infinity, active: null });
   });
 
-  it('crossing a block edge moves you onto the road and shifts your position', () => {
+  it("crossing into another area's street puts you on the road there, with your position shifted", () => {
     useGame.getState().shiftCell(1, 0);
     const s = useGame.getState();
+    // Gwarinpa street is somebody else's area: for you it is just road and houses
     expect(s.place).toBe('road');
-    expect(s.cell).toEqual([HOME_CELLS.kubwa[0] + 1, HOME_CELLS.kubwa[1]]);
+    expect(s.cell).toEqual(HOME_CELLS.gwarinpa);
     expect(s.pos).toEqual([-CELL_X, 2]);
     expect(s.near).toBe('street');
   });
 
   it('walking into a place block puts you in that place', () => {
-    // From Kubwa (0,0): one block east, then one south is Jabi (1,1)
-    useGame.getState().shiftCell(1, 0);
+    // From Kubwa (0,0): one block south is the stadium
     useGame.getState().shiftCell(0, 1);
-    expect(PLACE_CELLS.jabi).toEqual([1, 1]);
-    expect(useGame.getState().place).toBe('jabi');
+    expect(PLACE_CELLS.stadium).toEqual([0, 1]);
+    expect(useGame.getState().place).toBe('stadium');
     expect(useGame.getState().cell).toBeNull();
   });
 

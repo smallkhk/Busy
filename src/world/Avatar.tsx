@@ -1,12 +1,12 @@
 import { useFrame } from '@react-three/fiber';
-import { Suspense, useRef } from 'react';
+import { Suspense, useContext, useRef } from 'react';
 import type { Group } from 'three';
 import { activityById } from '../content/activities';
 import { live, useGame } from '../store/game';
 import { SKINS, type Hair, type Outfit } from '../content/fashion';
 import { avatarLabelPos } from './labels';
 import { CELL_X, CELL_Z, currentCell } from '../content/worldmap';
-import { shiftOrigin } from './origin';
+import { CellCtx, shiftOrigin } from './origin';
 import { homePoint } from '../content/homeLayout';
 import { HumanModel, type Hat, type HumanKind, type Move } from './HumanModel';
 import { dressFor } from './dress';
@@ -231,6 +231,9 @@ export function Person(props: {
 }) {
   const block = <BlockPerson shirt={props.shirt} skin={props.skin} trousers={props.trousers} legs={props.legs} outfit={props.outfit} hair={props.hair} />;
   const skin = props.skin ?? '#5a3825';
+  // People in the blocks next door stay simple: no skinned model to animate
+  const cell = useContext(CellCtx);
+  if (cell && !cell.current) return block;
   return (
     <Suspense fallback={block}>
       <HumanModel {...dressFor({ ...props, skin })} skin={skin} move={props.move} />
@@ -279,7 +282,9 @@ export function Avatar() {
       const dx = target[0] - g.position.x;
       const dz = target[1] - g.position.z;
       const dist = Math.hypot(dx, dz);
-      const step = (useGame.getState().driving ? CAR_SPEED : SPEED) * dt;
+      const gs = useGame.getState();
+      // A little brisker on the open road than inside the house
+      const step = (gs.driving ? CAR_SPEED : gs.place === "home" ? SPEED : SPEED * 1.3) * dt;
       if (dist <= step || dist < 0.02) {
         g.position.set(target[0], 0, target[1]);
         arrive([target[0], target[1]]);

@@ -59,6 +59,9 @@ export function TravelSheet({ sel }: { sel: MapSpot }) {
   const place = useGame(ridePlace);
   const area = useGame((s) => s.area);
   const hasCar = useGame((s) => !!s.car);
+  const outside = useGame((s) => s.place !== 'home' && !s.active);
+  const driving = useGame((s) => s.driving);
+  const headTo = useGame((s) => s.headTo);
   const here = fromPlace(place);
   const to = sel.place;
   return (
@@ -71,6 +74,13 @@ export function TravelSheet({ sel }: { sel: MapSpot }) {
       {to && to === here && <p className="muted small">📍 You dey here.</p>}
       {to && to !== here && (
         <div className="list">
+          {/* Go there for real through the city, no loading */}
+          {outside && (
+            <button className="primary" onClick={() => headTo(to)}>
+              {driving ? '🚗 Drive there yourself (follow the road)' : '🧭 Waka go there through town'}
+            </button>
+          )}
+          {!outside && <p className="muted small">🚪 Comot outside first to waka or drive through town.</p>}
           <Option a={trekBetween(place, to)} title="🚶 Trek (free, but e go tire you)" />
           <Option
             a={place === 'home' ? undefined : publicRoute(place, to)}

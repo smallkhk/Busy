@@ -36,7 +36,7 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
 
 /* ---------- HUD ---------- */
 .hud-top, .hud-bottom {
-  position: absolute; left: 0; right: 0; padding: 12px 12px; display: flex; flex-direction: column; gap: 8px;
+  position: absolute; z-index: 10; left: 0; right: 0; padding: 12px 12px; display: flex; flex-direction: column; gap: 8px;
   pointer-events: none; max-width: 520px; margin: 0 auto;
 }
 .hud-top { top: 0; padding-top: max(12px, env(safe-area-inset-top)); }
@@ -540,3 +540,7 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
 .drive-row { display: flex; align-items: center; gap: 8px; justify-content: flex-end; }
 .drive-btn { padding: 8px 14px; border-radius: 999px; font-size: 15px; }
 .drive-fuel { background: rgba(14, 33, 28, 0.85); color: #f1e3c8; border-radius: 999px; padding: 6px 10px; font-size: 13px; }
+
+/* Name of each block in the connected city */
+.block-name { background: rgba(14, 33, 28, 0.82); color: #f1e3c8; border: 1px solid rgba(232, 176, 75, 0.6); border-radius: 10px; padding: 4px 10px; font-weight: 800; font-size: 14px; white-space: nowrap; letter-spacing: 0.2px; }
+.block-name.here { background: #e8b04b; color: #1b1a14; border-color: #e8b04b; }
