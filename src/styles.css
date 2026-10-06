@@ -551,3 +551,5 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
 .school-strike { margin-top: 6px; color: #ffb4a8; }
 .school-fail { color: #ff8a7a; font-size: 13px; }
 .contact > .bar { flex: none; width: 100%; }
+
+.block-name.campus-sign { font-size: 12px; padding: 3px 8px; }

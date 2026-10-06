@@ -1,12 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { activityById } from '../content/activities';
+import { activityById, activityPlace } from '../content/activities';
 import { cgpaOf, degreeClass, examGrade, gradPay, jambScore, LECTURES_PER_LEVEL, programmeById, schoolBlock } from '../content/school';
 import { blockReason, useGame } from './game';
 
 const done = (id: string) => {
   // Run an activity to the end the way the game does: start it, then finish it
   const a = activityById(id)!;
-  useGame.setState({ place: 'uniabuja', pos: a.spot ?? [0, 0], target: null, route: [], active: null, time: 3 * 1440 + 10 * 60 });
+  useGame.setState({ place: activityPlace(id), pos: a.spot ?? [0, 0], target: null, route: [], active: null, time: 3 * 1440 + 10 * 60 });
   useGame.getState().choose(id);
   for (let i = 0; i < 5 && useGame.getState().target; i++) useGame.getState().arrive(useGame.getState().target!);
   const act = useGame.getState().active;

@@ -11,9 +11,9 @@ import { Secretariat } from './places/Secretariat';
 import { WuseMarket } from './places/WuseMarket';
 import { Airport, Asokoro, Garki, Maitama, Mararaba, Nyanya, Utako } from './places/Districts';
 import { Park, Stadium } from './places/Landmarks';
-import { UniAbuja } from './places/CityLandmarks';
+import { UniGate } from './places/Campus';
 
-const PLACES: Place[] = ['home', 'street', 'wuse', 'jabi', 'secretariat', 'lounge', 'hospital', 'maitama', 'asokoro', 'garki', 'nyanya', 'airport', 'utako', 'mararaba', 'park', 'stadium', 'uniabuja', 'road'];
+const PLACES: Place[] = ['home', 'street', 'wuse', 'jabi', 'secretariat', 'lounge', 'hospital', 'maitama', 'asokoro', 'garki', 'nyanya', 'airport', 'utako', 'mararaba', 'park', 'stadium', 'uniabuja', 'campus', 'lt', 'unilib', 'road'];
 
 /** Each place gets its own neighbourhood layout. */
 export const SEEDS = Object.fromEntries(PLACES.map((p, i) => [p, 11 + i * 37])) as Record<Place, number>;
@@ -67,6 +67,6 @@ export const SCENES: Partial<Record<Place, () => ReactElement>> = {
   mararaba: Mararaba,
   park: Park,
   stadium: Stadium,
-  uniabuja: UniAbuja,
+  uniabuja: UniGate,
 };
 

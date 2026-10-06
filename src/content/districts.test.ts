@@ -1,3 +1,4 @@
+import { CAMPUS_PLACES } from './campus';
 import { describe, expect, it } from 'vitest';
 import { ALL_ACTIVITIES, INTERACTABLES, PLACE_NAMES, type Place } from './activities';
 import { RIDE_PLACES, rideKm } from './phoneapps';
@@ -15,7 +16,8 @@ describe('districts', () => {
 
   it('every away-from-home place has a public route back home', () => {
     for (const place of Object.keys(PLACE_NAMES) as Place[]) {
-      if (place === 'home' || place === 'street' || place === 'road') continue;
+      // Campus buildings lead back to the UniAbuja gate, which has the buses
+      if (place === 'home' || place === 'street' || place === 'road' || CAMPUS_PLACES.includes(place)) continue;
       const home = INTERACTABLES.filter((i) => i.place === place).flatMap((i) => i.activities).some((a) => a.travelTo === 'street');
       expect(home, place).toBe(true);
     }

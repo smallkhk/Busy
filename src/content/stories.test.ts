@@ -1,3 +1,4 @@
+import { CAMPUS_PLACES } from './campus';
 import { describe, expect, it } from 'vitest';
 import { pickEvent, type EventContext } from '../engine/events';
 import { EVENTS } from './events';
@@ -43,6 +44,13 @@ describe('people in the world', () => {
     for (const [id, npc] of Object.entries(NPCS)) {
       expect(contactById(id), id).toBeDefined();
       for (const s of npc.spots) {
+        // The campus is a big compound: just stay inside its fence
+        if (CAMPUS_PLACES.includes(s.place)) {
+          expect(Math.abs(s.pos[0])).toBeLessThan(30);
+          expect(s.pos[1]).toBeGreaterThan(-25);
+          expect(s.pos[1]).toBeLessThan(13);
+          continue;
+        }
         expect(Math.abs(s.pos[0])).toBeLessThan(6.5);
         expect(s.pos[1]).toBeGreaterThan(-1.8);
         expect(s.pos[1]).toBeLessThan(3.4);

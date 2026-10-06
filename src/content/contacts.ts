@@ -85,6 +85,24 @@ export const CONTACTS: Contact[] = [
     where: 'Big men dey play golf for Asokoro',
     favour: { label: 'Attach me to constituency project', minRel: 60, cooldownDays: 21, text: '"Supply 50 bags of cement for the borehole project." Your cut land 💰🏗️', effect: { money: 150000 } },
   },
+  {
+    id: 'amaka',
+    name: 'Amaka',
+    emoji: '👩🏾‍🎓',
+    role: '300L Law student, debate club president. She go be SAN one day.',
+    influence: 2,
+    where: 'UniAbuja: moot court, debate club or the library',
+    favour: { label: 'Share her past questions', minRel: 40, cooldownDays: 5, text: 'She send you neat past questions with answers 📑', effect: { cv: 2 } },
+  },
+  {
+    id: 'tunde',
+    name: 'Tunde',
+    emoji: '👨🏾‍💻',
+    role: 'CS student, tech bro and SUG aspirant. E know every lecturer.',
+    influence: 2,
+    where: 'UniAbuja: tutorials, cafeteria or departmental party',
+    favour: { label: 'Connect you to internship', minRel: 50, cooldownDays: 10, text: 'E link you with fintech internship. Small money land 💸', effect: { money: 20000, cv: 2 } },
+  },
 ];
 
 export const contactById = (id: string) => CONTACTS.find((c) => c.id === id);
