@@ -19,6 +19,8 @@ export type Contact = {
   /** Hint shown before you meet them. */
   where: string;
   favour: Favour;
+  /** Neighbourhood people: knowing them adds Long Leg but never makes the 100% harder to reach. */
+  local?: boolean;
 };
 
 export const CONTACTS: Contact[] = [
@@ -103,6 +105,97 @@ export const CONTACTS: Contact[] = [
     where: 'UniAbuja: tutorials, cafeteria or departmental party',
     favour: { label: 'Connect you to internship', minRel: 50, cooldownDays: 10, text: 'E link you with fintech internship. Small money land 💸', effect: { money: 20000, cv: 2 } },
   },
+  // ---------------- People around Abuja ----------------
+  {
+    id: 'iyabo',
+    name: 'Mama Iyabo',
+    emoji: '👩🏾‍🌾',
+    role: 'Foodstuff queen for Wuse Market. She know every price.',
+    influence: 2,
+    where: 'Wuse Market, by the foodstuff stalls',
+    favour: { label: 'Bag me foodstuff (Mama price)', minRel: 35, cooldownDays: 7, text: 'She fill bag with rice, beans and pepper for half price 🧺', effect: { pantry: 6, money: -3000 } },
+    local: true,
+  },
+  {
+    id: 'nkechi',
+    name: 'Dr. Nkechi',
+    emoji: '👩🏾‍⚕️',
+    role: 'Doctor for General Hospital. Always on call, never sleep.',
+    influence: 3,
+    where: 'General Hospital, weekdays',
+    favour: { label: 'Check me well (free)', minRel: 45, cooldownDays: 7, text: '"Drink water, rest, no stress." She check you free and give you vitamin 💊', effect: { needs: { energy: 30, hygiene: 10, fun: 5 } } },
+    local: true,
+  },
+  {
+    id: 'yakubu',
+    name: 'Sergeant Yakubu',
+    emoji: '👮🏾‍♂️',
+    role: 'Police sergeant for Garki Area 1 division.',
+    influence: 3,
+    where: 'Garki Area 1, by the motor park',
+    favour: { label: 'Clean my name for station', minRel: 50, cooldownDays: 14, text: '"I don talk to them. Nobody go disturb you again." Police heat drop 🚔', effect: { heat: -40 } },
+    local: true,
+  },
+  {
+    id: 'hauwa',
+    name: 'Hajia Hauwa',
+    emoji: '🧕🏾',
+    role: 'Runs the biggest adashe (thrift) for Nyanya market.',
+    influence: 2,
+    where: 'Nyanya market',
+    favour: { label: 'Collect my adashe turn', minRel: 40, cooldownDays: 14, text: 'Na your turn for the adashe! She count the money give you 💵', effect: { money: 25000 } },
+    local: true,
+  },
+  {
+    id: 'obinna',
+    name: 'Obinna Banex',
+    emoji: '📱',
+    role: 'Phone and laptop dealer for Utako. E fit find any gadget.',
+    influence: 2,
+    where: 'Utako, by the tech hub',
+    favour: { label: 'Give me phone supply deal', minRel: 45, cooldownDays: 10, text: 'E give you 5 phones to sell for your people. Your profit land 📱💸', effect: { money: 20000 } },
+    local: true,
+  },
+  {
+    id: 'bala',
+    name: 'Coach Bala',
+    emoji: '🧑🏾‍🏫',
+    role: 'Football coach for National Stadium. E train Super Eagles players before.',
+    influence: 2,
+    where: 'National Stadium, morning and evening training',
+    favour: { label: 'Put me for amateur match', minRel: 40, cooldownDays: 7, text: 'You play 30 minutes, score one goal. Crowd shout your name ⚽📈', effect: { needs: { fun: 25, energy: -15 }, followersPct: 8 } },
+    local: true,
+  },
+  {
+    id: 'zainab',
+    name: 'Zainab',
+    emoji: '👩🏾‍🎨',
+    role: 'Painter wey dey sell art for Millennium Park.',
+    influence: 1,
+    where: 'Millennium Park, afternoons and weekends',
+    favour: { label: 'Paint my portrait', minRel: 35, cooldownDays: 14, text: 'She paint you like Oba, post am for Gram. People dey ask who you be 🎨', effect: { followersPct: 12, needs: { fun: 15 } } },
+    local: true,
+  },
+  {
+    id: 'ifeanyi',
+    name: 'Captain Ifeanyi',
+    emoji: '👨🏾‍✈️',
+    role: 'Zuma Air pilot. E don fly to 40 countries.',
+    influence: 4,
+    where: 'Nnamdi Azikiwe Airport, by the departure hall',
+    favour: { label: 'Connect me to cargo work', minRel: 55, cooldownDays: 14, text: 'E connect you to airport cargo agent. You carry the paperwork, collect your cut ✈️💰', effect: { money: 45000, cv: 1 } },
+    local: true,
+  },
+  {
+    id: 'dauda',
+    name: 'Chairman Dauda',
+    emoji: '🏍️',
+    role: 'Okada union chairman for Mararaba. Area boys dey hear im word.',
+    influence: 2,
+    where: 'Mararaba, by the okada stand',
+    favour: { label: 'Make area boys leave me alone', minRel: 40, cooldownDays: 14, text: '"Nobody go touch you for this side again." Police and agbero heat drop 🤝', effect: { heat: -15, needs: { social: 10 } } },
+    local: true,
+  },
 ];
 
 export const contactById = (id: string) => CONTACTS.find((c) => c.id === id);
@@ -113,10 +206,10 @@ export const FIRST_MEET_REL = 30;
 export const CALL_COST = 200;
 export const GIFT_COST = 5000;
 
-const MAX_LONG_LEG = CONTACTS.reduce((sum, c) => sum + 100 * c.influence, 0);
+const MAX_LONG_LEG = CONTACTS.filter((c) => !c.local).reduce((sum, c) => sum + 100 * c.influence, 0);
 
 /** 0–100: weighted by how much each person can open doors for you. */
 export function longLeg(contacts: Record<string, ContactState>): number {
   const total = CONTACTS.reduce((sum, c) => sum + (contacts[c.id]?.rel ?? 0) * c.influence, 0);
-  return Math.round((total / MAX_LONG_LEG) * 100);
+  return Math.min(100, Math.round((total / MAX_LONG_LEG) * 100));
 }
