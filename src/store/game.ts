@@ -4,6 +4,7 @@ import { activityById, activityPlace, ENTRY_SPOT, PLACE_NAMES, type Activity, ty
 import { entrySpot, exitSpot, homeBounds, homeSpot } from '../content/homeLayout';
 import { CAMPUS_PLACES } from '../content/campus';
 import { ACTIVITY_SEAT_REACH, nearestSeat, SIT_REACH } from '../content/seats';
+import { ARRIVE_RANGE, CHECKPOINT_BRIBE, CHECKPOINT_CHANCE, CHECKPOINT_DELAY, hustleById, newMission, riderLevel, TRIP_XP, tripPay, type HustleKind, type Mission } from '../content/missions';
 import { CELL_X, CELL_Z, cellOfPlace, currentCell, HOME_CELLS, inGrid, placeAt, ROAD_HALF, ROAD_Z, route, type Cell } from '../content/worldmap';
 import { AD_BIZ_BOOST } from '../content/billboards';
 import { appointChance, CAMPAIGN_DAYS, canRun, electionWon, MOVES, moveSupport, NO_POLITICS, OFFICES, startingSupport, TERM_DAYS, type CampaignMove, type Politics } from '../content/politics';
@@ -37,7 +38,7 @@ export const setClockSource = (fn: () => number) => (clock = fn);
 
 export type Txn = { at: number; label: string; amount: number };
 export type Toast = { id: number; text: string };
-export type PhoneApp = 'home' | 'bank' | 'jobs' | 'chat' | 'map' | 'gram' | 'house' | 'contacts' | 'chop' | 'ride' | 'news' | 'goals' | 'biz' | 'cars' | 'gist' | 'love' | 'account' | 'rankings' | 'style' | 'learn' | 'school' | 'politics' | 'admin';
+export type PhoneApp = 'home' | 'bank' | 'jobs' | 'chat' | 'map' | 'gram' | 'house' | 'contacts' | 'chop' | 'ride' | 'news' | 'goals' | 'biz' | 'cars' | 'gist' | 'love' | 'account' | 'rankings' | 'style' | 'learn' | 'school' | 'hustle' | 'politics' | 'admin';
 
 /** `total` is the actual duration (rush hour makes trips longer); old saves may lack it. */
 type Active = { id: string; remaining: number; gen: boolean; total?: number; eventAt?: number; /** Mini-game score 0–1. */ bonus?: number };
@@ -137,6 +138,13 @@ export type GameState = {
   near?: Place;
   /** You are behind the wheel, driving round town. */
   driving: boolean;
+  /** Hustle career: rider XP, trips done and money made from missions. */
+  hustle: { xp: number; trips: number; earned: number };
+  /** On a hustle shift (with a hired bike/keke or your car), and the job in hand. */
+  shift: { kind: HustleKind } | null;
+  mission: Mission | null;
+  /** Police don stop you on the road. */
+  checkpoint: boolean;
   /** Sitting, waving or dancing where you stand (cleared when you move or start something). */
   pose: Pose | null;
   /** Where you left your car (null: at your gate at home). Position is local to the block. */
@@ -184,6 +192,13 @@ export type GameState = {
   headTo: (place: Place) => void;
   /** Sit down, wave or dance (null stands you up). */
   setPose: (pose: Pose | null) => void;
+  /** Start a hustle shift (pays the vehicle rent). */
+  startShift: (kind: HustleKind) => void;
+  endShift: (why?: string) => void;
+  /** Walk/ride to the pickup or drop-off along the roads. */
+  navigate: () => void;
+  /** Police checkpoint: settle them or show your papers (and lose time). */
+  answerCheckpoint: (settle: boolean) => void;
   /** Get into your car (walks you to it first if it is parked away). */
   enterCar: () => void;
   /** Park where you are and get out. */
@@ -406,6 +421,10 @@ const initial = () => ({
   cell: null as Cell | null,
   driving: false,
   pose: null as Pose | null,
+  hustle: { xp: 0, trips: 0, earned: 0 },
+  shift: null as { kind: HustleKind } | null,
+  mission: null as Mission | null,
+  checkpoint: false,
   parked: null as { cell: Cell; pos: [number, number]; rot: number } | null,
   pending: null,
   active: null,
@@ -564,6 +583,37 @@ export const useGame = create<GameState>()(
           txns: reward ? [{ at: s.time, label: `Goal reward: ${fresh.map((g) => g.title).join(', ')}`, amount: reward }, ...s.txns].slice(0, 40) : s.txns,
         });
         for (const g of fresh) get().toast(`🏆 ${g.title}!${g.reward ? ` +${formatNaira(g.reward)}` : ''}`);
+      };
+
+      /** Hustle: reached the pickup? the drop-off? Get paid and take the next job. */
+      const missionStep = () => {
+        const s = get();
+        const m = s.mission;
+        const here = currentCell(s);
+        if (!m || !here) return;
+        const me = live.pos ?? s.pos;
+        const world: [number, number] = [here[0] * CELL_X + me[0], here[1] * CELL_Z + me[1]];
+        const goal = m.stage === 'pickup' ? m.pickup.at : m.dropoff.at;
+        if (Math.hypot(goal[0] - world[0], goal[1] - world[1]) > ARRIVE_RANGE) return;
+        if (m.stage === 'pickup') {
+          set({ mission: { ...m, stage: 'dropoff', deadline: clock() + m.time * 1000 } });
+          get().toast(m.food ? `🥡 ${m.food} collected. Deliver to ${m.dropoff.name} in ${m.time}s!` : `${m.who.emoji} ${m.who.name} don climb. "Abeg ${m.dropoff.name}, quick quick!" (${m.time}s)`);
+          return;
+        }
+        const left = ((m.deadline ?? clock()) - clock()) / 1000;
+        const { pay, stars, tip } = tripPay(m, left, Math.random);
+        const total = pay + tip;
+        const before = riderLevel(s.hustle.xp);
+        const hustle = { xp: s.hustle.xp + TRIP_XP, trips: s.hustle.trips + 1, earned: s.hustle.earned + total };
+        const level = riderLevel(hustle.xp);
+        set({
+          money: s.money + total,
+          hustle,
+          txns: [{ at: s.time, label: `${hustleById(m.kind)?.name}: ${m.pickup.name} → ${m.dropoff.name}`, amount: total }, ...s.txns].slice(0, 40),
+          mission: newMission(m.kind, s.area, world, level, Math.random),
+        });
+        get().toast(`${'⭐'.repeat(stars)} +${formatNaira(pay)}${tip ? ` +${formatNaira(tip)} tip 🎁` : ''}${left < 0 ? ' (you late o)' : ''}`);
+        if (level > before) get().toast(`🏍️ Rider level ${level}! Fares don go up${level === 3 ? '. Keke don open for Hustle app 🛺' : ''}`);
       };
 
       /** UniAbuja: what finishing a school activity does to your record. */
@@ -1604,6 +1654,7 @@ export const useGame = create<GameState>()(
         tick: (realSeconds) => {
           const s = get();
           if (!s.started || s.event || s.eventResult || s.minigame) return;
+          if (s.shift && s.mission && !s.checkpoint) missionStep();
           const dtReal = Math.min(realSeconds, 0.25);
           const a = s.active ? activityById(s.active.id) : undefined;
 
@@ -1887,6 +1938,8 @@ export const useGame = create<GameState>()(
             menu: null,
           });
           if (here && here !== s.place) get().toast(`📍 ${placeLabel(here, s.area, PLACE_NAMES)}`);
+          // On a hustle, police fit stop you as you enter a new block
+          if (s.shift && get().mission && Math.random() < CHECKPOINT_CHANCE) set({ checkpoint: true, target: null, route: [] });
         },
 
         headTo: (to) => {
@@ -1902,6 +1955,62 @@ export const useGame = create<GameState>()(
           set({ phone: null, menu: null });
           get().walkTo(e[0] + (there[0] - here[0]) * CELL_X, e[1] + (there[1] - here[1]) * CELL_Z);
           get().toast(`${s.driving ? '🚗' : '🚶'} Heading to ${placeLabel(to, s.area, PLACE_NAMES)}. Follow the road!`);
+        },
+
+        startShift: (kind) => {
+          const s = get();
+          const job = hustleById(kind);
+          if (!job || s.shift || s.active) return;
+          const level = riderLevel(s.hustle?.xp ?? 0);
+          const here = currentCell(s);
+          if (!here) return get().toast('🚪 Comot outside to the road first');
+          if (level < job.level) return get().toast(`🔒 ${job.name} opens at rider level ${job.level}`);
+          if (job.vehicle === 'car' && !s.driving) return get().toast('🚗 Enter your motor first, then start ride-hailing');
+          if (s.money < job.rent) return get().toast(`💸 You need ${formatNaira(job.rent)} to hire the ${job.vehicle}`);
+          const me = live.pos ?? s.pos;
+          const world: [number, number] = [here[0] * CELL_X + me[0], here[1] * CELL_Z + me[1]];
+          set({
+            money: s.money - job.rent,
+            txns: job.rent ? [{ at: s.time, label: `Hired ${job.vehicle} for ${job.name}`, amount: -job.rent }, ...s.txns].slice(0, 40) : s.txns,
+            shift: { kind },
+            driving: true,
+            pose: null,
+            phone: null,
+            mission: newMission(kind, s.area, world, level, Math.random),
+          });
+          const m = get().mission!;
+          get().toast(`${job.emoji} Shift start! First job: ${m.food ? `collect ${m.food}` : `pick ${m.who.name}`} at ${m.pickup.name}`);
+        },
+
+        endShift: (why) => {
+          const s = get();
+          if (!s.shift) return;
+          const job = hustleById(s.shift.kind);
+          set({ shift: null, mission: null, checkpoint: false, target: null, route: [], ...(job?.vehicle === 'car' ? {} : { driving: false }) });
+          get().toast(why ?? `${job?.emoji ?? '🏁'} Shift over. Total so far: ${formatNaira(get().hustle.earned)} from ${get().hustle.trips} trips`);
+        },
+
+        navigate: () => {
+          const s = get();
+          const m = s.mission;
+          const here = currentCell(s);
+          if (!m || !here || s.checkpoint) return;
+          const t = m.stage === 'pickup' ? m.pickup.at : m.dropoff.at;
+          get().walkTo(t[0] - here[0] * CELL_X, t[1] - here[1] * CELL_Z);
+        },
+
+        answerCheckpoint: (settle) => {
+          const s = get();
+          if (!s.checkpoint) return;
+          if (settle) {
+            set({ checkpoint: false, money: Math.max(0, s.money - CHECKPOINT_BRIBE), txns: [{ at: s.time, label: 'Police "settlement" 👮', amount: -CHECKPOINT_BRIBE }, ...s.txns].slice(0, 40) });
+            get().toast(`👮 "Oya go." You drop ${formatNaira(CHECKPOINT_BRIBE)}`);
+          } else {
+            // Show your papers: no money, but they hold you small
+            const m = s.mission;
+            set({ checkpoint: false, mission: m && m.deadline ? { ...m, deadline: m.deadline - CHECKPOINT_DELAY * 1000 } : m });
+            get().toast(`🪪 You show papers. Dem check am well well… ${CHECKPOINT_DELAY}s gone`);
+          }
         },
 
         setPose: (pose) => {
@@ -1959,6 +2068,11 @@ export const useGame = create<GameState>()(
         parkCar: () => {
           const s = get();
           if (!s.driving) return;
+          // A hired okada or keke goes back when you stop
+          if (s.shift && hustleById(s.shift.kind)?.vehicle !== 'car') {
+            get().endShift();
+            return;
+          }
           const c = currentCell(s);
           const here = live.pos ?? s.pos;
           // Parking in front of your own gate counts as home
@@ -1976,7 +2090,8 @@ export const useGame = create<GameState>()(
         },
 
         choose: (activityId) => {
-          // Park and get out, or stand up, before doing anything
+          // End any hustle, park and get out, or stand up, before doing anything
+          if (get().shift) get().endShift();
           if (get().driving) get().parkCar();
           if (get().pose) set({ pose: null });
           const s = get();
@@ -2006,7 +2121,7 @@ export const useGame = create<GameState>()(
           const { pending, route: rest } = get();
           // Driving burns fuel by distance
           const d0 = get();
-          if (d0.driving && d0.car) {
+          if (d0.driving && d0.car && (!d0.shift || hustleById(d0.shift.kind)?.vehicle === 'car')) {
             const c = carById(d0.car.id);
             const km = Math.hypot(pos[0] - d0.pos[0], pos[1] - d0.pos[1]) * KM_PER_UNIT;
             const fuel = Math.max(0, (d0.car.fuel ?? START_FUEL) - (km * (c?.litresPer100 ?? 10)) / 100);
@@ -2077,6 +2192,7 @@ export const useGame = create<GameState>()(
         cell: s.cell,
         near: s.near,
         parked: s.parked,
+        hustle: s.hustle,
         needs: s.needs,
         packaging: s.packaging,
         pantry: s.pantry,

@@ -137,7 +137,7 @@ export function Toasts() {
 
 /** Out in town with your own car: get in, or park and step out. */
 export function DriveButton() {
-  const has = useGame((s) => !!s.car && s.place !== 'home' && !s.active);
+  const has = useGame((s) => !!s.car && s.place !== 'home' && !s.active && !s.shift);
   const driving = useGame((s) => s.driving);
   const fuel = useGame((s) => s.car?.fuel);
   const near = useGame((s) => {

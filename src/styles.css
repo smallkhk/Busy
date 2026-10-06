@@ -561,3 +561,13 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
 .pose-btn { flex: none; white-space: nowrap; background: rgba(14, 33, 28, 0.85); color: #f1e3c8; border: 1px solid rgba(232, 176, 75, 0.45); border-radius: 999px; padding: 5px 9px; font-size: 12px; font-weight: 700; line-height: 1.2; }
 .pose-btn.on { background: #e8b04b; color: #1b1a14; }
 .action-row .drive-row { margin-left: auto; }
+
+/* Hustle missions */
+.mission-tag.pickup { background: #1f8a4c; color: #fff; border-color: #2ecc71; }
+.mission-tag.dropoff { background: #e8b04b; color: #1b1a14; border-color: #e8b04b; }
+.mission-panel { padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; }
+.mission-head { display: flex; justify-content: space-between; align-items: center; font-weight: 800; }
+.mission-timer { font-variant-numeric: tabular-nums; font-weight: 800; }
+.mission-timer.late { color: #ff8a7a; }
+.mission-btns { display: flex; gap: 8px; }
+.mission-btns button { flex: 1; }
