@@ -580,9 +580,3 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
 .flight-fill { height: 100%; border-radius: 3px; background: #f2c230; transition: width 0.5s linear; }
 .flight-plane { position: absolute; top: 50%; transform: translate(-50%, -55%); font-size: 16px; transition: left 0.5s linear; }
 
-/* ---------------- Launch loader ---------------- */
-.loader { position: fixed; inset: 0; z-index: 200; display: grid; place-items: center; background: radial-gradient(circle at 50% 40%, #1d4b3a, #0c1f18); }
-.loader-card { width: min(320px, calc(100vw - 48px)); display: flex; flex-direction: column; gap: 10px; text-align: center; color: #f4efe3; }
-.loader-title { font-size: 28px; font-weight: 900; letter-spacing: 0.5px; }
-.loader-bar { height: 10px; border-radius: 5px; background: rgba(255, 255, 255, 0.15); overflow: hidden; }
-.loader-fill { height: 100%; background: linear-gradient(90deg, #118a4c, #f2c230); transition: width 0.25s ease-out; }
