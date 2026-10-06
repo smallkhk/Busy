@@ -3,9 +3,9 @@ import { create } from 'zustand';
 import { FILES, VERSION } from 'virtual:asset-list';
 
 /**
- * On launch the phone downloads every 3D model once and keeps it (Cache Storage,
- * which the service worker serves from), then every model is prepared in the
- * background. After that, no place ever stops to load: walking into the airport,
+ * Shortly after launch the phone quietly downloads every 3D model once and keeps
+ * it (Cache Storage, which the service worker serves from), then every model is
+ * prepared in the background. No loading screen: you play while it downloads. After that, no place ever stops to load: walking into the airport,
  * the campus or a mansion is instant, even without network.
  */
 const CACHE = `abuja-models-${VERSION}`;
@@ -51,7 +51,8 @@ async function run() {
       usePreload.setState({ done, failed });
     }
   };
-  await Promise.all(Array.from({ length: 6 }, worker));
+  // Two at a time: the game you dey play keeps most of the network
+  await Promise.all(Array.from({ length: 2 }, worker));
   usePreload.setState({ ready: true });
   // Prepare every model (from the phone's copy) a few at a time, so the game no freeze
   const rest = FILES.map(([path]) => url(path));
