@@ -273,9 +273,13 @@ const HOME_AND_STREET: Interactable[] = [
   },
 ];
 
-export const INTERACTABLES: Interactable[] = [...HOME_AND_STREET, ...TRAVEL_INTERACTABLES, ...DISTRICT_INTERACTABLES, ...CAMPUS_INTERACTABLES].map((i) =>
-  NEW_ROUTES[i.id] ? { ...i, activities: [...i.activities, ...NEW_ROUTES[i.id]] } : i,
-);
+/** Things you do sitting down: class, exams, reading, eating at the buka, watching ball, gist on the bench. */
+const SEATED = new Set(['uni-lecture', 'lecture', 'uni-exam', 'library-read', 'group-study', 'e-library', 'uni-jollof', 'tutorial', 'debate', 'rice', 'tuwo', 'epl', 'neighbours', 'bole', 'continental', 'pastry', 'airport-coffee', 'fellowship', 'hostel-gist', 'meetup', 'freelance']);
+
+export const INTERACTABLES: Interactable[] = [...HOME_AND_STREET, ...TRAVEL_INTERACTABLES, ...DISTRICT_INTERACTABLES, ...CAMPUS_INTERACTABLES].map((i) => {
+  const withRoutes = NEW_ROUTES[i.id] ? { ...i, activities: [...i.activities, ...NEW_ROUTES[i.id]] } : i;
+  return { ...withRoutes, activities: withRoutes.activities.map((a) => (SEATED.has(a.id) && !a.away ? { ...a, pose: 'sit' as const } : a)) };
+});
 
 export const JOBS: Activity[] = [
   { id: 'pos', minigame: 'pos', label: 'POS attendant for area market', doing: 'Working POS for market', emoji: '💳', minutes: 360, pay: 9000, gains: { energy: -25, fun: -10, social: 10 }, hours: [8, 15], away: true },

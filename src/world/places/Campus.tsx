@@ -88,12 +88,12 @@ function Path({ a, b, w = 2.4 }: { a: P2; b: P2; w?: number }) {
 /** Seated (or standing) students to fill the place. */
 type Student = { p: [number, number, number]; shirt: string; woman?: boolean; rot?: number };
 
-function Students({ list }: { list: Student[] }) {
+function Students({ list, sit }: { list: Student[]; sit?: boolean }) {
   return (
     <>
       {list.map((s, i) => (
         <group key={i} position={s.p} rotation={[0, s.rot ?? Math.PI, 0]} scale={0.9}>
-          <Person shirt={s.shirt} woman={s.woman} trousers={s.woman ? undefined : '#2d2d2d'} move="Idle" />
+          <Person shirt={s.shirt} woman={s.woman} trousers={s.woman ? undefined : '#2d2d2d'} move={sit ? 'Sit' : 'Idle'} />
         </group>
       ))}
     </>
@@ -421,6 +421,7 @@ export function LectureHall() {
       <Outside />
 
       <Students
+        sit
         list={[
           ...([
           { p: [-1.8, 0.1, -0.3], shirt: '#2980b9' },
@@ -504,6 +505,7 @@ export function LibraryHall() {
       <Sign p={[7.6, 1.6, 5.4]} text="🚪 EXIT" />
       <Outside />
       <Students
+        sit
         list={[
           ...([
           { p: [-3.5, 0, 0.4], shirt: '#2980b9', rot: Math.PI },

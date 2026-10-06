@@ -253,6 +253,8 @@ export function Avatar() {
   const activity = active ? activityById(active.id) : undefined;
   const hidden = !!activity?.away;
   const sleeping = !!activity?.sleep;
+  const pose = useGame((s) => s.pose);
+  const seated = activity?.pose === 'sit' || (!active && pose === 'sit');
   const driving = useGame((s) => s.driving);
   const car = useGame((s) => s.car);
   const carDef = car ? carById(car.id) : undefined;
@@ -346,7 +348,7 @@ export function Avatar() {
       <>
       {/* Fitness shows: fit people get broader shoulders */}
       <group scale={[0.92 + fitness * 0.0016, 1, 0.94 + fitness * 0.0012]}>
-        <Person shirt={shirt} legs={legs} outfit={look?.outfit} hair={look?.hair} skin={SKINS[look?.skin ?? 2]} move={walking ? 'Walk' : active && !sleeping ? 'Interact' : 'Idle'} />
+        <Person shirt={shirt} legs={legs} outfit={look?.outfit} hair={look?.hair} skin={SKINS[look?.skin ?? 2]} move={walking ? 'Walk' : seated ? 'Sit' : active && !sleeping ? 'Interact' : pose === 'dance' ? 'Dance' : pose === 'wave' ? 'Wave' : pose === 'kneel' ? 'Kneel' : pose === 'phone' ? 'Interact' : 'Idle'} />
       </group>
       </>
       )}

@@ -368,8 +368,8 @@ export function Room() {
         <Box p={[3.6, 0.35, 3.3]} s={[1.6, 0.08, 0.4]} c="#8a6a45" />
         <Box p={[3.0, 0.17, 3.3]} s={[0.08, 0.34, 0.35]} c="#6b4f32" />
         <Box p={[4.2, 0.17, 3.3]} s={[0.08, 0.34, 0.35]} c="#6b4f32" />
-        <group position={[3.2, 0.12, 3.35]} rotation={[0, Math.PI, 0]} scale={0.9}>
-          <Person shirt="#7b4fb0" trousers="#3a3a3a" skin="#6b4430" />
+        <group position={[3.2, 0, 3.35]} rotation={[0, Math.PI, 0]} scale={0.9}>
+          <Person shirt="#7b4fb0" trousers="#3a3a3a" skin="#6b4430" move="Sit" />
         </group>
       </Tappable>
       </At>

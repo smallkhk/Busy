@@ -1,4 +1,5 @@
 import { useAnimations, useGLTF } from '@react-three/drei';
+import { useFrame } from '@react-three/fiber';
 import { useEffect, useMemo, useRef } from 'react';
 import {
   Box3,
@@ -8,6 +9,8 @@ import {
   Matrix4,
   Mesh,
   MeshStandardMaterial,
+  Object3D,
+  Quaternion,
   SphereGeometry,
   TorusGeometry,
   Vector3,
@@ -17,7 +20,7 @@ import { SkeletonUtils } from 'three-stdlib';
 
 /** Quaternius "Ultimate Modular Men/Women" characters (CC0), packed with meshopt in public/models. */
 export type HumanKind = 'casual_2' | 'casual_hoodie' | 'suit' | 'worker' | 'beach' | 'w_casual' | 'w_formal' | 'w_suit';
-export type Move = 'Idle' | 'Walk' | 'Run' | 'Wave' | 'Interact';
+export type Move = 'Idle' | 'Walk' | 'Run' | 'Wave' | 'Interact' | 'Sit' | 'Dance' | 'Kneel';
 
 /** Something on the head: Hausa hula cap, Yoruba fila, face cap or a gele headtie. */
 export type Hat = { type: 'hula' | 'fila' | 'cap' | 'gele' | 'afro'; color: string; band?: string };
@@ -25,6 +28,32 @@ export type Hat = { type: 'hula' | 'fila' | 'cap' | 'gele' | 'afro'; color: stri
 const url = (k: HumanKind) => `${import.meta.env.BASE_URL}models/${k}.glb`;
 
 /** Target standing height in world units (matches the old blocky people). */
+/** Sitting pose: how far the thighs and knees bend, and how far down the body goes. */
+const SIT_HIP = 1.45;
+const SIT_KNEE = 1.5;
+const SIT_DROP = 0.42;
+const KNEEL_DROP = 0.5;
+const SWAY = new Quaternion();
+const AXIS = new Vector3();
+const PARENT_Q = new Quaternion();
+const BEND = new Quaternion();
+
+/** The character's own left-right axis in world space (legs bend around it). */
+function side(root: Object3D) {
+  root.getWorldQuaternion(PARENT_Q);
+  AXIS.set(1, 0, 0).applyQuaternion(PARENT_Q);
+}
+
+/** Bend a bone around the side axis, whatever way the bone itself is pointing. */
+function bend(b: Object3D | null, angle: number) {
+  if (!b || !b.parent || !angle) return;
+  b.parent.updateWorldMatrix(true, false);
+  b.parent.getWorldQuaternion(PARENT_Q).invert();
+  const local = AXIS.clone().applyQuaternion(PARENT_Q);
+  b.quaternion.premultiply(BEND.setFromAxisAngle(local, angle));
+}
+const UP = new Vector3(0, 1, 0);
+
 const HEIGHT = 1.5;
 
 /** Darker shade of a colour, for skin shadows and embroidery. */
@@ -123,8 +152,46 @@ export function HumanModel({ kind, skin, tint, hat, move = 'Idle' }: { kind: Hum
   }, [scene, skin, tintKey, hatKey]);
 
   const { actions } = useAnimations(animations, group);
+  // Sitting and dancing have no clip of their own: they bend the bones on top of Idle / Wave
+  const clip = move === 'Sit' || move === 'Kneel' ? 'Idle' : move === 'Dance' ? 'Wave' : move;
+  const bones = useMemo(() => {
+    const get = (n: string) => model.getObjectByName(n) ?? null;
+    const hips = get('Hips');
+    return { hips, hipsRest: hips?.quaternion.clone(), legL: get('UpperLegL'), legR: get('UpperLegR'), kneeL: get('LowerLegL'), kneeR: get('LowerLegR'), body: get('Body') };
+  }, [model]);
+  const t = useRef(Math.random() * 10);
+  useFrame((_, dt) => {
+    const g = group.current;
+    if (!g) return;
+    t.current += dt;
+    if (move === 'Sit') {
+      // Thighs forward, shins down, bottom on the seat
+      side(g);
+      for (const b of [bones.legL, bones.legR]) bend(b, -SIT_HIP);
+      for (const b of [bones.kneeL, bones.kneeR]) bend(b, SIT_KNEE);
+      g.position.y = lift - SIT_DROP;
+    } else if (move === 'Kneel') {
+      // Kneel down to greet: knees on the floor, body upright
+      side(g);
+      for (const b of [bones.kneeL, bones.kneeR]) bend(b, 1.55);
+      g.position.y = lift - KNEEL_DROP;
+    } else if (move === 'Dance') {
+      const k = t.current * 7;
+      g.position.y = lift + Math.abs(Math.sin(k)) * 0.08;
+      // Hips have no track in the clips: start from rest every frame so the twist no pile up
+      if (bones.hips && bones.hipsRest) bones.hips.quaternion.copy(bones.hipsRest).multiply(SWAY.setFromAxisAngle(UP, Math.sin(k * 0.5) * 0.2));
+      side(g);
+      bend(bones.legL, Math.max(0, Math.sin(k)) * -0.35);
+      bend(bones.kneeL, Math.max(0, Math.sin(k)) * 0.5);
+      bend(bones.legR, Math.max(0, -Math.sin(k)) * -0.35);
+      bend(bones.kneeR, Math.max(0, -Math.sin(k)) * 0.5);
+    } else if (g.position.y !== lift) {
+      g.position.y = lift;
+      if (bones.hips && bones.hipsRest) bones.hips.quaternion.copy(bones.hipsRest);
+    }
+  });
   useEffect(() => {
-    const a = actions[move] ?? actions.Idle;
+    const a = actions[clip] ?? actions.Idle;
     if (!a) return;
     a.reset().fadeIn(0.2).play();
     // Start everybody at a different point so a crowd no dey breathe in sync
@@ -132,7 +199,7 @@ export function HumanModel({ kind, skin, tint, hat, move = 'Idle' }: { kind: Hum
     return () => {
       a.fadeOut(0.2);
     };
-  }, [actions, move]);
+  }, [actions, clip]);
 
   return (
     <group ref={group} scale={scale} position-y={lift}>

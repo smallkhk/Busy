@@ -38,7 +38,7 @@ function RemotePlayer({ p }: { p: Remote }) {
   });
   return (
     <group ref={ref} position={[p.x, 0, p.z]} visible={!p.hidden}>
-      <Person shirt={p.shirt} legs={legs} outfit={look.outfit} hair={look.hair} skin={SKINS[look.skin]} move={walking ? 'Walk' : 'Idle'} />
+      <Person shirt={p.shirt} legs={legs} outfit={look.outfit} hair={look.hair} skin={SKINS[look.skin]} move={walking ? 'Walk' : p.pose === 'sit' ? 'Sit' : p.pose === 'dance' ? 'Dance' : p.pose === 'wave' ? 'Wave' : p.pose === 'kneel' ? 'Kneel' : p.pose === 'phone' ? 'Interact' : 'Idle'} />
     </group>
   );
 }

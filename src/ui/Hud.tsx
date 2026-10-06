@@ -9,7 +9,7 @@ import { SICKNESS } from '../content/health';
 import { placeLabel } from '../content/housing';
 import { activityRealSeconds, clockParts, formatClock, formatNaira, formatSeconds } from '../engine/clock';
 import { mood, moodFace, NEED_KEYS, NEED_META } from '../engine/needs';
-import { blockReason, useGame, carSpot } from '../store/game';
+import { blockReason, useGame, carSpot, type Pose } from '../store/game';
 import { activityDetail } from './detail';
 
 export function TopBar() {
@@ -154,6 +154,28 @@ export function DriveButton() {
         <button className="primary drive-btn" onClick={enter}>{near ? '🚗 Enter your motor' : '🚗 Go to your motor'}</button>
       )}
       {fuel !== undefined && <span className="drive-fuel">⛽ {fuel.toFixed(1)}L</span>}
+    </div>
+  );
+}
+
+/** Sit down anywhere, wave or dance. Others in the same place see it too. */
+export function PoseBar() {
+  const free = useGame((s) => s.started && !s.active && !s.driving && !s.target);
+  const pose = useGame((s) => s.pose);
+  const setPose = useGame((s) => s.setPose);
+  if (!free) return null;
+  const btn = (p: Pose, label: string) => (
+    <button className={`pose-btn ${pose === p ? 'on' : ''}`} onClick={() => setPose(p)}>
+      {label}
+    </button>
+  );
+  return (
+    <div className="pose-bar">
+      {btn('sit', pose === 'sit' ? '🧍 Stand up' : '🪑 Sit')}
+      {btn('wave', '👋 Wave')}
+      {btn('dance', '💃 Dance')}
+      {btn('kneel', '🙏 Greet')}
+      {btn('phone', '📱 Phone')}
     </div>
   );
 }

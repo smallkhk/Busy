@@ -58,6 +58,8 @@ export type Activity = {
   effects?: { packaging?: number; pantry?: number; cv?: number; meet?: string; cure?: true | ('malaria' | 'typhoid' | 'food')[]; net?: boolean; carFix?: number; /** Litres into your car tank. */ fuel?: number; /** Chance the fuel na adulterated and damages the engine. */ badFuel?: number; /** Fitness points. */ fitness?: number };
   /** Play a quick mini-game first; how well you do changes the result. */
   minigame?: 'pos' | 'wash' | 'cook' | 'timing' | 'predict' | 'drive';
+  /** Sit down while you do it (and stay visible), instead of standing. */
+  pose?: 'sit';
   /** Shown instead of running, for content that isn't built yet. */
   locked?: string;
 };
