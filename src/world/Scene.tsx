@@ -1,4 +1,4 @@
-import { MapControls, OrbitControls, OrthographicCamera, PerspectiveCamera } from '@react-three/drei';
+import { MapControls, OrbitControls, OrthographicCamera, PerformanceMonitor, PerspectiveCamera } from '@react-three/drei';
 import type { MapControls as MapControlsImpl, OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 import { Neighborhood } from './Neighborhood';
 import { WorldCells } from './World';
@@ -8,7 +8,7 @@ import { onOriginShift } from './origin';
 import { CLEAR, hoodStyle, SEEDS } from './placeScenes';
 import { Room } from './Room';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Color, type DirectionalLight, MOUSE, Object3D, PMREMGenerator, TOUCH, Vector3, type AmbientLight, type InstancedMesh } from 'three';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import { Bloom, EffectComposer, N8AO, ToneMapping } from '@react-three/postprocessing';
@@ -411,9 +411,20 @@ export function Scene() {
   const wet = weather === 'rain' || weather === 'storm';
   const tier = useGame((s) => (place === 'home' ? homeTier(s.area) : 'x'));
   const style = useGame((s) => hoodStyle(place, s.area));
+  // Sharp on iPhone screens (up to 3x); steps down by itself if the phone struggles
+  const cap = Math.min(typeof window === 'undefined' ? 2 : window.devicePixelRatio || 1, 3);
+  const [dpr, setDpr] = useState(cap);
   const CampusScene = CAMPUS_SCENES[place as keyof typeof CAMPUS_SCENES] ?? FLIGHT_SCENES[place as keyof typeof FLIGHT_SCENES];
   return (
-    <Canvas key={low ? 'low' : 'high'} shadows={low ? true : 'soft'} dpr={low ? 1 : [1, 2]} gl={{ antialias: !low, powerPreference: 'high-performance' }} className="scene">
+    <Canvas key={low ? 'low' : 'high'} shadows={low ? true : 'soft'} dpr={low ? 1 : dpr} gl={{ antialias: !low, powerPreference: 'high-performance' }} className="scene">
+      {!low && (
+        <PerformanceMonitor
+          flipflops={3}
+          onDecline={() => setDpr((d) => Math.max(1.5, d - 0.5))}
+          onIncline={() => setDpr((d) => Math.min(cap, d + 0.5))}
+          onFallback={() => setDpr(1.5)}
+        />
+      )}
       {place === 'home' ? <HomeCamera key={tier} /> : <WorldCamera />}
       {place === 'home' && <HomeLook />}
       <Lights place={place} />

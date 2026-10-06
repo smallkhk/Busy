@@ -1,13 +1,14 @@
 // Abuja Life service worker: lets the game open fast and work offline.
 // Hashed build files (assets/*) never change, so they come from cache first.
 // The page itself comes from the network first so updates show up, with the cache as backup.
+// 3D models are downloaded on launch into `abuja-models-<version>` (see src/preload.ts) and served from there.
 const CACHE = 'abuja-life-v1';
 
 self.addEventListener('install', () => self.skipWaiting());
 
 self.addEventListener('activate', (e) => {
   e.waitUntil(
-    caches.keys().then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)))).then(() => self.clients.claim()),
+    caches.keys().then((keys) => Promise.all(keys.filter((k) => k.startsWith('abuja-life-') && k !== CACHE).map((k) => caches.delete(k)))).then(() => self.clients.claim()),
   );
 });
 
