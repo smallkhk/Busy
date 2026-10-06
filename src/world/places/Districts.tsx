@@ -1,6 +1,4 @@
-import { ParkedJets } from './Flight';
-import { Suspense } from 'react';
-import { AirportModel } from '../AirportModel';
+import { Terminal } from '../Terminal';
 import { Person } from '../Avatar';
 import { Box, Cyl, Tappable } from '../Room';
 import { Car, Tree, Walkers, type Walker } from '../Street';
@@ -374,11 +372,10 @@ export function Airport() {
     <group>
       <Ground color="#7fa856" />
       <Ground color="#cfd2d6" size={[16, 6]} pos={[0, 0, 0.6]} />
-      {/* Terminal, control tower and apron */}
-      <Suspense fallback={null}>
-        <AirportModel position={[0, 0, -12.6]} />
-      </Suspense>
-      <ParkedJets at={[0, -12.6]} />
+      {/* Terminal, control tower, apron and our jets */}
+      <group position={[0, 0, -3.5]}>
+        <Terminal name="NNAMDI AZIKIWE INTERNATIONAL AIRPORT" />
+      </group>
 
       <Tappable id="terminal">
         <Box p={[-4.2, 2.9, -3.24]} s={[2.4, 0.4, 0.04]} c="#f2c230" />
