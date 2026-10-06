@@ -65,6 +65,7 @@ let fastActivities = false;
 export const setFastActivities = (on: boolean) => {
   fastActivities = on;
 };
+export const fastActivitiesOn = () => fastActivities;
 
 export const activityRealSeconds = (gameMinutes: number) =>
   fastActivities

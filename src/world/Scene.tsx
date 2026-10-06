@@ -3,6 +3,7 @@ import type { MapControls as MapControlsImpl, OrbitControls as OrbitControlsImpl
 import { Neighborhood } from './Neighborhood';
 import { WorldCells } from './World';
 import { CAMPUS_SCENES } from './places/Campus';
+import { FLIGHT_SCENES } from './places/Flight';
 import { onOriginShift } from './origin';
 import { CLEAR, hoodStyle, SEEDS } from './placeScenes';
 import { Room } from './Room';
@@ -410,7 +411,7 @@ export function Scene() {
   const wet = weather === 'rain' || weather === 'storm';
   const tier = useGame((s) => (place === 'home' ? homeTier(s.area) : 'x'));
   const style = useGame((s) => hoodStyle(place, s.area));
-  const CampusScene = CAMPUS_SCENES[place as keyof typeof CAMPUS_SCENES];
+  const CampusScene = CAMPUS_SCENES[place as keyof typeof CAMPUS_SCENES] ?? FLIGHT_SCENES[place as keyof typeof FLIGHT_SCENES];
   return (
     <Canvas key={low ? 'low' : 'high'} shadows={low ? true : 'soft'} dpr={low ? 1 : [1, 2]} gl={{ antialias: !low, powerPreference: 'high-performance' }} className="scene">
       {place === 'home' ? <HomeCamera key={tier} /> : <WorldCamera />}
@@ -430,9 +431,9 @@ export function Scene() {
       )}
       <Avatar />
       <RemotePlayers />
-      {fest && fest.decor.length > 0 && place !== 'home' && <FestivalDecor colors={fest.decor} night={night} />}
+      {fest && fest.decor.length > 0 && place !== 'home' && place !== 'cabin' && <FestivalDecor colors={fest.decor} night={night} />}
       <Npcs />
-      {wet && place !== 'home' && <Rain storm={weather === 'storm'} />}
+      {wet && place !== 'home' && place !== 'cabin' && <Rain storm={weather === 'storm'} />}
       {weather === 'storm' && <Lightning />}
     </Canvas>
   );

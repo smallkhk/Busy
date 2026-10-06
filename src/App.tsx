@@ -1,4 +1,5 @@
 import { CheckpointModal, MissionPanel } from './ui/Hustle';
+import { FlightPanel } from './ui/Flight';
 import { ActionMenu, ActiveBanner, NeedsPanel, Toasts, TopBar, DriveButton, PoseBar } from './ui/Hud';
 import { AudioDirector } from './audio/AudioDirector';
 import { ChatBar } from './net/ChatBar';
@@ -73,6 +74,7 @@ export default function App() {
           <div className="hud-bottom">
             <ActiveBanner />
             <MissionPanel />
+            <FlightPanel />
             <div className="action-row">
               <PoseBar />
               <DriveButton />
