@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { LoginCard } from './Login';
 import { useGame } from '../store/game';
 import { HAIRS, SKINS, type Hair } from '../content/fashion';
 import { DREAMS, EDUCATIONS, familyById, ORIGINS, rollBirth, type Birth, type Dream, type Education, type Origin } from '../content/birth';
@@ -22,7 +23,7 @@ function Choices<T extends string>({ items, value, onPick }: { items: { id: T; n
 
 export function Start() {
   const start = useGame((s) => s.start);
-  const [step, setStep] = useState<'you' | 'ask' | 'born'>('you');
+  const [step, setStep] = useState<'you' | 'ask' | 'born' | 'login'>('you');
   const [name, setName] = useState('');
   const [shirt, setShirt] = useState(SHIRTS[0]);
   const [skin, setSkin] = useState(2);
@@ -31,6 +32,8 @@ export function Start() {
   const [education, setEducation] = useState<Education | null>(null);
   const [dream, setDream] = useState<Dream | null>(null);
   const [birth, setBirth] = useState<Birth | null>(null);
+
+  if (step === 'login') return <LoginCard onBack={() => setStep('you')} />;
 
   if (step === 'born' && birth) {
     const fam = familyById(birth.family);
@@ -139,6 +142,7 @@ export function Start() {
           </div>
         </div>
         <button className="primary" onClick={() => setStep('ask')}>Next ➜</button>
+        <button className="ghost" onClick={() => setStep('login')}>🔐 I get account already: Login</button>
       </div>
     </div>
   );

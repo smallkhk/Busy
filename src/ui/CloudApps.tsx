@@ -4,6 +4,7 @@ import { acceptOffer, fetchBoard, formatCode, loadFromCode, netWorth, saveNow, u
 import { tag, useSocial } from '../net/social';
 import { useGame } from '../store/game';
 import { isIOS, promptInstall, useInstall, useSettings } from '../settings';
+import { AccountLogin } from './Login';
 
 const ago = (t: number | null) => {
   if (!t) return 'never';
@@ -68,6 +69,7 @@ export function AccountApp() {
   };
   return (
     <>
+      <AccountLogin />
       <div className="balance">
         <div className="muted small">☁️ Cloud save</div>
         <div className="balance-amt" style={{ fontSize: 20 }}>
