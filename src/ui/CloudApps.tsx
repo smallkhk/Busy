@@ -30,7 +30,7 @@ function InstallCard() {
 }
 
 function QualityToggle() {
-  const { quality, setQuality } = useSettings();
+  const { quality, setQuality, fast, setFast } = useSettings();
   return (
     <>
       <div className="love-tabs">
@@ -38,6 +38,11 @@ function QualityToggle() {
         <button className={quality === 'low' ? 'on' : ''} onClick={() => setQuality('low')}>⚡ Low (faster)</button>
       </div>
       <p className="muted small">Low graphics: fewer houses, simpler shadows and lighter screen. Use am if your phone dey hot or slow.</p>
+      <div className="love-tabs">
+        <button className={fast ? 'on' : ''} onClick={() => setFast(true)}>⚡ Fast activities</button>
+        <button className={!fast ? 'on' : ''} onClick={() => setFast(false)}>🕰️ Real time</button>
+      </div>
+      <p className="muted small">Fast: every activity finish in 2–4 seconds (for testing). Real time: long things like sleep and work take minutes.</p>
     </>
   );
 }
