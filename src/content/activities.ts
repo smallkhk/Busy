@@ -5,6 +5,7 @@ import { TRAVEL_INTERACTABLES } from './travel';
 import { DISTRICT_INTERACTABLES, NEW_ROUTES } from './districts';
 import { CAMPUS_INTERACTABLES } from './campus';
 import { CLASS_ACTIVITIES, GYM_WORKOUT, SKILL_JOBS } from './learning';
+import { GRAD_JOBS } from './school';
 
 export * from './common';
 
@@ -276,6 +277,7 @@ export const JOBS: Activity[] = [
   { id: 'cyber', label: 'Typing & printing at cyber café', doing: 'Typing CVs for corpers', emoji: '🖨️', minutes: 180, pay: 4500, gains: { energy: -12, fun: -8 }, hours: [8, 18], away: true },
   HAILING_JOB,
   ...SKILL_JOBS,
+  ...GRAD_JOBS,
 ];
 
 export const PHONE_ACTIVITIES: Activity[] = [
