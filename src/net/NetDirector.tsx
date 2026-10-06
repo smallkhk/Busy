@@ -62,7 +62,7 @@ export function NetDirector() {
     const move = window.setInterval(() => {
       const g = useGame.getState();
       const a = g.active ? activityById(g.active.id) : undefined;
-      sendMove(avatarLabelPos.x, avatarLabelPos.z, !!a?.away);
+      sendMove(avatarLabelPos.x, avatarLabelPos.z, !!a?.away, a?.pose ?? g.pose ?? undefined);
     }, 300);
     const presence = window.setInterval(refreshPresence, 15000);
     return () => {

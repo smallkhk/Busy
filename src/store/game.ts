@@ -24,7 +24,7 @@ import { rollSickness, SICK_DRAIN, SICKNESS, type Sickness } from '../content/he
 import { ALL_GOALS } from '../content/goals';
 import { LOAN_DAYS, LOAN_FEE, LOAN_MAX, SAVINGS_DAILY_RATE, TOKEN_COST } from '../content/phoneapps';
 import { BRAND_COOLDOWN_DAYS, BRAND_MIN_FOLLOWERS, brandPay, followersGain, packagingGap, POST_COOLDOWN_MIN, postById } from '../content/gram';
-import { TALK_MINUTES, TALK_REL } from '../content/npcs';
+import { npcsAt, TALK_MINUTES, TALK_REL } from '../content/npcs';
 import { LOVE_GIFT_COST, ASK_OUT_AT, DAILY_COOL, DATE_TIERS, dateInterest, matchById, matchChance, officialPartner, PROPOSE_AFTER_DAYS, RING_COST, TEXT_INTEREST, WEDDING_COST, WEDDING_PACKAGING, type Love } from '../content/dating';
 import { combinedMods, nextWeather, priceOf, tripFactor, weatherSpell, WORLD_NEWS, type ActiveNews, type Weather } from '../content/world';
 import { effectChips, pickEvent, resolveChoice, type EventContext } from '../engine/events';
@@ -136,6 +136,8 @@ export type GameState = {
   near?: Place;
   /** You are behind the wheel, driving round town. */
   driving: boolean;
+  /** Sitting, waving or dancing where you stand (cleared when you move or start something). */
+  pose: Pose | null;
   /** Where you left your car (null: at your gate at home). Position is local to the block. */
   parked?: { cell: Cell; pos: [number, number]; rot: number } | null;
   pending: string | null;
@@ -179,6 +181,8 @@ export type GameState = {
   shiftCell: (dc: number, dr: number) => void;
   /** Walk (or drive, if you are in your car) through town to a place, following the roads. */
   headTo: (place: Place) => void;
+  /** Sit down, wave or dance (null stands you up). */
+  setPose: (pose: Pose | null) => void;
   /** Get into your car (walks you to it first if it is parked away). */
   enterCar: () => void;
   /** Park where you are and get out. */
@@ -302,6 +306,17 @@ export function carSpot(s: { place: Place; area: AreaId; cell?: Cell | null; par
   return { pos: [p.pos[0] + (p.cell[0] - here[0]) * CELL_X, p.pos[1] + (p.cell[1] - here[1]) * CELL_Z], rot: p.rot };
 }
 
+export type Pose = 'sit' | 'wave' | 'dance' | 'kneel' | 'phone';
+/** Energy per real second while you sit down. */
+export const SIT_REST = 0.4;
+/** Kneeling to greet a contact near you, once a day. */
+export const GREET_REL = 3;
+export const GREET_RANGE = 3;
+/** Fun per real second while you dance or press phone; dancing costs energy. */
+export const DANCE_FUN = 0.5;
+export const DANCE_TIRE = 0.2;
+export const PHONE_FUN = 0.15;
+
 /** Ride apps and the map treat the road as the place you were last near. */
 export const ridePlace = (s: { place: Place; near?: Place }): Place => (s.place === 'road' ? (s.near ?? 'street') : CAMPUS_PLACES.includes(s.place) ? 'uniabuja' : s.place);
 
@@ -387,6 +402,7 @@ const initial = () => ({
   route: [] as [number, number][],
   cell: null as Cell | null,
   driving: false,
+  pose: null as Pose | null,
   parked: null as { cell: Cell; pos: [number, number]; rot: number } | null,
   pending: null,
   active: null,
@@ -1614,6 +1630,11 @@ export const useGame = create<GameState>()(
             // Legacy clock: 1 real second = 1 game minute. Real clock: a minute na a minute.
             const step = real !== null ? Math.max(0, real - s.time) : dtReal;
             needs = tickNeeds(needs, step);
+            // Sitting down: catch your breath (a little energy back every real second)
+            if (s.pose === 'sit') needs = { ...needs, energy: clamp(needs.energy + dtReal * SIT_REST) };
+            // Dancing is fun but tiring; pressing phone passes time small
+            if (s.pose === 'dance') needs = { ...needs, fun: clamp(needs.fun + dtReal * DANCE_FUN), energy: clamp(needs.energy - dtReal * DANCE_TIRE) };
+            if (s.pose === 'phone') needs = { ...needs, fun: clamp(needs.fun + dtReal * PHONE_FUN) };
             if (s.sick) needs = { ...needs, energy: clamp(needs.energy - (SICK_DRAIN.energy! * step) / 60), fun: clamp(needs.fun - (SICK_DRAIN.fun! * step) / 60) };
             time = real ?? time + step;
             set({ needs, time });
@@ -1826,6 +1847,7 @@ export const useGame = create<GameState>()(
         walkTo: (x, z) => {
           const s = get();
           if (s.active) return;
+          if (s.pose) set({ pose: null });
           // Out in Abuja: follow the roads, even to the next place
           const path = planWalk(s, x, z);
           if (path && path.length) {
@@ -1879,6 +1901,26 @@ export const useGame = create<GameState>()(
           get().toast(`${s.driving ? '🚗' : '🚶'} Heading to ${placeLabel(to, s.area, PLACE_NAMES)}. Follow the road!`);
         },
 
+        setPose: (pose) => {
+          const s = get();
+          if (pose && (s.active || s.driving || s.target)) return;
+          set({ pose: s.pose === pose ? null : pose });
+          if (pose === 'sit' && s.pose !== 'sit') get().toast('🪑 You sit down. Energy dey come back small small.');
+          // Kneel to greet somebody you know who dey near you: respect is reciprocal
+          if (pose === 'kneel' && s.pose !== 'kneel') {
+            const { hour, day } = clockParts(s.time);
+            const me = live.pos ?? s.pos;
+            const near = npcsAt(s.place, hour, day).find(({ id, spot }) => s.contacts[id] && Math.hypot(spot.pos[0] - me[0], spot.pos[1] - me[1]) < GREET_RANGE);
+            const c = near && s.contacts[near.id];
+            const who = near && contactById(near.id);
+            if (near && c && who && c.lastGreetDay !== day) {
+              set({ contacts: { ...s.contacts, [near.id]: { ...c, rel: clamp(c.rel + GREET_REL), lastGreetDay: day } } });
+              get().toast(`🙏 You greet ${who.name} well. E like am! +${GREET_REL} relationship`);
+            } else if (near && who) get().toast(`🙏 ${who.name} don already receive your greeting today`);
+            else get().toast('🙏 You kneel greet. Walk near somebody you know make e count.');
+          }
+        },
+
         enterCar: () => {
           const s = get();
           if (!s.car || s.place === 'home' || s.active || s.driving) return;
@@ -1921,8 +1963,9 @@ export const useGame = create<GameState>()(
         },
 
         choose: (activityId) => {
-          // Park and get out before doing anything
+          // Park and get out, or stand up, before doing anything
           if (get().driving) get().parkCar();
+          if (get().pose) set({ pose: null });
           const s = get();
           const a = activityById(activityId);
           if (!a) return;

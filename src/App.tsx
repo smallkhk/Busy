@@ -1,4 +1,4 @@
-import { ActionMenu, ActiveBanner, NeedsPanel, Toasts, TopBar, DriveButton } from './ui/Hud';
+import { ActionMenu, ActiveBanner, NeedsPanel, Toasts, TopBar, DriveButton, PoseBar } from './ui/Hud';
 import { AudioDirector } from './audio/AudioDirector';
 import { ChatBar } from './net/ChatBar';
 import { NetDirector } from './net/NetDirector';
@@ -71,7 +71,10 @@ export default function App() {
           </div>
           <div className="hud-bottom">
             <ActiveBanner />
-            <DriveButton />
+            <div className="action-row">
+              <PoseBar />
+              <DriveButton />
+            </div>
             <ChatBar />
             <BottomNav />
           </div>

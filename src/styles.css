@@ -553,3 +553,11 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
 .contact > .bar { flex: none; width: 100%; }
 
 .block-name.campus-sign { font-size: 12px; padding: 3px 8px; }
+
+/* Sit / wave / dance */
+.action-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.action-row:empty { display: none; }
+.pose-bar { display: flex; gap: 6px; overflow-x: auto; max-width: 100%; scrollbar-width: none; }
+.pose-btn { flex: none; white-space: nowrap; background: rgba(14, 33, 28, 0.85); color: #f1e3c8; border: 1px solid rgba(232, 176, 75, 0.45); border-radius: 999px; padding: 5px 9px; font-size: 12px; font-weight: 700; line-height: 1.2; }
+.pose-btn.on { background: #e8b04b; color: #1b1a14; }
+.action-row .drive-row { margin-left: auto; }

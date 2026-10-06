@@ -77,7 +77,7 @@ function makeChannel() {
       const p = payload as Presence;
       if (p.room !== useNet.getState().room) return;
       const cur = useNet.getState().players[p.id];
-      if (cur) useNet.setState((s) => ({ players: { ...s.players, [p.id]: { ...cur, x: p.x, z: p.z, hidden: p.hidden } } }));
+      if (cur) useNet.setState((s) => ({ players: { ...s.players, [p.id]: { ...cur, x: p.x, z: p.z, hidden: p.hidden, pose: p.pose } } }));
     })
     .on('broadcast', { event: 'chat' }, ({ payload }) => {
       const m = payload as ChatMsg & { room: string };
@@ -148,14 +148,14 @@ function addChat(m: ChatMsg) {
   }));
 }
 
-let lastSent = { x: NaN, z: NaN, hidden: false };
-/** Called a few times a second with your avatar position. */
-export function sendMove(x: number, z: number, hidden: boolean) {
-  me = { ...me, x, z, hidden };
+let lastSent: { x: number; z: number; hidden: boolean; pose?: string } = { x: NaN, z: NaN, hidden: false };
+/** Called a few times a second with your avatar position (and pose: sitting, waving, dancing). */
+export function sendMove(x: number, z: number, hidden: boolean, pose?: string) {
+  me = { ...me, x, z, hidden, pose };
   if (!channel || !subscribed || !me.room) return;
-  if (Math.abs(x - lastSent.x) < 0.05 && Math.abs(z - lastSent.z) < 0.05 && hidden === lastSent.hidden) return;
-  lastSent = { x, z, hidden };
-  void channel.send({ type: 'broadcast', event: 'move', payload: { id: me.id, room: me.room, x, z, hidden } });
+  if (Math.abs(x - lastSent.x) < 0.05 && Math.abs(z - lastSent.z) < 0.05 && hidden === lastSent.hidden && pose === lastSent.pose) return;
+  lastSent = { x, z, hidden, pose };
+  void channel.send({ type: 'broadcast', event: 'move', payload: { id: me.id, room: me.room, x, z, hidden, pose } });
 }
 
 /** Change how you look to other players (shirt colour and outfit). */

@@ -387,8 +387,12 @@ export function Street() {
         <Box p={[1.0, 0.42, 3.8]} s={[1.8, 0.08, 0.35]} c="#7a5a3c" />
         <Box p={[-0.4, 1.3, 2.6]} s={[0.06, 2.6, 0.06]} c="#555" />
         <Box p={[-0.4, 2.45, 2.6]} s={[0.04, 0.4, 0.6]} c="#1f8a4c" />
-        <group position={[1.4, 0.2, 3.75]} rotation={[0, Math.PI, 0]} scale={0.9}>
-          <Person shirt="#16a085" trousers="#2d2d2d" />
+        {/* People waiting on the bench */}
+        <group position={[1.4, 0.05, 3.75]} rotation={[0, Math.PI, 0]} scale={0.9}>
+          <Person shirt="#16a085" trousers="#2d2d2d" move="Sit" />
+        </group>
+        <group position={[0.6, 0.05, 3.75]} rotation={[0, Math.PI, 0]} scale={0.9}>
+          <Person shirt="#e67e22" woman move="Sit" />
         </group>
       </Tappable>
 
