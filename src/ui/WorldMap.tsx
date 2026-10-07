@@ -32,7 +32,9 @@ function LabelSync({ anchors }: { anchors: Map<string, Vector3> }) {
       const a = anchors.get(id);
       if (!a) continue;
       tmp.copy(a).project(camera);
-      el.style.transform = `translate(${((tmp.x + 1) / 2) * size.width}px, ${((1 - tmp.y) / 2) * size.height}px) translate(-50%, -100%)`;
+      // A chip that shares its spot with another one sits just above it instead of on top of it
+      const lift = el.dataset.lift ? 30 : 0;
+      el.style.transform = `translate(${((tmp.x + 1) / 2) * size.width}px, ${((1 - tmp.y) / 2) * size.height - lift}px) translate(-50%, -100%)`;
     }
   });
   return null;
@@ -572,6 +574,7 @@ export function WorldMap() {
           <button
             key={s.id}
             ref={(el) => { if (el) labelEls.set(s.id, el); else labelEls.delete(s.id); }}
+            data-lift={s.id === 'home' && s.short === 'Your house' ? '1' : undefined}
             className={`world-chip ${s.landmark ? 'landmark' : s.place ? '' : 'soon'} ${selected === s.id ? 'on' : ''} ${s.id === herePos.id ? 'here' : ''}`}
             onPointerDown={(e) => { e.stopPropagation(); setSelected(s.id); setBoard(null); }}
           >

@@ -34,7 +34,7 @@ export const BENIN = {
 /** City roads: east–west at these z, north–south at these x. */
 export const BENIN_ROADS = { ew: [1.6, -27, 26], ns: [-32, 34] };
 /** Where you land, from the bus or the plane: by the bus park. */
-export const BENIN_ENTRY: [number, number] = [14, 3.6];
+export const BENIN_ENTRY: [number, number] = [17, 3.6];
 
 export const BUKA_TABLE_BENCHES: [number, number][] = [-9.2, -6.8].map((x) => [x, 8.8]);
 export const BENIN_SEATS: Seat[] = BUKA_TABLE_BENCHES.flatMap(([x, z]) => [-0.45, 0.45].map((dx) => ({ x: x + dx, z: z - 0.05, y: 0.45, rot: 0 })));
