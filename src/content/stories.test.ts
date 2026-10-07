@@ -52,7 +52,7 @@ describe('people in the world', () => {
           continue;
         }
         // Benin City is one big map: stay inside its streets
-        if (s.place === 'benin') {
+        if (s.place === 'benin' || s.place === 'lagos') {
           expect(Math.abs(s.pos[0])).toBeLessThan(60);
           expect(s.pos[1]).toBeGreaterThan(-46);
           expect(s.pos[1]).toBeLessThan(32);

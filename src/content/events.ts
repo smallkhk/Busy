@@ -2,6 +2,7 @@ import type { GameEvent } from '../engine/events';
 import { STORIES } from './stories';
 import { ABUJA_EVENTS } from './abujaEvents';
 import { BENIN_EVENTS } from './beninEvents';
+import { LAGOS_EVENTS } from './lagosCity';
 
 const outside = (p: string) => p !== 'home';
 const day = (h: number) => h >= 7 && h < 20;
@@ -1025,4 +1026,4 @@ const BASE_EVENTS: GameEvent[] = [
   },
 ];
 
-export const EVENTS: GameEvent[] = [...BASE_EVENTS, ...ABUJA_EVENTS, ...BENIN_EVENTS, ...STORIES];
+export const EVENTS: GameEvent[] = [...BASE_EVENTS, ...ABUJA_EVENTS, ...BENIN_EVENTS, ...LAGOS_EVENTS, ...STORIES];

@@ -13,6 +13,7 @@ import { Danfo, Keke, Tree, Walkers, type Walker } from '../Street';
 import { groundMap } from '../groundTex';
 import { Flag } from './common';
 import { Benin } from './Benin';
+import { LagosCity } from './LagosCity';
 import { FlyingJet, Terminal } from '../Terminal';
 
 /** Inside the cabin or outside looking at the plane. */
@@ -317,10 +318,11 @@ export function Lagos() {
   return (
     <group>
       {/* Ground: tarred city, sand by the sea, the Atlantic */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.02, -4]} receiveShadow onClick={walk}>
-        <planeGeometry args={[160, 30]} />
-        <meshStandardMaterial map={groundMap('earth', 160, 30)} roughness={1} />
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.02, -25]} receiveShadow onClick={walk}>
+        <planeGeometry args={[260, 72]} />
+        <meshStandardMaterial map={groundMap('earth', 260, 72)} roughness={1} />
       </mesh>
+      <LagosCity low={low} />
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[2, 0, 8]} receiveShadow onClick={walk}>
         <planeGeometry args={[160, 6.4]} />
         <meshStandardMaterial color="#e8d3a2" roughness={1} />

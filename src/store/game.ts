@@ -291,7 +291,7 @@ const BOUNDS: Record<Place, { minX: number; maxX: number; minZ: number; maxZ: nu
   lt: { minX: -8.5, maxX: 8.5, minZ: -3.5, maxZ: 5.8 },
   unilib: { minX: -8.5, maxX: 8.5, minZ: -4.5, maxZ: 5.6 },
   cabin: { minX: -11, maxX: 9.6, minZ: -0.25, maxZ: 0.25 },
-  lagos: { minX: -27, maxX: 30, minZ: -15, maxZ: 10.2 },
+  lagos: { minX: -60, maxX: 60, minZ: -48, maxZ: 10.2 },
   benin: { minX: -60, maxX: 60, minZ: -46, maxZ: 32 },
   road: { minX: -CELL_X / 2, maxX: CELL_X / 2, minZ: ROAD_Z - ROAD_HALF, maxZ: ROAD_Z + ROAD_HALF },
 };
