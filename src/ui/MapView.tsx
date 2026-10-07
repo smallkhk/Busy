@@ -51,7 +51,11 @@ function labelAt(pos: MapSpot['label'] = 'below', selected: boolean) {
 export function useMapSpots(): MapSpot[] {
   const area = useGame((s) => s.area);
   const homeXY = HOME_XY[area];
-  return [{ id: 'home', name: `${AREAS[area].name} (your area)`, short: AREAS[area].name, emoji: '🏠', x: homeXY[0], y: homeXY[1], place: 'street', label: 'right' }, ...MAP_SPOTS];
+  // You live in a district wey get its own pin (Nyanya, Mararaba): call yours "Your house" and put the label the other side
+  const twin = MAP_SPOTS.find((m) => Math.hypot(m.x - homeXY[0], m.y - homeXY[1]) < 30);
+  const short = twin ? 'Your house' : AREAS[area].name;
+  const label = twin ? (twin.label === 'left' ? 'right' : 'left') : 'right';
+  return [{ id: 'home', name: `${AREAS[area].name} (your area)`, short, emoji: '🏠', x: homeXY[0], y: homeXY[1], place: 'street', label }, ...MAP_SPOTS];
 }
 
 /** Distance and the ways to reach a spot from where you dey. */
