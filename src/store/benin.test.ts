@@ -49,6 +49,18 @@ describe('Benin City', () => {
     expect(useGame.getState().place).toBe('airport');
   });
 
+  it('keke carries you across the big city, and new places work', () => {
+    useGame.setState({ place: 'benin' });
+    done('keke-ring-uniben');
+    expect(useGame.getState().place).toBe('benin');
+    expect(useGame.getState().pos).toEqual([-10, -31]);
+    done('uniben-walk');
+    done('keke-uniben-market');
+    expect(useGame.getState().pos).toEqual([-46, -4]);
+    done('oba-market-food');
+    expect(useGame.getState().pantry).toBeGreaterThan(0);
+  });
+
   it('bronze casting pays, and you fit chop banga soup', () => {
     useGame.setState({ place: 'benin' });
     const money = useGame.getState().money;

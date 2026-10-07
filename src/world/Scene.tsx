@@ -99,6 +99,7 @@ function WorldCamera() {
 
   // Arriving somewhere new (bus, door, map): jump the view there. Rooms get framed whole.
   const lastPlace = useRef(useGame.getState().place);
+  const lastPos = useRef(useGame.getState().pos);
   const snap = useRef(0.6);
   const frame = (x: number, z: number, zm: number) => {
     const c = controls.current;
@@ -120,6 +121,10 @@ function WorldCamera() {
       lastPlace.current = place;
       snap.current = 0.6;
     }
+    // A keke dropped you far across the same place: jump the view there too
+    const pos = useGame.getState().pos;
+    if (Math.hypot(pos[0] - lastPos.current[0], pos[1] - lastPos.current[1]) > 15) snap.current = 0.6;
+    lastPos.current = pos;
     if (snap.current > 0) {
       snap.current -= dt;
       const room = ROOM_VIEW[place];

@@ -292,7 +292,7 @@ const BOUNDS: Record<Place, { minX: number; maxX: number; minZ: number; maxZ: nu
   unilib: { minX: -8.5, maxX: 8.5, minZ: -4.5, maxZ: 5.6 },
   cabin: { minX: -11, maxX: 9.6, minZ: -0.25, maxZ: 0.25 },
   lagos: { minX: -27, maxX: 30, minZ: -15, maxZ: 10.2 },
-  benin: { minX: -27, maxX: 29, minZ: -14, maxZ: 11 },
+  benin: { minX: -60, maxX: 60, minZ: -46, maxZ: 32 },
   road: { minX: -CELL_X / 2, maxX: CELL_X / 2, minZ: ROAD_Z - ROAD_HALF, maxZ: ROAD_Z + ROAD_HALF },
 };
 
@@ -794,6 +794,7 @@ export const useGame = create<GameState>()(
           if (!fx) get().toast(`${a.emoji} Done: ${a.label}`);
         }
         set({ active: null, ...(a.away ? { pos: exitSpot(s.place, s.area) } : {}) });
+        if (a.warpTo) set({ pos: a.warpTo, target: null, route: [] });
         if (fx?.flight) set({ flight: newFlight(fx.flight.from ?? 'ABV', fx.flight.to, fx.flight.cls, clock(), fastActivitiesOn(), Math.random) });
         if (a.travelTo) {
           set({ place: a.travelTo, pos: entrySpot(a.travelTo, s.area), target: null, route: [], cell: null, driving: false });

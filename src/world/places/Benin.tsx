@@ -2,7 +2,8 @@ import { Html } from '@react-three/drei';
 import { useFrame, type ThreeEvent } from '@react-three/fiber';
 import { useRef, type ReactElement } from 'react';
 import type { Group } from 'three';
-import { BENIN, BUKA_TABLE_BENCHES } from '../../content/benin';
+import { BENIN, BENIN_ROADS, BUKA_TABLE_BENCHES } from '../../content/benin';
+import { Neighborhood, type HoodStyle, type Rect } from '../Neighborhood';
 import { useGame } from '../../store/game';
 import { useSettings } from '../../settings';
 import { Person } from '../Avatar';
@@ -161,6 +162,212 @@ const BENIN_WALKERS: Walker[] = [
   { from: 18, to: 4, z: 9.6, speed: 0.5, shirt: '#8e44ad' },
 ];
 
+/** The other roads: two more east–west and two north–south, with white dashes. */
+function CityRoads() {
+  const walk = useWalk();
+  const out: ReactElement[] = [];
+  for (const z of BENIN_ROADS.ew.slice(1)) {
+    out.push(
+      <mesh key={`ew${z}`} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.01, z]} receiveShadow onClick={walk}>
+        <planeGeometry args={[130, 3.6]} />
+        <meshStandardMaterial color="#3a3a3e" />
+      </mesh>,
+    );
+    for (let x = -60; x <= 60; x += 3) out.push(<Box key={`ewd${z}${x}`} p={[x, 0.02, z]} s={[1.2, 0.01, 0.1]} c="#f2f2f2" />);
+  }
+  for (const x of BENIN_ROADS.ns) {
+    out.push(
+      <mesh key={`ns${x}`} rotation={[-Math.PI / 2, 0, Math.PI / 2]} position={[x, 0.011, -8]} receiveShadow onClick={walk}>
+        <planeGeometry args={[84, 3.6]} />
+        <meshStandardMaterial color="#3a3a3e" />
+      </mesh>,
+    );
+    for (let z = -48; z <= 32; z += 3) out.push(<Box key={`nsd${x}${z}`} p={[x, 0.02, z]} s={[0.1, 0.01, 1.2]} c="#f2f2f2" />);
+  }
+  return <>{out}</>;
+}
+
+/** Green-roofed keke stand sign. */
+function KekeStand({ at }: { at: P2 }) {
+  return (
+    <group position={[at[0] + 1.6, 0, at[1]]}>
+      <Box p={[0, 1.1, 0]} s={[0.08, 2.2, 0.08]} c="#555" />
+      <Box p={[0, 2.1, 0]} s={[1.2, 0.5, 0.05]} c="#118a4c" />
+      <group position={[1.4, 0, 0.2]}>
+        <Keke />
+      </group>
+    </group>
+  );
+}
+
+/** Houses filling the blocks, kept off the playable spots. */
+function Fill({ at, style, seed, extent, near, far, front, frontFar, clear = [] }: { at: P2; style: HoodStyle; seed: number; extent: number; near: number; far: number; front: number; frontFar: number; clear?: Rect[] }) {
+  return (
+    <group position={[at[0], 0, at[1]]}>
+      <Neighborhood seed={seed} style={style} extent={extent} near={near} far={far} front={front} frontFar={frontFar} clear={clear} roadZ={0} />
+    </group>
+  );
+}
+
+/** Oba Market: rows of stalls under coloured roofs. */
+function Market() {
+  const [mx, mz] = BENIN.market;
+  const stalls: ReactElement[] = [];
+  const cols = ['#c0392b', '#2980b9', '#27ae60', '#f39c12', '#8e44ad'];
+  for (let r = 0; r < 3; r++)
+    for (let c = 0; c < 5; c++) {
+      const x = mx - 6 + c * 3;
+      const z = mz - 3 + r * 3;
+      stalls.push(
+        <group key={`${r}${c}`} position={[x, 0, z]}>
+          <Box p={[0, 0.45, 0]} s={[2.2, 0.9, 1.2]} c="#8a6a45" />
+          <Box p={[0, 1.9, 0]} s={[2.6, 0.08, 1.8]} r={[0.1, 0, 0]} c={cols[(r + c) % cols.length]} />
+          {[-1.15, 1.15].map((dx) => <Cyl key={dx} p={[dx, 0.95, 0.8]} r={0.04} h={1.9} c="#5b3a21" />)}
+          {[0, 1, 2].map((k) => <Box key={k} p={[-0.6 + k * 0.6, 1.0, 0.1]} s={[0.45, 0.2, 0.7]} c={['#e67e22', '#c0392b', '#f1c40f'][k]} />)}
+        </group>,
+      );
+    }
+  return (
+    <Tappable id="oba-market">
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[mx, 0.012, mz]}>
+        <planeGeometry args={[18, 12]} />
+        <meshStandardMaterial color="#b8a58a" />
+      </mesh>
+      {stalls}
+    </Tappable>
+  );
+}
+
+/** Holy Cross Cathedral: tall nave and twin towers. */
+function Cathedral() {
+  const [cx, cz] = BENIN.cathedral;
+  return (
+    <Tappable id="cathedral">
+      <Box p={[cx, 3, cz]} s={[8, 6, 10]} c="#f1ece0" />
+      <mesh position={[cx, 7, cz]} rotation={[0, 0, 0]}>
+        <cylinderGeometry args={[0.01, 5.6, 2.4, 4, 1]} />
+        <meshStandardMaterial color="#8a3b2b" />
+      </mesh>
+      {[-3, 3].map((dx) => (
+        <group key={dx}>
+          <Box p={[cx + dx, 4.5, cz - 5.2]} s={[2, 9, 2]} c="#efe7d6" />
+          <mesh position={[cx + dx, 10, cz - 5.2]} rotation={[0, Math.PI / 4, 0]}>
+            <coneGeometry args={[1.5, 2.2, 4]} />
+            <meshStandardMaterial color="#8a3b2b" />
+          </mesh>
+        </group>
+      ))}
+      <Box p={[cx, 2, cz - 5.05]} s={[2.2, 4, 0.1]} c="#5b3a21" />
+      <Box p={[cx, 8.4, cz - 5.25]} s={[0.25, 1.4, 0.1]} c="#f2c230" />
+      <Box p={[cx, 8.6, cz - 5.25]} s={[0.9, 0.25, 0.1]} c="#f2c230" />
+    </Tappable>
+  );
+}
+
+/** The ancient moat: a deep dry trench with earth banks, running north–south. */
+function Moat() {
+  const [mx] = BENIN.moat;
+  return (
+    <Tappable id="moat">
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[mx, 0.005, -8]}>
+        <planeGeometry args={[4, 80]} />
+        <meshStandardMaterial color="#5e2a17" />
+      </mesh>
+      {[-2.4, 2.4].map((dx) => <Box key={dx} p={[mx + dx, 0.5, -8]} s={[0.8, 1, 80]} c="#8c4426" />)}
+    </Tappable>
+  );
+}
+
+/** UNIBEN gate and a few faculty blocks behind it. */
+function Uniben() {
+  const [ux, uz] = BENIN.uniben;
+  return (
+    <Tappable id="uniben">
+      <Box p={[ux - 4, 2, uz + 4]} s={[0.8, 4, 0.8]} c="#e9e2d2" />
+      <Box p={[ux + 4, 2, uz + 4]} s={[0.8, 4, 0.8]} c="#e9e2d2" />
+      <Box p={[ux, 4.2, uz + 4]} s={[9.6, 0.8, 0.8]} c="#2b4a8a" />
+      <Box p={[ux, 4.2, uz + 4.42]} s={[6, 0.4, 0.05]} c="#f2c230" />
+      <House p={[ux - 6, uz - 3]} w={8} d={5} h={6} wall="#e9e2d2" roof="#2b4a8a" />
+      <House p={[ux + 7, uz - 2]} w={7} d={5} h={4.5} wall="#d6cdb8" roof="#2b4a8a" />
+      <House p={[ux, uz - 9]} w={12} d={4} h={8} wall="#efe8da" roof="#2b4a8a" />
+    </Tappable>
+  );
+}
+
+/** Samuel Ogbemudia Stadium: oval bowl with a green pitch. */
+function Stadium() {
+  const [sx, sz] = BENIN.stadium;
+  return (
+    <Tappable id="ogbemudia">
+      <mesh position={[sx, 2.2, sz - 3]} scale={[1.5, 1, 1]}>
+        <cylinderGeometry args={[7, 6.2, 4.4, 40, 1, true]} />
+        <meshStandardMaterial color="#d9d2c4" side={2} />
+      </mesh>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[sx, 0.03, sz - 3]} scale={[1.5, 1, 1]}>
+        <circleGeometry args={[6.2, 40]} />
+        <meshStandardMaterial color="#3f8a3a" />
+      </mesh>
+      <Box p={[sx, 0.05, sz - 3]} s={[10, 0.01, 0.1]} c="#ffffff" />
+      {[-5, 5].map((dx) => <Box key={dx} p={[sx + dx * 1.9, 5.6, sz - 3]} s={[0.3, 3, 0.3]} c="#888" />)}
+    </Tappable>
+  );
+}
+
+/** Edo Government House: white with columns, a flag and a gatehouse. */
+function GovtHouse() {
+  const [gx, gz] = BENIN.govt;
+  return (
+    <Tappable id="govt-house">
+      <Box p={[gx, 2.5, gz]} s={[12, 5, 6]} c="#f5f3ee" />
+      <Box p={[gx, 5.2, gz]} s={[12.6, 0.4, 6.6]} c="#118a4c" />
+      {Array.from({ length: 6 }, (_, i) => <Cyl key={i} p={[gx - 5 + i * 2, 2.3, gz + 3.4]} r={0.25} h={4.6} c="#ffffff" />)}
+      <Box p={[gx, 4.7, gz + 3.4]} s={[12, 0.4, 1]} c="#ffffff" />
+      <Box p={[gx, 0.8, gz + 6.5]} s={[14, 1.6, 0.3]} c="#e6e2d6" />
+      <Box p={[gx, 0.9, gz + 6.55]} s={[3, 1.8, 0.1]} c="#2b3640" />
+    </Tappable>
+  );
+}
+
+/** GRA: the shortlet house (the rest of GRA is the big filler houses). */
+function GraHouse() {
+  return (
+    <Tappable id="gra-shortlet">
+      <House p={BENIN.gra} w={7} d={5} h={4.5} wall="#f7f3ea" roof="#2f6b4a" />
+      <Box p={[BENIN.gra[0], 0.9, BENIN.gra[1] - 4]} s={[9, 1.8, 0.25]} c="#e8e2d2" />
+      <Box p={[BENIN.gra[0], 0.95, BENIN.gra[1] - 4.05]} s={[2.4, 1.9, 0.08]} c="#1f8a4c" />
+    </Tappable>
+  );
+}
+
+/** Everything beyond the old centre: new landmarks, keke stands and houses. */
+function RestOfCity({ low }: { low: boolean }) {
+  return (
+    <group>
+      <Market />
+      <Sign p={[BENIN.market[0], 3.4, BENIN.market[1] + 6]} text="🧺 OBA MARKET" />
+      <Cathedral />
+      <Sign p={[BENIN.cathedral[0], 7.5, BENIN.cathedral[1] - 5.4]} text="⛪ HOLY CROSS CATHEDRAL" />
+      <Moat />
+      <Sign p={[BENIN.moat[0], 2.4, BENIN.moat[1]]} text="🏞️ BENIN MOAT (IYA)" />
+      <Uniben />
+      <Sign p={[BENIN.uniben[0], 5.6, BENIN.uniben[1] + 4.4]} text="🎓 UNIVERSITY OF BENIN" />
+      <Stadium />
+      <Sign p={[BENIN.stadium[0], 7, BENIN.stadium[1] + 3]} text="🏟️ SAMUEL OGBEMUDIA STADIUM" />
+      <GovtHouse />
+      <Sign p={[BENIN.govt[0], 6.4, BENIN.govt[1] + 3.6]} text="🏛️ EDO GOVERNMENT HOUSE" />
+      <GraHouse />
+      <Sign p={[BENIN.gra[0], 5.4, BENIN.gra[1] - 4]} text="🏡 GRA" />
+      {([[8, 3.8], [-10, -31], [-46, -4], [24, -31], [48, -4.5], [-46, 7.5]] as P2[]).map((at) => <KekeStand key={`${at[0]}${at[1]}`} at={at} />)}
+
+      {/* Houses: north of Uselu road, between the roads, south of Sapele road, and GRA mansions */}
+      <Fill at={[0, -27]} style="mixed" seed={71} extent={low ? 40 : 58} near={-2.2} far={-17} front={2.2} frontFar={8.5} clear={[[-24, -20, 4, 0], [10, -20, 38, 0], [-36, -30, -28, 30], [30, -30, 38, 30]]} />
+      <Fill at={[0, 26]} style="mixed" seed={113} extent={low ? 40 : 58} near={-2.2} far={-14} front={2.2} frontFar={6} clear={[[-28, -26, 30, -13], [-52, -20, -40, -6], [42, -18, 54, -8], [-36, -30, -28, 30], [30, -30, 38, 30]]} />
+      {!low && <Fill at={[-46, 1.6]} style="poor" seed={157} extent={12} near={-2.2} far={-26} front={2.2} frontFar={22} clear={[[-11, -22, 11, -2], [-7, 4, 7, 20], [-16, -40, -8, 40], [12, -40, 20, 40]]} />}
+      <Fill at={[48, 1.6]} style="rich" seed={199} extent={10} near={-2.2} far={-26} front={2.2} frontFar={22} clear={[[-8, -20, 8, -3], [-5, 6, 5, 16], [-18, -40, -12, 40]]} />
+    </group>
+  );
+}
+
 export function Benin() {
   const low = useSettings((s) => s.quality === 'low');
   const walk = useWalk();
@@ -169,9 +376,10 @@ export function Benin() {
     <group>
       {/* Red earth everywhere, the main road through the middle */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.02, 0]} receiveShadow onClick={walk}>
-        <planeGeometry args={[160, 80]} />
+        <planeGeometry args={[260, 180]} />
         <meshStandardMaterial color={RED_EARTH} roughness={1} />
       </mesh>
+      <CityRoads />
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.01, 1.6]} receiveShadow onClick={walk}>
         <planeGeometry args={[160, 3.6]} />
         <meshStandardMaterial color="#3a3a3e" />
@@ -280,6 +488,7 @@ export function Benin() {
         <Tree key={`${x}${z}`} p={[x, 0, z]} />
       ))}
       <Walkers walkers={low ? BENIN_WALKERS.slice(0, 2) : BENIN_WALKERS} />
+      <RestOfCity low={low} />
     </group>
   );
 }

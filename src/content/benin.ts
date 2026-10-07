@@ -18,12 +18,52 @@ export const BENIN = {
   hotel: [-21, 6.5] as [number, number],
   park: [14, 6] as [number, number],
   airport: [24, 6.5] as [number, number],
+  // The rest of the city, round the roads
+  market: [-46, -11] as [number, number],
+  cathedral: [-46, 13] as [number, number],
+  moat: [-56, 0] as [number, number],
+  uniben: [-10, -38] as [number, number],
+  stadium: [24, -38] as [number, number],
+  govt: [48, -13] as [number, number],
+  gra: [48, 14] as [number, number],
 };
+/** City roads: east–west at these z, north–south at these x. */
+export const BENIN_ROADS = { ew: [1.6, -27, 26], ns: [-32, 34] };
 /** Where you land, from the bus or the plane: by the bus park. */
 export const BENIN_ENTRY: [number, number] = [14, 3.6];
 
 export const BUKA_TABLE_BENCHES: [number, number][] = [-9.2, -6.8].map((x) => [x, 8.8]);
 export const BENIN_SEATS: Seat[] = BUKA_TABLE_BENCHES.flatMap(([x, z]) => [-0.45, 0.45].map((dx) => ({ x: x + dx, z: z - 0.05, y: 0.45, rot: 0 })));
+
+/** Keke round the city: [id, name, where you land]. */
+const KEKE_STOPS: [string, string, [number, number]][] = [
+  ['ring', "King's Square", [8, 3.8]],
+  ['uniben', 'UNIBEN', [-10, -31]],
+  ['market', 'Oba Market', [-46, -4]],
+  ['stadium', 'Ogbemudia Stadium', [24, -31]],
+  ['gra', 'GRA & Government House', [48, -4.5]],
+  ['cathedral', 'Holy Cross Cathedral', [-46, 7.5]],
+];
+const kekeRides = (from: string) =>
+  KEKE_STOPS.filter(([id]) => id !== from).map(([id, name, at]) => ({
+    id: `keke-${from}-${id}`,
+    label: `Keke go ${name}`,
+    doing: `Inside keke to ${name} 🛺`,
+    emoji: '🛺',
+    minutes: 15,
+    cost: 300,
+    gains: { fun: 2 },
+    away: true,
+    warpTo: at,
+  }));
+const kekeStand = (from: string, name: string, at: [number, number]): Interactable => ({
+  id: `keke-stand-${from}`,
+  place: 'benin',
+  name: `Keke stand (${name})`,
+  emoji: '🛺',
+  label: [at[0] + 1.6, 2.2, at[1]],
+  activities: kekeRides(from).map((a) => ({ ...a, spot: [at[0] + 1.6, at[1] + 0.6] as [number, number] })),
+});
 
 /** In front of a building north of the road (toward the road), or south of it. */
 const north = (p: [number, number], d = 4.5): [number, number] => [p[0], p[1] + d];
@@ -94,7 +134,7 @@ export const BENIN_INTERACTABLES: Interactable[] = [
     emoji: '🏨',
     label: label(BENIN.hotel, 6),
     activities: [
-      { id: 'benin-sleep', label: 'Book room & sleep (8 hrs)', doing: 'Sleeping for hotel ❄️', emoji: '🏨', minutes: 480, cost: 25000, gains: { energy: 95, hygiene: 30 }, sleep: true, spot: south(BENIN.hotel, -3.4) },
+      { id: 'benin-sleep', label: 'Book room & sleep (8 hrs)', doing: 'Sleeping for hotel ❄️', emoji: '🏨', minutes: 480, cost: 25000, gains: { energy: 95, hygiene: 30 }, sleep: true, spot: [BENIN.hotel[0], 3.9] },
     ],
   },
   {
@@ -105,6 +145,87 @@ export const BENIN_INTERACTABLES: Interactable[] = [
     label: label(BENIN.park, 3.4),
     activities: [ride('benin-abuja', 'Luxury bus go Abuja (Utako park, 8 hrs)', '🚌', 'utako', 480, 12000, south(BENIN.park, 2.2))],
   },
+  // ---------------- The rest of the city ----------------
+  {
+    id: 'oba-market',
+    place: 'benin',
+    name: 'Oba Market',
+    emoji: '🧺',
+    label: label(BENIN.market, 3.6),
+    activities: [
+      { id: 'oba-market-food', label: 'Buy foodstuff (6 meals, Benin price)', doing: 'Pricing garri, plantain and pepper 🧺', emoji: '🧺', minutes: 30, cost: 7000, gains: { social: 8 }, effects: { pantry: 6 }, hours: [7, 18], spot: north(BENIN.market, 6) },
+      { id: 'oba-market-akara', label: 'Akara & pap', doing: 'Chopping hot akara 🫓', emoji: '🫓', minutes: 15, cost: 600, gains: { food: 25 }, hours: [6, 12], spot: north(BENIN.market, 6) },
+      { id: 'oba-market-sell', label: 'Sell for market stall (5 hrs)', doing: '"Customer! Come buy, e cheap!" 🗣️', emoji: '🗣️', minutes: 300, pay: 10000, gains: { energy: -22, social: 15 }, hours: [7, 18], spot: north(BENIN.market, 6) },
+    ],
+  },
+  {
+    id: 'cathedral',
+    place: 'benin',
+    name: 'Holy Cross Cathedral',
+    emoji: '⛪',
+    label: label(BENIN.cathedral, 7),
+    activities: [
+      { id: 'benin-mass', label: 'Attend Mass', doing: 'Singing in the choir loft 🙏🏾', emoji: '⛪', minutes: 90, gains: { social: 15, fun: 10 }, hours: [7, 12], spot: south(BENIN.cathedral, 5.5) },
+    ],
+  },
+  {
+    id: 'moat',
+    place: 'benin',
+    name: 'Ancient Benin moat (Iya)',
+    emoji: '🏞️',
+    label: label(BENIN.moat, 2.6),
+    activities: [
+      { id: 'moat-walk', label: 'Walk by the ancient moat', doing: 'Seeing the walls the Benin Kingdom dig long ago 🏞️', emoji: '🏞️', minutes: 45, gains: { fun: 15, energy: -5 }, hours: [7, 18], spot: [BENIN.moat[0] + 3, BENIN.moat[1]] },
+    ],
+  },
+  {
+    id: 'uniben',
+    place: 'benin',
+    name: 'UNIBEN (Ugbowo campus)',
+    emoji: '🎓',
+    label: label(BENIN.uniben, 6),
+    activities: [
+      { id: 'uniben-walk', label: 'Waka round Ugbowo campus', doing: 'Touring UNIBEN with the students 🎓', emoji: '🎓', minutes: 60, gains: { fun: 12, social: 12 }, hours: [8, 19], spot: north(BENIN.uniben, 6.5) },
+      { id: 'uniben-gist', label: 'Gist with UNIBEN students at the buka', doing: 'Gisting about lecturers and SUG 😂', emoji: '💬', minutes: 45, cost: 1200, gains: { social: 20, food: 20 }, hours: [9, 20], spot: north(BENIN.uniben, 6.5) },
+    ],
+  },
+  {
+    id: 'ogbemudia',
+    place: 'benin',
+    name: 'Samuel Ogbemudia Stadium',
+    emoji: '🏟️',
+    label: label(BENIN.stadium, 7),
+    activities: [
+      { id: 'bendel-match', minigame: 'predict', label: 'Watch Bendel Insurance match', doing: 'Shouting "Bendel! Bendel!" ⚽', emoji: '⚽', minutes: 120, cost: 1500, gains: { fun: 30, social: 15, energy: -8 }, hours: [14, 19], spot: north(BENIN.stadium, 7) },
+      { id: 'stadium-jog-benin', label: 'Jog round the stadium', doing: 'Running laps 🏃🏾', emoji: '🏃🏾', minutes: 45, gains: { fun: 10, energy: -15, hygiene: -10 }, effects: { fitness: 3 }, hours: [6, 19], spot: north(BENIN.stadium, 7) },
+    ],
+  },
+  {
+    id: 'govt-house',
+    place: 'benin',
+    name: 'Edo Government House',
+    emoji: '🏛️',
+    label: label(BENIN.govt, 6),
+    activities: [
+      { id: 'govt-proposal', label: 'Submit business proposal', doing: 'Waiting for protocol officer with your file 📁', emoji: '📁', minutes: 120, gains: { energy: -10, social: 5 }, effects: { cv: 1 }, hours: [9, 15], spot: north(BENIN.govt, 5) },
+    ],
+  },
+  {
+    id: 'gra-shortlet',
+    place: 'benin',
+    name: 'GRA shortlet',
+    emoji: '🏡',
+    label: label(BENIN.gra, 5),
+    activities: [
+      { id: 'gra-sleep', label: 'Shortlet for GRA (sleep 8 hrs)', doing: 'Sleeping for GRA shortlet with AC ❄️', emoji: '🏡', minutes: 480, cost: 40000, gains: { energy: 95, hygiene: 35, fun: 10 }, sleep: true, spot: [BENIN.gra[0], 9.6] },
+    ],
+  },
+  kekeStand('ring', "King's Square", [8, 3.8]),
+  kekeStand('uniben', 'UNIBEN', [-10, -31]),
+  kekeStand('market', 'Oba Market', [-46, -4]),
+  kekeStand('stadium', 'Stadium', [24, -31]),
+  kekeStand('gra', 'GRA', [48, -4.5]),
+  kekeStand('cathedral', 'Cathedral', [-46, 7.5]),
   {
     id: 'benin-airport',
     place: 'benin',
