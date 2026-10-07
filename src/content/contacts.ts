@@ -247,6 +247,47 @@ export const CONTACTS: Contact[] = [
     favour: { label: 'Let me sell your bronze for Abuja', minRel: 50, cooldownDays: 14, text: 'You carry im bronze heads sell for Abuja big men. Your commission land 🗿💰', effect: { money: 35000 } },
     local: true,
   },
+  // ---------------- Lagos ----------------
+  {
+    id: 'kemi',
+    name: 'Kemi Lagos',
+    emoji: '💅🏾',
+    role: 'Lagos influencer, 400k followers. If she post you, you don blow.',
+    influence: 2,
+    where: 'Lagos: chill for Elegushi Beach',
+    favour: { label: 'Shout me out', minRel: 45, cooldownDays: 7, text: 'She post you for her story: "My Abuja person 😍". Your followers jump 📈', effect: { followersPct: 20 } },
+    local: true,
+  },
+  {
+    id: 'chief',
+    name: 'Chief Adebayo',
+    emoji: '🤵🏾',
+    role: 'Importer for Apapa. Container dey land every week.',
+    influence: 5,
+    where: 'Lagos: owambe for the VI hotel lounge',
+    favour: { label: 'Cut me into one container', minRel: 60, cooldownDays: 14, text: '"Clear this container for Apapa, I go settle you." Your cut land 🚢💰', effect: { money: 120000 } },
+    local: true,
+  },
+  {
+    id: 'basira',
+    name: 'Iya Basira',
+    emoji: '👵🏾',
+    role: 'Mama Put for Lagos. Her amala na legend.',
+    influence: 1,
+    where: 'Lagos: the Mama Put (amala spot)',
+    favour: { label: 'Mama, I dey hungry', minRel: 35, cooldownDays: 2, text: '"Siddon, my pikin." She give you full plate free, plus meat 🍲', effect: { needs: { food: 60, social: 10 } } },
+    local: true,
+  },
+  {
+    id: 'seun',
+    name: 'Seun',
+    emoji: '🧑🏾‍💻',
+    role: 'Yaba startup founder. E just raise dollar money.',
+    influence: 3,
+    where: 'Lagos: hackathon for the Yaba tech hub',
+    favour: { label: 'Give me remote gig', minRel: 50, cooldownDays: 10, text: 'E give you small remote contract for im startup 💻💸', effect: { money: 40000, cv: 2 } },
+    local: true,
+  },
 ];
 
 export const contactById = (id: string) => CONTACTS.find((c) => c.id === id);

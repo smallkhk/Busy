@@ -76,3 +76,25 @@ describe('Benin City', () => {
     done('banga');
   });
 });
+
+describe('Lagos, bigger', () => {
+  beforeEach(() => {
+    now = Date.UTC(2026, 9, 6, 9, 0, 0);
+    setClockSource(() => now);
+    useGame.getState().reset();
+    useGame.getState().start('Tunde', '#222');
+    useGame.setState({ money: 1_000_000, nextEventCheck: Infinity, minigame: null, place: 'lagos' });
+  });
+  afterEach(() => setClockSource(() => Date.now()));
+
+  it('danfo carries you round Lagos, and the new places work', () => {
+    done('danfo-centre-yaba');
+    expect(useGame.getState().pos).toEqual([0, -30.5]);
+    done('yaba-hack');
+    expect(useGame.getState().contacts.seun).toBeTruthy();
+    done('danfo-yaba-tbs');
+    expect(useGame.getState().pos).toEqual([52, -28.5]);
+    done('tbs-snap');
+    expect(blockReason(activityById('air-home')!, useGame.getState())).toMatch(/Lagos/);
+  });
+});

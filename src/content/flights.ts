@@ -208,7 +208,7 @@ export const FLIGHT_INTERACTABLES: Interactable[] = [
     emoji: '🍲',
     label: label(LAGOS.buka, 3),
     activities: [
-      { id: 'lagos-amala', label: 'Amala, gbegiri & ewedu', doing: 'Eating amala with hand 🍲', emoji: '🍲', minutes: 30, cost: 2500, gains: { food: 45 }, pose: 'sit', hours: [7, 21], spot: [LAGOS.buka[0], LAGOS.buka[1] + 3.4] },
+      { id: 'lagos-amala', label: 'Amala, gbegiri & ewedu', doing: 'Eating amala with hand 🍲', emoji: '🍲', minutes: 30, cost: 2500, gains: { food: 45 }, effects: { meet: 'basira' }, pose: 'sit', hours: [7, 21], spot: [LAGOS.buka[0], LAGOS.buka[1] + 3.4] },
     ],
   },
   {
@@ -219,7 +219,7 @@ export const FLIGHT_INTERACTABLES: Interactable[] = [
     label: label(LAGOS.hotel, 9),
     activities: [
       { id: 'lagos-hotel', label: 'Book room & sleep (8 hrs)', doing: 'Sleeping for hotel with AC ❄️', emoji: '🏨', minutes: 480, cost: 45000, gains: { energy: 95, hygiene: 30 }, sleep: true, spot: front(LAGOS.hotel, 5) },
-      { id: 'vi-lounge', label: 'Owambe for VI lounge', doing: 'Spraying money for VI 💃🏾', emoji: '💃🏾', minutes: 120, cost: 20000, gains: { fun: 40, social: 25, energy: -15 }, hours: [17, 24], spot: front(LAGOS.hotel, 5) },
+      { id: 'vi-lounge', label: 'Owambe for VI lounge', doing: 'Spraying money for VI 💃🏾', emoji: '💃🏾', minutes: 120, cost: 20000, gains: { fun: 40, social: 25, energy: -15 }, effects: { meet: 'chief' }, hours: [17, 24], spot: front(LAGOS.hotel, 5) },
       { id: 'lagos-meetup', label: 'Tech meetup (network with Lagos people)', doing: 'Collecting LinkedIn and business cards 💼', emoji: '💼', minutes: 120, gains: { social: 20, energy: -10 }, effects: { cv: 1 }, hours: [10, 19], spot: front(LAGOS.hotel, 5) },
     ],
   },
@@ -230,7 +230,7 @@ export const FLIGHT_INTERACTABLES: Interactable[] = [
     emoji: '🏖️',
     label: label(LAGOS.beach, 2.6),
     activities: [
-      { id: 'beach-chill', label: 'Chill for beach chair', doing: 'Feeling the Atlantic breeze 🌊', emoji: '🏖️', minutes: 60, cost: 2000, gains: { fun: 30, energy: 5 }, pose: 'sit', spot: [17.5, 8.4] },
+      { id: 'beach-chill', label: 'Chill for beach chair', doing: 'Feeling the Atlantic breeze 🌊', emoji: '🏖️', minutes: 60, cost: 2000, gains: { fun: 30, energy: 5 }, effects: { meet: 'kemi' }, pose: 'sit', spot: [17.5, 8.4] },
       { id: 'beach-horse', label: 'Ride horse for beach', doing: 'Galloping on the sand 🐎', emoji: '🐎', minutes: 20, cost: 3000, gains: { fun: 25 }, spot: [21, 7] },
       { id: 'beach-coconut', label: 'Coconut & suya', doing: 'Drinking coconut water 🥥', emoji: '🥥', minutes: 15, cost: 2500, gains: { food: 20, fun: 5 }, pose: 'sit', spot: [22, 8.4] },
     ],

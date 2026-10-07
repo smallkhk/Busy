@@ -301,6 +301,51 @@ export const NPCS: Record<string, Npc> = {
       close: '"My brother! You fit carry my work go anywhere for Nigeria."',
     },
   },
+  // ---------------- Lagos ----------------
+  kemi: {
+    shirt: '#e84393',
+    look: { woman: true },
+    spots: [{ place: 'lagos', pos: [20.5, 6.6], hours: [10, 18] }],
+    lines: {
+      stranger: '"Hi babe! Abeg move small, I dey shoot content 📸… wait, you no be Lagos person?"',
+      cold: '"Ah, Abuja person! You don follow me for Gram?"',
+      warm: '"Bestie! Come enter this video, your face go blow 😂"',
+      close: '"My Abuja plug! Next brand deal wey I get, we go share am."',
+    },
+  },
+  chief: {
+    shirt: '#f4e3c1',
+    trousers: '#f4e3c1',
+    look: { outfit: 'agbada', hat: { type: 'fila', color: '#7a1f2b', band: '#d8a53a' } },
+    spots: [{ place: 'lagos', pos: [23, -3.4], hours: [17, 24] }],
+    lines: {
+      stranger: '"Who be this one? You no fit just waka come my front like that o."',
+      cold: '"Ehen, the Abuja boy. Wetin you dey sell?"',
+      warm: '"My son! Come siddon, order anything. Na Chief dey pay."',
+      close: '"My right hand! Any container wey land, your share dey inside."',
+    },
+  },
+  basira: {
+    shirt: '#c0392b',
+    look: { woman: true, hat: { type: 'gele', color: '#c0392b', band: '#f1c40f' } },
+    spots: [{ place: 'lagos', pos: [-2.6, -6.4], hours: [7, 21] }],
+    lines: {
+      stranger: '"Customer, wetin you go chop? Amala dey, ewedu dey, ponmo plenty!"',
+      cold: '"You don come back? Siddon, I go serve you."',
+      warm: '"My pikin from Abuja! I keep orisirisi for you today."',
+      close: '"My own pikin! You no go pay today, just chop."',
+    },
+  },
+  seun: {
+    shirt: '#2d3436',
+    spots: [{ place: 'lagos', pos: [3, -30.6], hours: [9, 18] }],
+    lines: {
+      stranger: '"Hey! You dey into tech? We dey hire, but only cracked people 😎"',
+      cold: '"Bro, you don check that link I send you?"',
+      warm: '"My guy! Investors dey visit this week. Come help me with the demo."',
+      close: '"Co-founder energy! Anything wey we build, your name dey inside."',
+    },
+  },
 };
 
 /** Contacts standing at `place` at this hour of this day. */
