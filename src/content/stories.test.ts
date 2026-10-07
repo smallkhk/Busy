@@ -51,6 +51,13 @@ describe('people in the world', () => {
           expect(s.pos[1]).toBeLessThan(13);
           continue;
         }
+        // Benin City is one big map: stay inside its streets
+        if (s.place === 'benin') {
+          expect(Math.abs(s.pos[0])).toBeLessThan(60);
+          expect(s.pos[1]).toBeGreaterThan(-46);
+          expect(s.pos[1]).toBeLessThan(32);
+          continue;
+        }
         expect(Math.abs(s.pos[0])).toBeLessThan(6.5);
         expect(s.pos[1]).toBeGreaterThan(-1.8);
         expect(s.pos[1]).toBeLessThan(3.4);

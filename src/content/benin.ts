@@ -26,6 +26,10 @@ export const BENIN = {
   stadium: [24, -38] as [number, number],
   govt: [48, -13] as [number, number],
   gra: [48, 14] as [number, number],
+  ubth: [-20, 17] as [number, number],
+  zoo: [16, 18] as [number, number],
+  faith: [-46, -38] as [number, number],
+  lounge: [46, -37] as [number, number],
 };
 /** City roads: east–west at these z, north–south at these x. */
 export const BENIN_ROADS = { ew: [1.6, -27, 26], ns: [-32, 34] };
@@ -43,7 +47,12 @@ const KEKE_STOPS: [string, string, [number, number]][] = [
   ['stadium', 'Ogbemudia Stadium', [24, -31]],
   ['gra', 'GRA & Government House', [48, -4.5]],
   ['cathedral', 'Holy Cross Cathedral', [-46, 7.5]],
+  ['ubth', 'UBTH (teaching hospital)', [-14, 12.6]],
+  ['zoo', 'Ogba Zoo', [22, 12.6]],
+  ['faith', 'Faith Arena', [-40, -31]],
+  ['lounge', 'Airport Road lounge', [52, -31]],
 ];
+export const KEKE_AT: [number, number][] = KEKE_STOPS.map(([, , at]) => at);
 const kekeRides = (from: string) =>
   KEKE_STOPS.filter(([id]) => id !== from).map(([id, name, at]) => ({
     id: `keke-${from}-${id}`,
@@ -79,7 +88,7 @@ export const BENIN_INTERACTABLES: Interactable[] = [
     label: label(BENIN.palace, 5.5),
     activities: [
       { id: 'palace-tour', label: "Tour the palace courtyards", doing: 'Learning 800 years of Benin Kingdom history 👑', emoji: '🏛️', minutes: 90, cost: 3000, gains: { fun: 20, social: 5 }, hours: [10, 17], spot: north(BENIN.palace) },
-      { id: 'palace-greet', label: "Greet the Oba's chiefs (Oba gha to kpere! 🙏🏾)", doing: 'Kneeling to greet the palace chiefs 🙏🏾', emoji: '🙏🏾', minutes: 30, gains: { social: 15, fun: 5 }, effects: { packaging: 2 }, hours: [9, 17], spot: north(BENIN.palace) },
+      { id: 'palace-greet', label: "Greet the Oba's chiefs (Oba gha to kpere! 🙏🏾)", doing: 'Kneeling to greet the palace chiefs 🙏🏾', emoji: '🙏🏾', minutes: 30, gains: { social: 15, fun: 5 }, effects: { packaging: 2, meet: 'osagie' }, hours: [9, 17], spot: north(BENIN.palace) },
     ],
   },
   {
@@ -89,7 +98,7 @@ export const BENIN_INTERACTABLES: Interactable[] = [
     emoji: '🗿',
     label: label(BENIN.igun, 3.6),
     activities: [
-      { id: 'watch-casting', label: 'Watch them pour bronze', doing: 'Watching hot bronze enter the mould 🔥', emoji: '🔥', minutes: 30, gains: { fun: 12 }, hours: [8, 18], spot: north(BENIN.igun, 3.5) },
+      { id: 'watch-casting', label: 'Watch them pour bronze', doing: 'Watching hot bronze enter the mould 🔥', emoji: '🔥', minutes: 30, gains: { fun: 12 }, effects: { meet: 'ize' }, hours: [8, 18], spot: north(BENIN.igun, 3.5) },
       { id: 'buy-bronze', label: 'Buy bronze head for your parlour', doing: 'Pricing bronze head with the caster 🗿', emoji: '🗿', minutes: 30, cost: 25000, gains: { fun: 10 }, effects: { packaging: 8 }, hours: [8, 18], spot: north(BENIN.igun, 3.5) },
       { id: 'bronze-apprentice', label: 'Bronze casting apprentice (5 hrs)', doing: 'Shaping wax and blowing the furnace 🗿', emoji: '⚒️', minutes: 300, pay: 9000, gains: { energy: -25, hygiene: -15, fun: 5 }, hours: [8, 17], spot: north(BENIN.igun, 3.5) },
     ],
@@ -122,7 +131,7 @@ export const BENIN_INTERACTABLES: Interactable[] = [
     emoji: '🍲',
     label: label(BENIN.buka, 3),
     activities: [
-      { id: 'banga', label: 'Banga soup & starch', doing: 'Swallowing starch with banga 🍲', emoji: '🍲', minutes: 30, cost: 2500, gains: { food: 45 }, pose: 'sit', hours: [7, 21], spot: [BENIN.buka[0], BENIN.buka[1] + 1.8] },
+      { id: 'banga', label: 'Banga soup & starch', doing: 'Swallowing starch with banga 🍲', emoji: '🍲', minutes: 30, cost: 2500, gains: { food: 45 }, effects: { meet: 'mamaosas' }, pose: 'sit', hours: [7, 21], spot: [BENIN.buka[0], BENIN.buka[1] + 1.8] },
       { id: 'owo-soup', label: 'Owo soup & yam', doing: 'Enjoying owo soup 🍠', emoji: '🍠', minutes: 30, cost: 2000, gains: { food: 40 }, pose: 'sit', hours: [7, 21], spot: [BENIN.buka[0], BENIN.buka[1] + 1.8] },
       { id: 'palm-wine', label: 'Fresh palm wine', doing: 'Drinking palm wine from calabash 🥥', emoji: '🥥', minutes: 30, cost: 800, gains: { fun: 15, social: 10 }, pose: 'sit', hours: [10, 22], spot: [BENIN.buka[0], BENIN.buka[1] + 1.8] },
     ],
@@ -186,7 +195,7 @@ export const BENIN_INTERACTABLES: Interactable[] = [
     label: label(BENIN.uniben, 6),
     activities: [
       { id: 'uniben-walk', label: 'Waka round Ugbowo campus', doing: 'Touring UNIBEN with the students 🎓', emoji: '🎓', minutes: 60, gains: { fun: 12, social: 12 }, hours: [8, 19], spot: north(BENIN.uniben, 6.5) },
-      { id: 'uniben-gist', label: 'Gist with UNIBEN students at the buka', doing: 'Gisting about lecturers and SUG 😂', emoji: '💬', minutes: 45, cost: 1200, gains: { social: 20, food: 20 }, hours: [9, 20], spot: north(BENIN.uniben, 6.5) },
+      { id: 'uniben-gist', label: 'Gist with UNIBEN students at the buka', doing: 'Gisting about lecturers and SUG 😂', emoji: '💬', minutes: 45, cost: 1200, gains: { social: 20, food: 20 }, effects: { meet: 'efe' }, hours: [9, 20], spot: north(BENIN.uniben, 6.5) },
     ],
   },
   {
@@ -226,6 +235,54 @@ export const BENIN_INTERACTABLES: Interactable[] = [
   kekeStand('stadium', 'Stadium', [24, -31]),
   kekeStand('gra', 'GRA', [48, -4.5]),
   kekeStand('cathedral', 'Cathedral', [-46, 7.5]),
+  kekeStand('ubth', 'UBTH', [-14, 12.6]),
+  kekeStand('zoo', 'Ogba Zoo', [22, 12.6]),
+  kekeStand('faith', 'Faith Arena', [-40, -31]),
+  kekeStand('lounge', 'Airport Road', [52, -31]),
+  {
+    id: 'ubth',
+    place: 'benin',
+    name: 'UBTH (University of Benin Teaching Hospital)',
+    emoji: '🏥',
+    label: label(BENIN.ubth, 6),
+    activities: [
+      { id: 'ubth-doctor', label: 'See doctor', doing: 'Waiting for UBTH clinic 🩺', emoji: '🩺', minutes: 150, cost: 12000, gains: { energy: 10, fun: -5 }, effects: { cure: true, meet: 'ehi' }, hours: [8, 16], spot: south(BENIN.ubth, 4.4) },
+      { id: 'ubth-emergency', label: 'Emergency treatment', doing: 'Doctors dey work on you 🚑', emoji: '🚑', minutes: 120, cost: 30000, gains: { energy: 40 }, effects: { cure: true }, spot: south(BENIN.ubth, 4.4) },
+    ],
+  },
+  {
+    id: 'ogba-zoo',
+    place: 'benin',
+    name: 'Ogba Zoo & Nature Park',
+    emoji: '🦁',
+    label: label(BENIN.zoo, 4),
+    activities: [
+      { id: 'zoo-visit', label: 'See the animals', doing: 'Watching lion, monkey and ostrich 🦁', emoji: '🦁', minutes: 90, cost: 1500, gains: { fun: 25, social: 10 }, hours: [9, 18], spot: south(BENIN.zoo, 5.4) },
+      { id: 'zoo-picnic', label: 'Picnic under the trees', doing: 'Chopping jollof under shade 🧺', emoji: '🧺', minutes: 60, cost: 3000, gains: { food: 20, fun: 15 }, hours: [9, 18], spot: south(BENIN.zoo, 5.4) },
+    ],
+  },
+  {
+    id: 'faith-arena',
+    place: 'benin',
+    name: 'Faith Arena (Church of God Mission)',
+    emoji: '🙌🏾',
+    label: label(BENIN.faith, 7),
+    activities: [
+      { id: 'faith-service', label: 'Attend Sunday service', doing: 'Clapping and dancing for praise 🙌🏾', emoji: '🙌🏾', minutes: 120, gains: { social: 20, fun: 15 }, hours: [7, 13], spot: north(BENIN.faith, 6.5) },
+      { id: 'faith-crusade', label: 'Night crusade', doing: 'Shouting "Amen!" for crusade ground 🔥', emoji: '🔥', minutes: 120, gains: { fun: 20, social: 15, energy: -10 }, hours: [18, 23], spot: north(BENIN.faith, 6.5) },
+    ],
+  },
+  {
+    id: 'airport-rd-lounge',
+    place: 'benin',
+    name: 'Airport Road lounge',
+    emoji: '🎶',
+    label: label(BENIN.lounge, 4.6),
+    activities: [
+      { id: 'benin-club', label: 'Enjoy for the lounge', doing: 'Dancing to Edo highlife and Afrobeats 🎶', emoji: '🎶', minutes: 120, cost: 10000, gains: { fun: 35, social: 20, energy: -15 }, hours: [19, 24], requires: { packaging: 15 }, spot: north(BENIN.lounge, 5.5) },
+      { id: 'benin-hypeman', label: 'Hype man for the lounge (5 hrs)', doing: '"Make some noise for Benin!" 🎤', emoji: '🎤', minutes: 300, pay: 12000, gains: { energy: -25, social: 20, fun: 10 }, hours: [19, 24], spot: north(BENIN.lounge, 5.5) },
+    ],
+  },
   {
     id: 'benin-airport',
     place: 'benin',

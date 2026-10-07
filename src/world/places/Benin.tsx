@@ -2,7 +2,7 @@ import { Html } from '@react-three/drei';
 import { useFrame, type ThreeEvent } from '@react-three/fiber';
 import { useRef, type ReactElement } from 'react';
 import type { Group } from 'three';
-import { BENIN, BENIN_ROADS, BUKA_TABLE_BENCHES } from '../../content/benin';
+import { BENIN, BENIN_ROADS, BUKA_TABLE_BENCHES, KEKE_AT } from '../../content/benin';
 import { Neighborhood, type HoodStyle, type Rect } from '../Neighborhood';
 import { useGame } from '../../store/game';
 import { useSettings } from '../../settings';
@@ -339,6 +339,85 @@ function GraHouse() {
   );
 }
 
+/** UBTH: big white hospital block with a red cross. */
+function Ubth() {
+  const [ux, uz] = BENIN.ubth;
+  return (
+    <Tappable id="ubth">
+      <House p={[ux, uz]} w={12} d={5} h={6} wall="#f4f6f8" roof="#2b6cb0" />
+      <Box p={[ux, 5, uz - 2.53]} s={[1.6, 0.5, 0.04]} c="#d63031" />
+      <Box p={[ux, 5, uz - 2.53]} s={[0.5, 1.6, 0.04]} c="#d63031" />
+      <Box p={[ux, 1.2, uz - 2.54]} s={[2.4, 2.4, 0.04]} c="#2b3640" />
+      <Box p={[ux + 4, 0.75, uz - 4]} s={[2.6, 1.5, 1.4]} c="#f4f6f8" />
+      <Box p={[ux + 4, 0.9, uz - 4.71]} s={[0.4, 0.4, 0.02]} c="#d63031" />
+    </Tappable>
+  );
+}
+
+/** A simple animal: body, neck and head blocks. */
+function Animal({ x, z, c, tall = 0.4, len = 1.2 }: { x: number; z: number; c: string; tall?: number; len?: number }) {
+  return (
+    <group position={[x, 0, z]}>
+      <Box p={[0, 0.7, 0]} s={[len, 0.6, 0.5]} c={c} />
+      <Box p={[len / 2, 0.9 + tall / 2, 0]} s={[0.25, tall + 0.4, 0.25]} c={c} />
+      <Box p={[len / 2 + 0.15, 1.15 + tall, 0]} s={[0.45, 0.3, 0.3]} c={c} />
+      {[-len / 2 + 0.15, len / 2 - 0.15].flatMap((dx) => [-0.18, 0.18].map((dz) => <Box key={`${dx}${dz}`} p={[dx, 0.22, dz]} s={[0.12, 0.44, 0.12]} c={c} />))}
+    </group>
+  );
+}
+
+/** Ogba Zoo: a fenced green park with trees and animals. */
+function Zoo() {
+  const [zx, zz] = BENIN.zoo;
+  return (
+    <Tappable id="ogba-zoo">
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[zx, 0.012, zz]}>
+        <planeGeometry args={[14, 8]} />
+        <meshStandardMaterial color="#4f8f3a" />
+      </mesh>
+      {[-4, 4].map((dz) => <Box key={dz} p={[zx, 0.5, zz + dz]} s={[14, 1, 0.08]} c="#6b4a2f" />)}
+      {[-7, 7].map((dx) => <Box key={dx} p={[zx + dx, 0.5, zz]} s={[0.08, 1, 8]} c="#6b4a2f" />)}
+      <Box p={[zx, 1.6, zz - 4]} s={[3, 0.5, 0.15]} c="#2f6b32" />
+      <Animal x={zx - 3} z={zz - 1} c="#c9a24a" tall={0.2} />
+      <Animal x={zx + 1} z={zz + 1.5} c="#d9b26a" tall={1.6} len={1} />
+      <Animal x={zx + 4} z={zz - 1.5} c="#5f6670" tall={0.1} len={1.6} />
+      {([[-5, 2], [-1, 2.8], [5, 2.5], [-5.5, -2.5]] as P2[]).map(([dx, dz]) => <Tree key={`${dx}${dz}`} p={[zx + dx, 0, zz + dz]} s={0.8} />)}
+    </Tappable>
+  );
+}
+
+/** Faith Arena: a huge white dome auditorium. */
+function FaithArena() {
+  const [fx, fz] = BENIN.faith;
+  return (
+    <Tappable id="faith-arena">
+      <Cyl p={[fx, 1.8, fz]} r={6} h={3.6} c="#f1efe8" />
+      <mesh position={[fx, 3.6, fz]} scale={[1, 0.55, 1]}>
+        <sphereGeometry args={[6, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2]} />
+        <meshStandardMaterial color="#e9e2d2" />
+      </mesh>
+      <Box p={[fx, 1.4, fz + 5.95]} s={[3, 2.8, 0.2]} c="#5b3a21" />
+      <Box p={[fx, 3.2, fz + 6.05]} s={[4.4, 0.6, 0.2]} c="#2b4a8a" />
+    </Tappable>
+  );
+}
+
+/** Airport Road lounge: dark glass front with neon. */
+function Lounge() {
+  const [lx, lz] = BENIN.lounge;
+  return (
+    <Tappable id="airport-rd-lounge">
+      <Box p={[lx, 2, lz]} s={[8, 4, 5]} c="#1e1e24" />
+      <Box p={[lx, 1.6, lz + 2.52]} s={[6, 2, 0.04]} c="#2d3a55" />
+      <mesh position={[lx, 3.4, lz + 2.56]}>
+        <boxGeometry args={[5, 0.35, 0.05]} />
+        <meshStandardMaterial color="#ff4fd8" emissive="#ff4fd8" emissiveIntensity={1.4} />
+      </mesh>
+      <Box p={[lx, 4.15, lz]} s={[8.4, 0.3, 5.4]} c="#3a3a44" />
+    </Tappable>
+  );
+}
+
 /** Everything beyond the old centre: new landmarks, keke stands and houses. */
 function RestOfCity({ low }: { low: boolean }) {
   return (
@@ -357,11 +436,19 @@ function RestOfCity({ low }: { low: boolean }) {
       <Sign p={[BENIN.govt[0], 6.4, BENIN.govt[1] + 3.6]} text="🏛️ EDO GOVERNMENT HOUSE" />
       <GraHouse />
       <Sign p={[BENIN.gra[0], 5.4, BENIN.gra[1] - 4]} text="🏡 GRA" />
-      {([[8, 3.8], [-10, -31], [-46, -4], [24, -31], [48, -4.5], [-46, 7.5]] as P2[]).map((at) => <KekeStand key={`${at[0]}${at[1]}`} at={at} />)}
+      {KEKE_AT.map((at) => <KekeStand key={`${at[0]}${at[1]}`} at={at} />)}
+      <Ubth />
+      <Sign p={[BENIN.ubth[0], 6.6, BENIN.ubth[1] - 3]} text="🏥 UBTH" />
+      <Zoo />
+      <Sign p={[BENIN.zoo[0], 3.4, BENIN.zoo[1] - 4.4]} text="🦁 OGBA ZOO" />
+      <FaithArena />
+      <Sign p={[BENIN.faith[0], 7.6, BENIN.faith[1] + 4]} text="🙌🏾 FAITH ARENA" />
+      <Lounge />
+      <Sign p={[BENIN.lounge[0], 4.8, BENIN.lounge[1] + 3]} text="🎶 AIRPORT ROAD LOUNGE" />
 
       {/* Houses: north of Uselu road, between the roads, south of Sapele road, and GRA mansions */}
-      <Fill at={[0, -27]} style="mixed" seed={71} extent={low ? 40 : 58} near={-2.2} far={-17} front={2.2} frontFar={8.5} clear={[[-24, -20, 4, 0], [10, -20, 38, 0], [-36, -30, -28, 30], [30, -30, 38, 30]]} />
-      <Fill at={[0, 26]} style="mixed" seed={113} extent={low ? 40 : 58} near={-2.2} far={-14} front={2.2} frontFar={6} clear={[[-28, -26, 30, -13], [-52, -20, -40, -6], [42, -18, 54, -8], [-36, -30, -28, 30], [30, -30, 38, 30]]} />
+      <Fill at={[0, -27]} style="mixed" seed={71} extent={low ? 40 : 58} near={-2.2} far={-17} front={2.2} frontFar={8.5} clear={[[-24, -20, 4, 0], [10, -20, 38, 0], [-54, -18, -36, -2], [38, -16, 56, -2], [-36, -30, -28, 30], [30, -30, 38, 30]]} />
+      <Fill at={[0, 26]} style="mixed" seed={113} extent={low ? 40 : 58} near={-2.2} far={-14} front={2.2} frontFar={6} clear={[[-28, -26, 30, -13], [-52, -20, -40, -6], [42, -18, 54, -8], [-28, -14, -11, -3], [7, -14, 25, -3], [-36, -30, -28, 30], [30, -30, 38, 30]]} />
       {!low && <Fill at={[-46, 1.6]} style="poor" seed={157} extent={12} near={-2.2} far={-26} front={2.2} frontFar={22} clear={[[-11, -22, 11, -2], [-7, 4, 7, 20], [-16, -40, -8, 40], [12, -40, 20, 40]]} />}
       <Fill at={[48, 1.6]} style="rich" seed={199} extent={10} near={-2.2} far={-26} front={2.2} frontFar={22} clear={[[-8, -20, 8, -3], [-5, 6, 5, 16], [-18, -40, -12, 40]]} />
     </group>

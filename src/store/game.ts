@@ -872,7 +872,9 @@ export const useGame = create<GameState>()(
 
       const fireEvent = (trigger: 'idle' | 'commute', trip?: string) => {
         const s = get();
-        const e = pickEvent(EVENTS, trigger, eventContext(s, trip), s.eventHistory, s.time);
+        // Out of Abuja only that city's own events (and phone calls) fit happen; city events stay in their city
+        const pool = EVENTS.filter((ev) => (isAway(s.place) ? ev.city === s.place || (!!ev.caller && !ev.city) : !ev.city));
+        const e = pickEvent(pool, trigger, eventContext(s, trip), s.eventHistory, s.time);
         if (e) set({ event: e.id, eventTrip: trip ?? null, eventHistory: { ...s.eventHistory, [e.id]: s.time }, menu: null, phone: null });
       };
 

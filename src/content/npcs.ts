@@ -246,6 +246,61 @@ export const NPCS: Record<string, Npc> = {
       close: '"Chairman friend! This Mararaba na your house."',
     },
   },
+  // ---------------- Benin City ----------------
+  osagie: {
+    shirt: '#f4f1ec',
+    trousers: '#f4f1ec',
+    look: { outfit: 'agbada', hat: { type: 'fila', color: '#b0281f', band: '#d8a53a' } },
+    spots: [{ place: 'benin', pos: [-14, -3.2], hours: [10, 16] }],
+    lines: {
+      stranger: '"Who you be? For this palace, you must greet well before you talk o."',
+      cold: '"Ehen, the visitor from Abuja. You don learn how to greet?"',
+      warm: '"My son! Come, make I show you where the bronze plaques dey."',
+      close: '"Our own pikin! Any time you come Benin, the palace door open for you."',
+    },
+  },
+  efe: {
+    shirt: '#e84393',
+    look: { woman: true },
+    spots: [{ place: 'benin', pos: [-7, -31.6], hours: [9, 18] }],
+    lines: {
+      stranger: '"Hey! You no be UNIBEN student. You dey visit?"',
+      cold: '"Abuja person! You don follow my page?"',
+      warm: '"Bestie! Come enter my video, Benin people go love you."',
+      close: '"My Abuja G! Next time you come, na my house you go stay."',
+    },
+  },
+  mamaosas: {
+    shirt: '#c0392b',
+    look: { woman: true, hat: { type: 'gele', color: '#c0392b', band: '#f1c40f' } },
+    spots: [{ place: 'benin', pos: [-11, 8.4], hours: [7, 21] }],
+    lines: {
+      stranger: '"Customer! Banga dey, owo soup dey, starch dey hot!"',
+      cold: '"You don come again? Siddon, make I serve you."',
+      warm: '"My pikin from Abuja! I keep fresh fish for you today."',
+      close: '"My own pikin! Your food dey ready before you even reach."',
+    },
+  },
+  ehi: {
+    shirt: '#ffffff',
+    spots: [{ place: 'benin', pos: [-17, 12.4], hours: [8, 17], days: [1, 2, 3, 4, 5] }],
+    lines: {
+      stranger: '"Good day. You dey come for clinic? Queue dey that side."',
+      cold: '"You again? Hope say you dey take the drugs."',
+      warm: '"My friend! Come, let me check your BP quickly."',
+      close: '"Anything you feel for Benin, call me straight."',
+    },
+  },
+  ize: {
+    shirt: '#6b4a2f',
+    spots: [{ place: 'benin', pos: [6.8, -6.4], hours: [8, 17] }],
+    lines: {
+      stranger: '"Welcome to Igun Street. Na bronze we dey cast since our great-grandfathers."',
+      cold: '"You come back! You wan buy bronze this time?"',
+      warm: '"My friend! Come see this new one. E take me two weeks."',
+      close: '"My brother! You fit carry my work go anywhere for Nigeria."',
+    },
+  },
 };
 
 /** Contacts standing at `place` at this hour of this day. */
