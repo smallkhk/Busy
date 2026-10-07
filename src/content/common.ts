@@ -49,6 +49,8 @@ export type Activity = {
   spot?: [number, number];
   /** Walking here moves the player to another place. */
   travelTo?: Place;
+  /** Ride to another spot inside the same place (keke round a big city). */
+  warpTo?: [number, number];
   /** A road trip: takes longer in rush hour. */
   commute?: boolean;
   /** Trip to or from your home area: shorter if you live closer to town. */
