@@ -107,6 +107,8 @@ export type GameEvent = {
   when?: (c: EventContext) => boolean;
   /** Game hours before it can fire again. */
   cooldownHours?: number;
+  /** Only fires in this city outside Abuja. Away from Abuja, only that city's events (and phone calls) fire. */
+  city?: Place;
   choices: Choice[];
 };
 

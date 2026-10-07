@@ -61,6 +61,13 @@ describe('Benin City', () => {
     expect(useGame.getState().pantry).toBeGreaterThan(0);
   });
 
+  it('Benin events only happen for Benin, and Abuja events no follow you there', async () => {
+    const { EVENTS } = await import('../content/events');
+    expect(EVENTS.filter((e) => e.city === 'benin').length).toBeGreaterThanOrEqual(5);
+    expect(activityById('ubth-doctor')?.effects?.cure).toBe(true);
+    expect(activityById('keke-ring-zoo')?.warpTo).toEqual([22, 12.6]);
+  });
+
   it('bronze casting pays, and you fit chop banga soup', () => {
     useGame.setState({ place: 'benin' });
     const money = useGame.getState().money;
