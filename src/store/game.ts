@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
-import { activityById, activityPlace, ENTRY_SPOT, PLACE_NAMES, type Activity, type Place } from '../content/activities';
+import { activityById, activityPlace, ENTRY_SPOT, PLACE_NAMES, TABLE_GAMES, type Activity, type Place, type TableGame } from '../content/activities';
 import { entrySpot, exitSpot, homeBounds, homeSpot } from '../content/homeLayout';
 import { CAMPUS_PLACES } from '../content/campus';
 import { CITY_NAMES, flightProgress, isAway, LAND_PLACE, MY_SEAT, newFlight, type Flight } from '../content/flights';
@@ -777,15 +777,17 @@ export const useGame = create<GameState>()(
             set({ car: { ...car, condition: Math.max(0, Math.min(100, car.condition - wear)) } });
             get().toast(wear > 0 ? `🚗💥 Rough driving: car condition -${wear}` : '🚗✨ Smooth driving! Car no suffer');
           }
-          if (a.minigame === 'pool' && bonus !== 0.5) {
+          if (TABLE_GAMES.includes(a.minigame as TableGame)) {
+            // Win: take the pot (2× stake). Draw: your stake comes back. Lose: e don go.
             const won = bonus >= 1;
-            const pot = (a.cost ?? 0) * 2;
+            const draw = bonus === 0.5;
+            const back = won ? (a.cost ?? 0) * 2 : draw ? (a.cost ?? 0) : 0;
             set({
               needs: { ...n, fun: clamp(n.fun + (won ? 25 : 5)), social: clamp(n.social + 10) },
-              ...(won && pot ? { money: get().money + pot, txns: [{ at: s.time, label: '🎱 Pool winnings', amount: pot }, ...get().txns].slice(0, 40) } : {}),
+              ...(back ? { money: get().money + back, txns: [{ at: s.time, label: `${a.emoji} ${won ? 'Winnings' : 'Stake back (draw)'}`, amount: back }, ...get().txns].slice(0, 40) } : {}),
             });
-            bump(won ? 'pool-wins' : 'pool-games');
-            get().toast(won ? `🎱🏆 You win the pool game! +${formatNaira(pot)}` : '🎱 You lose this one. Na practice 😤');
+            bump(won ? `${a.minigame}-wins` : `${a.minigame}-games`);
+            get().toast(won ? `${a.emoji}🏆 You win!${back ? ` +${formatNaira(back)}` : ''}` : draw ? `${a.emoji}🤝 Draw. Your money come back.` : `${a.emoji} You lose this one. Na practice 😤`);
           }
           if (a.minigame === 'predict' && bonus !== 0.5) {
             set({ needs: { ...n, fun: clamp(n.fun + (bonus >= 1 ? 20 : -5)), social: clamp(n.social + (bonus >= 1 ? 10 : 0)) } });
@@ -1231,7 +1233,7 @@ export const useGame = create<GameState>()(
           const mg = get().minigame;
           set({ minigame: null });
           // Walking away from the pool table: no game, no stake taken
-          if (mg?.kind === 'pool' && score === null) return get().toast('🎱 You leave the table. Your money dey your pocket.');
+          if (mg && TABLE_GAMES.includes(mg.kind as TableGame) && score === null) return get().toast('🚶 You leave the game. Your money dey your pocket.');
           if (mg) startActivity(mg.id, score === null ? 0.5 : Math.max(0, Math.min(1, score)));
         },
 

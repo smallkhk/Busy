@@ -5,6 +5,8 @@ import { formatNaira } from '../engine/clock';
 import { useGame } from '../store/game';
 import { DriveRoad, type RoadHazard } from '../world/DriveRoad';
 import { PoolGame } from './Pool';
+import { AyoGame, DraughtsGame, WhotGame } from './BoardGames';
+import { TABLE_GAMES, type TableGame } from '../content/common';
 
 type Done = (score: number) => void;
 
@@ -215,7 +217,7 @@ function Drive({ done }: { done: Done }) {
   );
 }
 
-const TITLES = { pos: '🏧 POS rush', wash: '🧽 Car wash', cook: '🍳 Kitchen time', timing: '🕺 Feel the beat', predict: '⚽ Predict the match', drive: '🚗 Abuja road', pool: '🎱 8-ball pool' } as const;
+const TITLES = { pos: '🏧 POS rush', wash: '🧽 Car wash', cook: '🍳 Kitchen time', timing: '🕺 Feel the beat', predict: '⚽ Predict the match', drive: '🚗 Abuja road', pool: '🎱 8-ball pool', ayo: '🫘 Ayo', whot: '🃏 Whot', draughts: '⚫ Draughts' } as const;
 
 /** Quick game before some activities. Your score changes the pay or the fun. */
 export function MiniGame() {
@@ -225,13 +227,18 @@ export function MiniGame() {
   const a = activityById(mg.id);
   const done: Done = (score) => play(score);
   // Pool takes the whole screen
-  if (mg.kind === 'pool')
+  if (TABLE_GAMES.includes(mg.kind as TableGame)) {
+    const stake = a?.cost ?? 0;
     return (
       <div className="pool-screen">
-        <PoolGame key={mg.id} done={done} stake={a?.cost ?? 0} />
-        <button className="ghost pool-quit" onClick={() => confirm('Leave the table? Your stake go dey refund.') && play(null)}>✕ Leave table</button>
+        {mg.kind === 'pool' && <PoolGame key={mg.id} done={done} stake={stake} />}
+        {mg.kind === 'ayo' && <AyoGame key={mg.id} done={done} stake={stake} />}
+        {mg.kind === 'whot' && <WhotGame key={mg.id} done={done} stake={stake} />}
+        {mg.kind === 'draughts' && <DraughtsGame key={mg.id} done={done} stake={stake} />}
+        <button className="ghost pool-quit" onClick={() => confirm('Leave the game? Nobody go collect your money.') && play(null)}>✕ Leave game</button>
       </div>
     );
+  }
   return (
     <div className="event-backdrop">
       <div className="event card minigame" key={mg.id}>

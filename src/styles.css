@@ -603,3 +603,44 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
 .pool-table canvas { border-radius: 10px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6); }
 .pool-help { text-align: center; }
 .pool-quit { align-self: center; margin-top: 4px; }
+
+/* ---------------- Ayo ---------------- */
+.ayo-board { flex: 0 0 auto; margin: auto 0 !important; display: flex; flex-direction: column; justify-content: center; gap: 10px; padding: 18px 10px; margin: 6px 0; border-radius: 26px; background: linear-gradient(160deg, #8a5a2b, #5b3a21); box-shadow: inset 0 4px 10px rgba(0, 0, 0, 0.4), 0 10px 26px rgba(0, 0, 0, 0.5); }
+.ayo-board .ayo-row { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; }
+.ayo-pit { aspect-ratio: 1; border-radius: 50%; border: none; background: radial-gradient(circle at 50% 40%, #3b2414, #241509); box-shadow: inset 0 4px 8px rgba(0, 0, 0, 0.7); display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; color: #f4efe3; padding: 0; }
+.ayo-pit.can { outline: 2px solid #f2c230; cursor: pointer; }
+.ayo-pit.last { box-shadow: inset 0 4px 8px rgba(0, 0, 0, 0.7), 0 0 0 3px rgba(61, 214, 255, 0.6); }
+.ayo-seeds { display: flex; flex-wrap: wrap; justify-content: center; gap: 2px; max-width: 70%; }
+.ayo-seeds i { width: 7px; height: 7px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #d9c7a0, #7a6a4a); }
+.ayo-pit b { position: absolute; bottom: -2px; right: 2px; font-size: 11px; color: #f2c230; }
+.ayo-row:first-child .ayo-pit b { bottom: auto; top: -2px; }
+
+/* ---------------- Whot ---------------- */
+.whot-table { flex: 1; display: flex; flex-direction: column; justify-content: space-between; gap: 10px; padding: 12px 6px; border-radius: 18px; background: radial-gradient(circle at 50% 50%, #1d6a45, #0f4a2f); min-height: 0; }
+.whot-backs { display: flex; justify-content: center; flex-wrap: wrap; gap: 3px; }
+.whot-back { width: 28px; height: 40px; border-radius: 5px; background: repeating-linear-gradient(45deg, #8b1e3f 0 4px, #6a1530 4px 8px); border: 2px solid #f4efe3; }
+.whot-mid { display: flex; justify-content: center; align-items: center; gap: 22px; }
+.whot-market { width: 64px; height: 92px; border-radius: 8px; background: repeating-linear-gradient(45deg, #8b1e3f 0 5px, #6a1530 5px 10px); border: 2px solid #f4efe3; color: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; }
+.whot-market small { font-size: 10px; opacity: 0.85; }
+.whot-pile { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.whot-call { font-size: 12px; font-weight: 800; color: #f2c230; }
+.whot-hand { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
+.whot-card { width: 58px; height: 84px; border-radius: 8px; background: #fbf6ea; border: 2px solid #8b1e3f; color: #8b1e3f; display: flex; flex-direction: column; justify-content: space-between; align-items: stretch; padding: 3px 5px; box-shadow: 0 3px 8px rgba(0, 0, 0, 0.35); }
+.whot-card .wn { font-weight: 900; font-size: 15px; text-align: left; line-height: 1; }
+.whot-card .wn.r { text-align: right; transform: rotate(180deg); }
+.whot-card .ws { font-size: 24px; text-align: center; line-height: 1; }
+.whot-card.whot { background: #8b1e3f; color: #fbf6ea; border-color: #f2c230; }
+.whot-card.dim { opacity: 0.45; }
+.whot-ask { position: absolute; left: 16px; right: 16px; top: 38%; z-index: 5; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+.whot-shapes { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+/* ---------------- Draughts ---------------- */
+.dr-wrap { flex: 1; display: grid; place-items: center; min-height: 0; }
+.dr-board { width: min(100%, 62vh); aspect-ratio: 1; display: grid; grid-template-columns: repeat(8, 1fr); border: 8px solid #5b3a21; border-radius: 6px; box-shadow: 0 10px 26px rgba(0, 0, 0, 0.5); }
+.dr-sq { border: none; padding: 0; border-radius: 0; display: grid; place-items: center; min-width: 0; min-height: 0; }
+.dr-sq.can .dr-piece { box-shadow: 0 0 0 3px #f2c230, inset 0 -3px 0 rgba(0, 0, 0, 0.3); }
+.dr-piece { width: 78%; height: 78%; border-radius: 50%; display: grid; place-items: center; font-size: 13px; box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.3), 0 2px 4px rgba(0, 0, 0, 0.5); }
+.dr-piece.s0 { background: radial-gradient(circle at 35% 30%, #4a4a4a, #111); }
+.dr-piece.s1 { background: radial-gradient(circle at 35% 30%, #fff, #d8cdb5); }
+.pool-screen { position: fixed; }
+.pool-screen .pool { position: relative; }

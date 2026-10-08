@@ -62,7 +62,7 @@ export type Activity = {
   /** `cure` lists sicknesses it treats (all of them if true); `net` buys a mosquito net. */
   effects?: { packaging?: number; pantry?: number; cv?: number; meet?: string; cure?: true | ('malaria' | 'typhoid' | 'food')[]; net?: boolean; carFix?: number; /** Litres into your car tank. */ fuel?: number; /** Chance the fuel na adulterated and damages the engine. */ badFuel?: number; /** Fitness points. */ fitness?: number; /** Board a flight (see flights.ts). */ flight?: { from: 'ABV' | 'LOS' | 'BNI'; to: 'ABV' | 'LOS' | 'BNI'; cls: 'economy' | 'business' } };
   /** Play a quick mini-game first; how well you do changes the result. */
-  minigame?: 'pos' | 'wash' | 'cook' | 'timing' | 'predict' | 'drive' | 'pool';
+  minigame?: 'pos' | 'wash' | 'cook' | 'timing' | 'predict' | 'drive' | TableGame;
   /** Sit down while you do it (and stay visible), instead of standing. */
   pose?: 'sit';
   /** Shown instead of running, for content that isn't built yet. */
@@ -98,19 +98,32 @@ export function ride(id: string, label: string, emoji: string, to: Place, minute
   };
 }
 
-/** A game of 8-ball pool for money: win and you take the pot (twice your stake). */
-export function poolMatch(id: string, stake: number, spot: [number, number], extra: Partial<Activity> = {}): Activity {
+/** Games you play against somebody for a stake: win and you take the pot (twice your stake). */
+export type TableGame = 'pool' | 'ayo' | 'whot' | 'draughts';
+export const TABLE_GAMES: TableGame[] = ['pool', 'ayo', 'whot', 'draughts'];
+const TABLE_INFO: Record<TableGame, { name: string; emoji: string; minutes: number }> = {
+  pool: { name: '8-ball pool', emoji: '🎱', minutes: 40 },
+  ayo: { name: 'Ayo', emoji: '🫘', minutes: 30 },
+  whot: { name: 'Whot', emoji: '🃏', minutes: 25 },
+  draughts: { name: 'Draughts', emoji: '⚫', minutes: 35 },
+};
+
+export function tableGame(kind: TableGame, id: string, stake: number, spot: [number, number], extra: Partial<Activity> = {}): Activity {
+  const t = TABLE_INFO[kind];
   return {
     id,
-    label: `🎱 Play 8-ball pool (₦${stake.toLocaleString('en-NG')} stake)`,
-    doing: 'Playing 8-ball pool 🎱',
-    emoji: '🎱',
-    minutes: 40,
-    cost: stake,
+    label: `${t.emoji} Play ${t.name} ${stake ? `(₦${stake.toLocaleString('en-NG')} stake)` : '(friendly)'}`,
+    doing: `Playing ${t.name} ${t.emoji}`,
+    emoji: t.emoji,
+    minutes: t.minutes,
+    cost: stake || undefined,
     gains: { fun: 15, social: 10 },
-    minigame: 'pool',
-    hours: [11, 24],
+    minigame: kind,
+    hours: [8, 24],
     spot,
     ...extra,
   };
 }
+
+/** A game of 8-ball pool for money. */
+export const poolMatch = (id: string, stake: number, spot: [number, number], extra: Partial<Activity> = {}) => tableGame('pool', id, stake, spot, { hours: [11, 24], ...extra });

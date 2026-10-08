@@ -1,4 +1,4 @@
-import { ride, type Activity, type Interactable, type Place } from './common';
+import { ride, type Activity, type Interactable, type Place, poolMatch, tableGame } from './common';
 import { DRIVES, HAILING_JOB } from './cars';
 import { CHOP_ITEMS, RIDES, TREKS } from './phoneapps';
 import { TRAVEL_INTERACTABLES } from './travel';
@@ -167,7 +167,7 @@ const HOME_AND_STREET: Interactable[] = [
     emoji: '🎱',
     label: [0.6, 1.2, 2.35],
     activities: [
-      { id: 'snooker', label: 'Play snooker', doing: 'Shooting snooker 🎱', emoji: '🎱', minutes: 45, gains: { fun: 30, social: 10, energy: -5 }, requires: { mansion: true }, spot: [-0.6, 2.6] },
+      poolMatch('snooker', 0, [-0.6, 2.6], { requires: { mansion: true }, hours: [0, 24] }),
     ],
   },
   {
@@ -178,6 +178,7 @@ const HOME_AND_STREET: Interactable[] = [
     label: [5.6, 1.6, 0.0],
     activities: [
       { id: 'tea', label: 'Tea & bread', doing: 'Gisting with Mai Shayi', emoji: '🍞', minutes: 25, cost: 800, gains: { food: 30, social: 15 }, hours: [6, 23], spot: [5.0, 0.7] },
+      tableGame('ayo', 'ayo-maishayi', 500, [5.0, 0.7]),
       { id: 'spag', label: 'Indomie & egg special', doing: 'Chopping Mai Shayi special', emoji: '🍳', minutes: 30, cost: 1800, gains: { food: 55, social: 15, fun: 5 }, hours: [6, 23], spot: [5.0, 0.7] },
     ],
   },
@@ -189,6 +190,7 @@ const HOME_AND_STREET: Interactable[] = [
     label: [3.6, 1.0, 3.3],
     activities: [
       { id: 'neighbours', label: 'Gist with neighbours', doing: 'Gisting with neighbours', emoji: '🗣️', minutes: 45, gains: { social: 25, fun: 10 }, effects: { meet: 'ade' }, hours: [7, 22], spot: [3.6, 2.6] },
+      tableGame('draughts', 'draughts-bench', 500, [3.6, 2.6], { hours: [7, 22] }),
     ],
   },
   {
@@ -240,6 +242,7 @@ const HOME_AND_STREET: Interactable[] = [
     label: [1.8, 2.6, -3.4],
     activities: [
       { id: 'epl', minigame: 'predict', label: 'Watch EPL match (dem get gen)', doing: 'Shouting for viewing centre', emoji: '⚽', minutes: 120, cost: 500, gains: { fun: 45, social: 25 }, hours: [12, 23], spot: [1.8, -2.0] },
+      tableGame('whot', 'whot-viewing', 500, [1.8, -2.0]),
     ],
   },
   {
