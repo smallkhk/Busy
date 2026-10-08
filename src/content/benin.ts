@@ -1,4 +1,4 @@
-import { poolMatch, ride, type Interactable } from './common';
+import { poolMatch, ride, type Interactable, tableGame } from './common';
 import { fly } from './flights';
 import type { Seat } from './seats';
 
@@ -132,6 +132,7 @@ export const BENIN_INTERACTABLES: Interactable[] = [
     label: label(BENIN.buka, 3),
     activities: [
       { id: 'banga', label: 'Banga soup & starch', doing: 'Swallowing starch with banga 🍲', emoji: '🍲', minutes: 30, cost: 2500, gains: { food: 45 }, effects: { meet: 'mamaosas' }, pose: 'sit', hours: [7, 21], spot: [BENIN.buka[0], BENIN.buka[1] + 1.8] },
+      tableGame('ayo', 'ayo-benin', 1000, [BENIN.buka[0], BENIN.buka[1] + 1.8]),
       { id: 'owo-soup', label: 'Owo soup & yam', doing: 'Enjoying owo soup 🍠', emoji: '🍠', minutes: 30, cost: 2000, gains: { food: 40 }, pose: 'sit', hours: [7, 21], spot: [BENIN.buka[0], BENIN.buka[1] + 1.8] },
       { id: 'palm-wine', label: 'Fresh palm wine', doing: 'Drinking palm wine from calabash 🥥', emoji: '🥥', minutes: 30, cost: 800, gains: { fun: 15, social: 10 }, pose: 'sit', hours: [10, 22], spot: [BENIN.buka[0], BENIN.buka[1] + 1.8] },
     ],

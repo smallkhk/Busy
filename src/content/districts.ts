@@ -1,5 +1,5 @@
 import { FLY_FROM_ABUJA } from './flights';
-import { ride, type Interactable } from './common';
+import { ride, type Interactable, tableGame } from './common';
 
 /**
  * The newer districts. Every scene in src/world/places/Districts.tsx shares one layout:
@@ -160,6 +160,7 @@ export const DISTRICT_INTERACTABLES: Interactable[] = [
     emoji: '🚌',
     label: PARK_LABEL,
     activities: [
+      tableGame('draughts', 'draughts-garki', 1000, PARK),
       ride('garki-home', 'Bus go your area (home)', '🚌', 'street', 75, 900, PARK),
       ride('garki-wuse', 'Bus go Wuse Market', '🚌', 'wuse', 20, 300, PARK),
       ride('garki-sec', 'Bus go Federal Secretariat', '🏛️', 'secretariat', 12, 200, PARK),
@@ -189,6 +190,7 @@ export const DISTRICT_INTERACTABLES: Interactable[] = [
     label: [-4.2, 2.2, -2.4],
     activities: [
       { id: 'mamaput', label: 'Eba & egusi', doing: 'Chopping with hand', emoji: '🍲', minutes: 25, cost: 1200, gains: { food: 50, social: 8 }, effects: { meet: 'hauwa' }, hours: [7, 21], spot: A },
+      tableGame('ayo', 'ayo-nyanya', 1000, A),
     ],
   },
   {
@@ -363,6 +365,7 @@ export const DISTRICT_INTERACTABLES: Interactable[] = [
     emoji: '🚌',
     label: PARK_LABEL,
     activities: [
+      tableGame('whot', 'whot-mararaba', 1000, PARK),
       ride('mr-nyanya', 'Bus go Nyanya', '🚌', 'nyanya', 15, 200, PARK),
       ride('mr-garki', 'Bus go Garki Area 1', '🚌', 'garki', 50, 600, PARK),
       ride('mr-home', 'Bus go your area (home)', '🚌', 'street', 120, 1300, PARK),

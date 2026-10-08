@@ -1,5 +1,5 @@
 import type { Activity, Interactable, Place } from './common';
-import { poolMatch, ride } from './common';
+import { poolMatch, ride, tableGame } from './common';
 import { JAMB_FEE } from './school';
 
 /**
@@ -166,6 +166,7 @@ export const CAMPUS_INTERACTABLES: Interactable[] = [
     label: label(CAMPUS.boys, 5.5),
     activities: [
       { id: 'hostel-gist', label: 'Gist for hostel with students', doing: 'Gisting about lecturers and crushes', emoji: '🗣️', minutes: 60, gains: { social: 30, fun: 20 }, hours: [16, 24], spot: [CAMPUS.boys[0] + 5, CAMPUS.boys[1]] },
+      tableGame('whot', 'whot-hostel', 300, [CAMPUS.boys[0] + 5, CAMPUS.boys[1]]),
       { id: 'hostel-nap', label: 'Rest for friend room', doing: 'Sleeping on friend mattress 😴', emoji: '😴', minutes: 120, gains: { energy: 35 }, hours: [0, 24], spot: [CAMPUS.boys[0] + 5, CAMPUS.boys[1]] },
     ],
   },
