@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type JSX } from 'react';
+import { cellOf, HOME, HOME_COL, ludoCpu, ludoScore, moveSeed, movable, newLudo, rollDie, SAFE, START, TRACK, type Ludo } from '../content/ludo';
 import { ayoCpu, ayoScore, legal, newAyo, play, type Ayo } from '../content/ayo';
 import { apply, dark, draughtsCpu, draughtsScore, movesFor, newDraughts, type Draughts, type Move } from '../content/draughts';
 import { canPlay, goMarket, newWhot, playCard, SHAPE_EMOJI, SHAPES, top, whotCpu, whotScore, type Card, type Shape, type Whot } from '../content/whot';
@@ -197,6 +198,106 @@ export function DraughtsGame({ done, stake }: { done: Done; stake: number }) {
         </div>
       </div>
       <div className="pool-help muted small">Tap your piece, then the square. If you fit chop, you must chop. Reach the end and you become king 👑.</div>
+    </div>
+  );
+}
+
+// ---------------- Ludo ----------------
+const LUDO_COLOR: Record<0 | 1, string> = { 0: '#d63031', 1: '#f2c230' };
+const DICE = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
+/** Yard circles: [row, col] of the 4 seats in each corner yard. */
+const YARD: Record<0 | 1, [number, number][]> = {
+  0: [[10.5, 1.5], [10.5, 3.5], [12.5, 1.5], [12.5, 3.5]],
+  1: [[1.5, 10.5], [1.5, 12.5], [3.5, 10.5], [3.5, 12.5]],
+};
+
+export function LudoGame({ done, stake }: { done: Done; stake: number }) {
+  const opp = useOpponent();
+  const [g, setG] = useState<Ludo>(() => newLudo(Math.random() < 0.5 ? 0 : 1));
+  const [rolling, setRolling] = useState(false);
+  useFinish(g.over, ludoScore(g), done);
+  const throwDie = () => {
+    setRolling(true);
+    window.setTimeout(() => {
+      setRolling(false);
+      setG((x) => rollDie(x, 1 + Math.floor(Math.random() * 6)));
+    }, 450);
+  };
+  // The computer throws and moves by itself
+  useEffect(() => {
+    if (g.over || g.turn !== 1 || rolling) return;
+    const t = window.setTimeout(() => {
+      if (g.roll === null) throwDie();
+      else setG(moveSeed(g, ludoCpu(g)));
+    }, 750);
+    return () => window.clearTimeout(t);
+  }, [g, rolling]);
+  // Only one seed fit move: move am for you
+  const can = g.turn === 0 && !g.over ? movable(g) : [];
+  useEffect(() => {
+    if (g.turn !== 0 || g.roll === null || can.length !== 1) return;
+    const t = window.setTimeout(() => setG(moveSeed(g, can[0])), 600);
+    return () => window.clearTimeout(t);
+  }, [g, can]);
+  const home = (s: 0 | 1) => g.seeds[s].filter((x) => x === HOME).length;
+  const cells: JSX.Element[] = [];
+  const homeCols = new Map<string, 0 | 1>();
+  for (const s of [0, 1] as const) HOME_COL[s].forEach(([r, c]) => homeCols.set(`${r},${c}`, s));
+  const trackIdx = new Map(TRACK.map(([r, c], i) => [`${r},${c}`, i]));
+  for (let r = 0; r < 15; r++)
+    for (let c = 0; c < 15; c++) {
+      const k = `${r},${c}`;
+      const t = trackIdx.get(k);
+      const hc = homeCols.get(k);
+      let bg = 'transparent';
+      if (t !== undefined) bg = t === START[0] ? LUDO_COLOR[0] : t === START[1] ? LUDO_COLOR[1] : '#fbf6ea';
+      if (hc !== undefined) bg = LUDO_COLOR[hc];
+      const star = t !== undefined && SAFE.has(t) && t !== START[0] && t !== START[1];
+      cells.push(
+        <div key={k} className="ludo-cell" style={{ gridRow: r + 1, gridColumn: c + 1, background: bg }}>
+          {star && '★'}
+        </div>,
+      );
+    }
+  // Seeds: on the board (grouped when two share a square) or in the yard
+  const pieces: JSX.Element[] = [];
+  for (const s of [0, 1] as const)
+    g.seeds[s].forEach((step, i) => {
+      const at = step === HOME ? null : cellOf(s, step);
+      const pos: [number, number] = at ? [at[0] + 0.5, at[1] + 0.5] : step === HOME ? [7.5 + (s === 0 ? 0.6 : -0.6), 7.5 + (i - 1.5) * 0.35] : [YARD[s][i][0] + 0.5, YARD[s][i][1] + 0.5];
+      const mine = s === 0 && can.includes(i);
+      const dup = at ? g.seeds[s].slice(0, i).filter((x) => x === step).length : 0;
+      pieces.push(
+        <button
+          key={`${s}${i}`}
+          className={`ludo-seed ${mine ? 'can' : ''} ${step === HOME ? 'home' : ''}`}
+          style={{ left: `${((pos[1] + dup * 0.18) / 15) * 100}%`, top: `${((pos[0] - dup * 0.18) / 15) * 100}%`, background: LUDO_COLOR[s] }}
+          onClick={() => mine && setG(moveSeed(g, i))}
+        />,
+      );
+    });
+  return (
+    <div className="pool">
+      <Head you={`🔴 ${home(0)}/4 home`} them={`${opp} · 🟡 ${home(1)}/4`} mine={g.turn === 0} note={g.note} stake={stake} />
+      <div className="dr-wrap">
+        <div className="ludo-board">
+          <div className="ludo-yard" style={{ gridRow: '10 / 16', gridColumn: '1 / 7', background: LUDO_COLOR[0] }} />
+          <div className="ludo-yard" style={{ gridRow: '1 / 7', gridColumn: '10 / 16', background: LUDO_COLOR[1] }} />
+          <div className="ludo-yard" style={{ gridRow: '1 / 7', gridColumn: '1 / 7', background: '#2a7fd6' }} />
+          <div className="ludo-yard" style={{ gridRow: '10 / 16', gridColumn: '10 / 16', background: '#1e9e5a' }} />
+          <div className="ludo-centre" style={{ gridRow: '7 / 10', gridColumn: '7 / 10' }} />
+          {cells}
+          {(Object.keys(YARD) as unknown as (0 | 1)[]).flatMap((s) => YARD[s].map(([r, c], i) => <span key={`y${s}${i}`} className="ludo-spot" style={{ left: `${((c + 0.5) / 15) * 100}%`, top: `${((r + 0.5) / 15) * 100}%` }} />))}
+          {pieces}
+        </div>
+      </div>
+      <div className="ludo-bar">
+        <button className={`ludo-die ${rolling ? 'spin' : ''}`} disabled={g.turn !== 0 || g.roll !== null || g.over || rolling} onClick={throwDie}>
+          {g.roll ? DICE[g.roll - 1] : '🎲'}
+        </button>
+        <span className="muted small">{g.turn === 0 && g.roll === null && !g.over ? 'Tap the die to roll' : can.length > 1 ? 'Tap the seed you wan move' : ''}</span>
+      </div>
+      <div className="pool-help muted small">6 to bring seed out · 6 or knocking a seed = roll again · ★ and start squares are safe · exact number to enter home.</div>
     </div>
   );
 }

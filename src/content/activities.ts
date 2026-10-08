@@ -191,6 +191,7 @@ const HOME_AND_STREET: Interactable[] = [
     activities: [
       { id: 'neighbours', label: 'Gist with neighbours', doing: 'Gisting with neighbours', emoji: '🗣️', minutes: 45, gains: { social: 25, fun: 10 }, effects: { meet: 'ade' }, hours: [7, 22], spot: [3.6, 2.6] },
       tableGame('draughts', 'draughts-bench', 500, [3.6, 2.6], { hours: [7, 22] }),
+      tableGame('ludo', 'ludo-bench', 500, [3.6, 2.6], { hours: [7, 22] }),
     ],
   },
   {

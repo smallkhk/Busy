@@ -188,6 +188,7 @@ export const FLIGHT_INTERACTABLES: Interactable[] = [
     activities: [
       { id: 'danfo-tour', label: 'Enter danfo, cross Third Mainland Bridge', doing: '"Oshodi! Oshodi! Enter with your change!" 🚐', emoji: '🚐', minutes: 90, cost: 800, gains: { fun: 15, energy: -10 }, away: true, spot: [LAGOS.danfo[0], LAGOS.danfo[1] - 1.6] },
       tableGame('whot', 'whot-lagos', 1500, [LAGOS.danfo[0], LAGOS.danfo[1] - 1.6]),
+      tableGame('ludo', 'ludo-lagos', 1500, [LAGOS.danfo[0], LAGOS.danfo[1] - 1.6]),
       { id: 'lagos-traffic', label: 'Hawk for go-slow (sell gala & water)', doing: 'Running between cars for traffic 🥤', emoji: '🥤', minutes: 120, pay: 5000, gains: { energy: -25, hygiene: -15 }, hours: [7, 20], away: true, spot: [LAGOS.danfo[0], LAGOS.danfo[1] - 1.6] },
     ],
   },

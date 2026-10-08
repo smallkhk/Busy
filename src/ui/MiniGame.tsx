@@ -5,7 +5,7 @@ import { formatNaira } from '../engine/clock';
 import { useGame } from '../store/game';
 import { DriveRoad, type RoadHazard } from '../world/DriveRoad';
 import { PoolGame } from './Pool';
-import { AyoGame, DraughtsGame, WhotGame } from './BoardGames';
+import { AyoGame, DraughtsGame, LudoGame, WhotGame } from './BoardGames';
 import { TABLE_GAMES, type TableGame } from '../content/common';
 
 type Done = (score: number) => void;
@@ -217,7 +217,7 @@ function Drive({ done }: { done: Done }) {
   );
 }
 
-const TITLES = { pos: '🏧 POS rush', wash: '🧽 Car wash', cook: '🍳 Kitchen time', timing: '🕺 Feel the beat', predict: '⚽ Predict the match', drive: '🚗 Abuja road', pool: '🎱 8-ball pool', ayo: '🫘 Ayo', whot: '🃏 Whot', draughts: '⚫ Draughts' } as const;
+const TITLES = { pos: '🏧 POS rush', wash: '🧽 Car wash', cook: '🍳 Kitchen time', timing: '🕺 Feel the beat', predict: '⚽ Predict the match', drive: '🚗 Abuja road', pool: '🎱 8-ball pool', ayo: '🫘 Ayo', whot: '🃏 Whot', draughts: '⚫ Draughts', ludo: '🎲 Ludo' } as const;
 
 /** Quick game before some activities. Your score changes the pay or the fun. */
 export function MiniGame() {
@@ -235,6 +235,7 @@ export function MiniGame() {
         {mg.kind === 'ayo' && <AyoGame key={mg.id} done={done} stake={stake} />}
         {mg.kind === 'whot' && <WhotGame key={mg.id} done={done} stake={stake} />}
         {mg.kind === 'draughts' && <DraughtsGame key={mg.id} done={done} stake={stake} />}
+        {mg.kind === 'ludo' && <LudoGame key={mg.id} done={done} stake={stake} />}
         <button className="ghost pool-quit" onClick={() => confirm('Leave the game? Nobody go collect your money.') && play(null)}>✕ Leave game</button>
       </div>
     );
