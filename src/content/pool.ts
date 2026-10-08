@@ -150,7 +150,7 @@ export type Match = {
 };
 
 export function newMatch(rand: () => number, breaker: Side = 'you'): Match {
-  return { balls: rack(rand), turn: breaker, groups: { you: null, cpu: null }, winner: null, note: breaker === 'you' ? 'Your break! Drag back from the white ball and let go.' : 'Opponent dey break…' };
+  return { balls: rack(rand), turn: breaker, groups: { you: null, cpu: null }, winner: null, note: breaker === 'you' ? 'Your break! Touch the table to aim, then pull the power bar down.' : 'Opponent dey break…' };
 }
 
 const other = (s: Side): Side => (s === 'you' ? 'cpu' : 'you');

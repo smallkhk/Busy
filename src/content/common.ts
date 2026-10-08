@@ -99,13 +99,14 @@ export function ride(id: string, label: string, emoji: string, to: Place, minute
 }
 
 /** Games you play against somebody for a stake: win and you take the pot (twice your stake). */
-export type TableGame = 'pool' | 'ayo' | 'whot' | 'draughts';
-export const TABLE_GAMES: TableGame[] = ['pool', 'ayo', 'whot', 'draughts'];
+export type TableGame = 'pool' | 'ayo' | 'whot' | 'draughts' | 'ludo';
+export const TABLE_GAMES: TableGame[] = ['pool', 'ayo', 'whot', 'draughts', 'ludo'];
 const TABLE_INFO: Record<TableGame, { name: string; emoji: string; minutes: number }> = {
   pool: { name: '8-ball pool', emoji: '🎱', minutes: 40 },
   ayo: { name: 'Ayo', emoji: '🫘', minutes: 30 },
   whot: { name: 'Whot', emoji: '🃏', minutes: 25 },
   draughts: { name: 'Draughts', emoji: '⚫', minutes: 35 },
+  ludo: { name: 'Ludo', emoji: '🎲', minutes: 35 },
 };
 
 export function tableGame(kind: TableGame, id: string, stake: number, spot: [number, number], extra: Partial<Activity> = {}): Activity {

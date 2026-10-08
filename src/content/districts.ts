@@ -316,6 +316,7 @@ export const DISTRICT_INTERACTABLES: Interactable[] = [
     emoji: '🚍',
     label: PARK_LABEL,
     activities: [
+      tableGame('ludo', 'ludo-utako', 1000, PARK),
       { id: 'village', label: 'Travel go village for weekend (2 days)', doing: 'Enjoying village life 🌴', emoji: '🌴', minutes: 2880, cost: 30000, gains: { fun: 70, social: 60, energy: 30, food: 50 }, hours: [6, 12], away: true, spot: PARK },
       { id: 'loader', label: 'Load luggage for interstate buses (4 hrs)', doing: 'Lifting bags onto bus roof', emoji: '🧳', minutes: 240, pay: 6000, gains: { energy: -28, hygiene: -15, social: 5 }, hours: [5, 12], away: true, spot: PARK },
       ride('utako-home', 'Bus go your area (home)', '🚌', 'street', 45, 600, PARK),
