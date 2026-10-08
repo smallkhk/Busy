@@ -1,4 +1,4 @@
-import { ride, type Interactable } from './common';
+import { poolMatch, ride, type Interactable } from './common';
 import { fly } from './flights';
 import type { Seat } from './seats';
 
@@ -280,6 +280,7 @@ export const BENIN_INTERACTABLES: Interactable[] = [
     label: label(BENIN.lounge, 4.6),
     activities: [
       { id: 'benin-club', label: 'Enjoy for the lounge', doing: 'Dancing to Edo highlife and Afrobeats 🎶', emoji: '🎶', minutes: 120, cost: 10000, gains: { fun: 35, social: 20, energy: -15 }, hours: [19, 24], requires: { packaging: 15 }, spot: north(BENIN.lounge, 5.5) },
+      poolMatch('pool-benin', 3000, north(BENIN.lounge, 5.5)),
       { id: 'benin-hypeman', label: 'Hype man for the lounge (5 hrs)', doing: '"Make some noise for Benin!" 🎤', emoji: '🎤', minutes: 300, pay: 12000, gains: { energy: -25, social: 20, fun: 10 }, hours: [19, 24], spot: north(BENIN.lounge, 5.5) },
     ],
   },

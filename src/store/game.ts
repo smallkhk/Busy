@@ -777,6 +777,16 @@ export const useGame = create<GameState>()(
             set({ car: { ...car, condition: Math.max(0, Math.min(100, car.condition - wear)) } });
             get().toast(wear > 0 ? `🚗💥 Rough driving: car condition -${wear}` : '🚗✨ Smooth driving! Car no suffer');
           }
+          if (a.minigame === 'pool' && bonus !== 0.5) {
+            const won = bonus >= 1;
+            const pot = (a.cost ?? 0) * 2;
+            set({
+              needs: { ...n, fun: clamp(n.fun + (won ? 25 : 5)), social: clamp(n.social + 10) },
+              ...(won && pot ? { money: get().money + pot, txns: [{ at: s.time, label: '🎱 Pool winnings', amount: pot }, ...get().txns].slice(0, 40) } : {}),
+            });
+            bump(won ? 'pool-wins' : 'pool-games');
+            get().toast(won ? `🎱🏆 You win the pool game! +${formatNaira(pot)}` : '🎱 You lose this one. Na practice 😤');
+          }
           if (a.minigame === 'predict' && bonus !== 0.5) {
             set({ needs: { ...n, fun: clamp(n.fun + (bonus >= 1 ? 20 : -5)), social: clamp(n.social + (bonus >= 1 ? 10 : 0)) } });
             get().toast(bonus >= 1 ? '🎯 Your prediction correct! Everybody dey hail you 🙌🏾' : '😅 Your prediction no enter. Next match!');
@@ -1220,6 +1230,8 @@ export const useGame = create<GameState>()(
         playMinigame: (score) => {
           const mg = get().minigame;
           set({ minigame: null });
+          // Walking away from the pool table: no game, no stake taken
+          if (mg?.kind === 'pool' && score === null) return get().toast('🎱 You leave the table. Your money dey your pocket.');
           if (mg) startActivity(mg.id, score === null ? 0.5 : Math.max(0, Math.min(1, score)));
         },
 

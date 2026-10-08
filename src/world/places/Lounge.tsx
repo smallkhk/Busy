@@ -1,3 +1,4 @@
+import { PoolTable } from '../PoolTable';
 import { useFrame } from '@react-three/fiber';
 import { useRef } from 'react';
 import { Color, type Group, type MeshStandardMaterial } from 'three';
@@ -137,6 +138,13 @@ export function Lounge() {
           </group>
         </group>
       ))}
+
+      <Tappable id="pool-table">
+        <PoolTable p={[5.9, 0, -1.6]} />
+      </Tappable>
+      <group position={[6.9, 0, -0.9]} rotation={[0, -Math.PI / 2, 0]}>
+        <Person shirt="#2e86c1" trousers="#1d1d1d" move="Idle" />
+      </group>
 
       {/* Entrance with bouncer */}
       <Box p={[3.2, 1.2, 1.9]} s={[0.25, 2.4, 0.25]} c="#2b2b33" />

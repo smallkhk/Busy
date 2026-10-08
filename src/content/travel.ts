@@ -1,4 +1,4 @@
-import { ride, type Interactable } from './common';
+import { ride, type Interactable, poolMatch } from './common';
 
 /** Places you reach from the Kubwa bus stop. Coordinates match the scenes in src/world/places/. */
 export const TRAVEL_INTERACTABLES: Interactable[] = [
@@ -196,6 +196,14 @@ export const TRAVEL_INTERACTABLES: Interactable[] = [
     activities: [
       { id: 'spray', label: 'Request song & spray DJ', doing: 'Spraying DJ', emoji: '💸', minutes: 15, cost: 5000, gains: { fun: 20, social: 10 }, effects: { packaging: 2 }, hours: [19, 24], requires: { packaging: 25 }, spot: [3.2, -1.6] },
     ],
+  },
+  {
+    id: 'pool-table',
+    place: 'lounge',
+    name: 'Pool table',
+    emoji: '🎱',
+    label: [5.9, 1.6, -1.6],
+    activities: [poolMatch('pool-lounge', 2000, [4.8, -1.2]), poolMatch('pool-lounge-big', 10000, [4.8, -1.2], { requires: { packaging: 20 } })],
   },
   {
     id: 'lounge-park',
