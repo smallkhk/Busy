@@ -585,3 +585,21 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
 .login-fields { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
 .login-error { color: #ff8a7a; margin: 0; }
 .link-btn { background: none; border: none; color: #f2c230; padding: 6px 0; text-decoration: underline; cursor: pointer; align-self: flex-start; }
+
+/* ---------------- 8-ball pool ---------------- */
+.pool-screen { position: fixed; inset: 0; z-index: 120; background: radial-gradient(circle at 50% 30%, #2a2130, #120e16); display: flex; flex-direction: column; padding: max(10px, env(safe-area-inset-top)) 10px max(10px, env(safe-area-inset-bottom)); }
+.pool { flex: 1; display: flex; flex-direction: column; gap: 6px; min-height: 0; color: #f4efe3; }
+.pool-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.pool-player { display: flex; flex-direction: column; gap: 4px; padding: 6px 10px; border-radius: 12px; background: rgba(255, 255, 255, 0.06); border: 1px solid transparent; min-width: 0; }
+.pool-player.right { align-items: flex-end; text-align: right; }
+.pool-player.on { border-color: #f2c230; box-shadow: 0 0 12px rgba(242, 194, 48, 0.35); }
+.pool-player b { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 120px; }
+.pool-stake { font-weight: 900; color: #f2c230; font-size: 13px; white-space: nowrap; }
+.pool-tray { display: flex; gap: 2px; }
+.pool-tray i { width: 11px; height: 11px; border-radius: 50%; display: inline-block; box-shadow: inset -1px -1px 2px rgba(0, 0, 0, 0.4); }
+.pool-tray i.gone { opacity: 0.18; }
+.pool-note { text-align: center; font-weight: 700; font-size: 14px; min-height: 20px; }
+.pool-table { flex: 1; min-height: 0; display: grid; place-items: center; touch-action: none; user-select: none; }
+.pool-table canvas { border-radius: 10px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6); }
+.pool-help { text-align: center; }
+.pool-quit { align-self: center; margin-top: 4px; }

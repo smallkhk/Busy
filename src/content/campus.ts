@@ -1,5 +1,5 @@
 import type { Activity, Interactable, Place } from './common';
-import { ride } from './common';
+import { poolMatch, ride } from './common';
 import { JAMB_FEE } from './school';
 
 /**
@@ -153,6 +153,7 @@ export const CAMPUS_INTERACTABLES: Interactable[] = [
     label: label(CAMPUS.sub, 4),
     activities: [
       { id: 'debate', label: 'Debate club meeting', doing: 'Arguing "Is NEPA better than generator?" 🎤', emoji: '🎤', minutes: 90, gains: { social: 25, fun: 15 }, effects: { meet: 'amaka', packaging: 1 }, hours: [16, 20], spot: front(CAMPUS.sub) },
+      poolMatch('pool-sub', 500, front(CAMPUS.sub)),
       { id: 'table-tennis', label: 'Play table tennis', doing: 'Smashing ball 🏓', emoji: '🏓', minutes: 45, gains: { fun: 25, energy: -8, social: 10 }, hours: [10, 22], spot: front(CAMPUS.sub) },
       { id: 'dept-party', label: 'Departmental party (Friday night)', doing: 'Dancing with coursemates 🪩', emoji: '🪩', minutes: 180, cost: 2000, gains: { fun: 45, social: 35, energy: -20 }, effects: { meet: 'tunde' }, hours: [19, 24], spot: front(CAMPUS.sub) },
     ],

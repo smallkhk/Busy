@@ -62,7 +62,7 @@ export type Activity = {
   /** `cure` lists sicknesses it treats (all of them if true); `net` buys a mosquito net. */
   effects?: { packaging?: number; pantry?: number; cv?: number; meet?: string; cure?: true | ('malaria' | 'typhoid' | 'food')[]; net?: boolean; carFix?: number; /** Litres into your car tank. */ fuel?: number; /** Chance the fuel na adulterated and damages the engine. */ badFuel?: number; /** Fitness points. */ fitness?: number; /** Board a flight (see flights.ts). */ flight?: { from: 'ABV' | 'LOS' | 'BNI'; to: 'ABV' | 'LOS' | 'BNI'; cls: 'economy' | 'business' } };
   /** Play a quick mini-game first; how well you do changes the result. */
-  minigame?: 'pos' | 'wash' | 'cook' | 'timing' | 'predict' | 'drive';
+  minigame?: 'pos' | 'wash' | 'cook' | 'timing' | 'predict' | 'drive' | 'pool';
   /** Sit down while you do it (and stay visible), instead of standing. */
   pose?: 'sit';
   /** Shown instead of running, for content that isn't built yet. */
@@ -95,5 +95,22 @@ export function ride(id: string, label: string, emoji: string, to: Place, minute
     commute: true,
     homeLeg,
     spot,
+  };
+}
+
+/** A game of 8-ball pool for money: win and you take the pot (twice your stake). */
+export function poolMatch(id: string, stake: number, spot: [number, number], extra: Partial<Activity> = {}): Activity {
+  return {
+    id,
+    label: `🎱 Play 8-ball pool (₦${stake.toLocaleString('en-NG')} stake)`,
+    doing: 'Playing 8-ball pool 🎱',
+    emoji: '🎱',
+    minutes: 40,
+    cost: stake,
+    gains: { fun: 15, social: 10 },
+    minigame: 'pool',
+    hours: [11, 24],
+    spot,
+    ...extra,
   };
 }

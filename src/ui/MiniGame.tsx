@@ -4,6 +4,7 @@ import { cookScore, DECOYS, DRIVE_SECONDS, driveScore, inZone, LANES, markerAt, 
 import { formatNaira } from '../engine/clock';
 import { useGame } from '../store/game';
 import { DriveRoad, type RoadHazard } from '../world/DriveRoad';
+import { PoolGame } from './Pool';
 
 type Done = (score: number) => void;
 
@@ -214,7 +215,7 @@ function Drive({ done }: { done: Done }) {
   );
 }
 
-const TITLES = { pos: '🏧 POS rush', wash: '🧽 Car wash', cook: '🍳 Kitchen time', timing: '🕺 Feel the beat', predict: '⚽ Predict the match', drive: '🚗 Abuja road' } as const;
+const TITLES = { pos: '🏧 POS rush', wash: '🧽 Car wash', cook: '🍳 Kitchen time', timing: '🕺 Feel the beat', predict: '⚽ Predict the match', drive: '🚗 Abuja road', pool: '🎱 8-ball pool' } as const;
 
 /** Quick game before some activities. Your score changes the pay or the fun. */
 export function MiniGame() {
@@ -223,6 +224,14 @@ export function MiniGame() {
   if (!mg) return null;
   const a = activityById(mg.id);
   const done: Done = (score) => play(score);
+  // Pool takes the whole screen
+  if (mg.kind === 'pool')
+    return (
+      <div className="pool-screen">
+        <PoolGame key={mg.id} done={done} stake={a?.cost ?? 0} />
+        <button className="ghost pool-quit" onClick={() => confirm('Leave the table? Your stake go dey refund.') && play(null)}>✕ Leave table</button>
+      </div>
+    );
   return (
     <div className="event-backdrop">
       <div className="event card minigame" key={mg.id}>
